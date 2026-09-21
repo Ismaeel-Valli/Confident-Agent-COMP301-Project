@@ -1,0 +1,1995 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "JSONPlaceholder - curated subset",
+    "version": "draft-2026-09-21",
+    "description": "Researcher-authored, documentation-derived subset; independent human review pending."
+  },
+  "servers": [
+    {
+      "url": "https://jsonplaceholder.typicode.com"
+    }
+  ],
+  "paths": {
+    "/posts": {
+      "get": {
+        "summary": "Retrieve the posts",
+        "operationId": "get_posts",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": false,
+            "description": "Filter by userId",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "body": {
+                        "type": "string"
+                      },
+                      "userId": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      },
+      "post": {
+        "summary": "Submit a new post",
+        "operationId": "post_posts",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "userId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [
+          "title"
+        ],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  },
+                  "userId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/posts/{id}": {
+      "get": {
+        "summary": "Retrieve a post by identifier",
+        "operationId": "get_posts_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the post",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "userId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      },
+      "put": {
+        "summary": "Replace a post record with the supplied data",
+        "operationId": "put_posts_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the post",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "userId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [
+          "title",
+          "body",
+          "userId"
+        ],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  },
+                  "userId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Change selected fields of a post",
+        "operationId": "patch_posts_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the post",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "userId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  },
+                  "userId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a post by identifier",
+        "operationId": "delete_posts_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the post",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      }
+    },
+    "/comments": {
+      "get": {
+        "summary": "Retrieve the comments",
+        "operationId": "get_comments",
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "query",
+            "required": false,
+            "description": "Filter by postId",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "body": {
+                        "type": "string"
+                      },
+                      "postId": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      },
+      "post": {
+        "summary": "Submit a new comment",
+        "operationId": "post_comments",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "postId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [
+          "name"
+        ],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  },
+                  "postId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comments/{id}": {
+      "get": {
+        "summary": "Retrieve a comment by identifier",
+        "operationId": "get_comments_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the comment",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "postId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      },
+      "put": {
+        "summary": "Replace a comment record with the supplied data",
+        "operationId": "put_comments_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the comment",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "postId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [
+          "name",
+          "email",
+          "body",
+          "postId"
+        ],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  },
+                  "postId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Change selected fields of a comment",
+        "operationId": "patch_comments_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the comment",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "postId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  },
+                  "postId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a comment by identifier",
+        "operationId": "delete_comments_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the comment",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      }
+    },
+    "/albums": {
+      "get": {
+        "summary": "Retrieve the albums",
+        "operationId": "get_albums",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": false,
+            "description": "Filter by userId",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "userId": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      },
+      "post": {
+        "summary": "Submit a new album",
+        "operationId": "post_albums",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "userId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [
+          "title"
+        ],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "userId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/albums/{id}": {
+      "get": {
+        "summary": "Retrieve a album by identifier",
+        "operationId": "get_albums_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the album",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "userId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      },
+      "put": {
+        "summary": "Replace a album record with the supplied data",
+        "operationId": "put_albums_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the album",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "userId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [
+          "title",
+          "userId"
+        ],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "userId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Change selected fields of a album",
+        "operationId": "patch_albums_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the album",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "userId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "userId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a album by identifier",
+        "operationId": "delete_albums_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the album",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      }
+    },
+    "/photos": {
+      "get": {
+        "summary": "Retrieve the photos",
+        "operationId": "get_photos",
+        "parameters": [
+          {
+            "name": "albumId",
+            "in": "query",
+            "required": false,
+            "description": "Filter by albumId",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "url": {
+                        "type": "string"
+                      },
+                      "thumbnailUrl": {
+                        "type": "string"
+                      },
+                      "albumId": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      },
+      "post": {
+        "summary": "Submit a new photo",
+        "operationId": "post_photos",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "thumbnailUrl": {
+                      "type": "string"
+                    },
+                    "albumId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [
+          "title"
+        ],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": "string"
+                  },
+                  "albumId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/photos/{id}": {
+      "get": {
+        "summary": "Retrieve a photo by identifier",
+        "operationId": "get_photos_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the photo",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "thumbnailUrl": {
+                      "type": "string"
+                    },
+                    "albumId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      },
+      "put": {
+        "summary": "Replace a photo record with the supplied data",
+        "operationId": "put_photos_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the photo",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "thumbnailUrl": {
+                      "type": "string"
+                    },
+                    "albumId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [
+          "title",
+          "url",
+          "thumbnailUrl",
+          "albumId"
+        ],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": "string"
+                  },
+                  "albumId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Change selected fields of a photo",
+        "operationId": "patch_photos_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the photo",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "thumbnailUrl": {
+                      "type": "string"
+                    },
+                    "albumId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": "string"
+                  },
+                  "albumId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a photo by identifier",
+        "operationId": "delete_photos_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the photo",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      }
+    },
+    "/todos": {
+      "get": {
+        "summary": "Retrieve the todos",
+        "operationId": "get_todos",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": false,
+            "description": "Filter by userId",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "completed": {
+                        "type": "boolean"
+                      },
+                      "userId": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      },
+      "post": {
+        "summary": "Submit a new todo",
+        "operationId": "post_todos",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "completed": {
+                      "type": "boolean"
+                    },
+                    "userId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [
+          "title"
+        ],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "completed": {
+                    "type": "boolean"
+                  },
+                  "userId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/todos/{id}": {
+      "get": {
+        "summary": "Retrieve a todo by identifier",
+        "operationId": "get_todos_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the todo",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "completed": {
+                      "type": "boolean"
+                    },
+                    "userId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      },
+      "put": {
+        "summary": "Replace a todo record with the supplied data",
+        "operationId": "put_todos_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the todo",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "completed": {
+                      "type": "boolean"
+                    },
+                    "userId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [
+          "title",
+          "completed",
+          "userId"
+        ],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "completed": {
+                    "type": "boolean"
+                  },
+                  "userId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Change selected fields of a todo",
+        "operationId": "patch_todos_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the todo",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "completed": {
+                      "type": "boolean"
+                    },
+                    "userId": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "completed": {
+                    "type": "boolean"
+                  },
+                  "userId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a todo by identifier",
+        "operationId": "delete_todos_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the todo",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      }
+    },
+    "/users": {
+      "get": {
+        "summary": "Retrieve the users",
+        "operationId": "get_users",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "username": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "phone": {
+                        "type": "string"
+                      },
+                      "website": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      },
+      "post": {
+        "summary": "Submit a new user",
+        "operationId": "post_users",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "website": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [
+          "name"
+        ],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "username": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "summary": "Retrieve a user by identifier",
+        "operationId": "get_users_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the user",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "website": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      },
+      "put": {
+        "summary": "Replace a user record with the supplied data",
+        "operationId": "put_users_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the user",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "website": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [
+          "name",
+          "username",
+          "email",
+          "phone",
+          "website"
+        ],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "username": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Change selected fields of a user",
+        "operationId": "patch_users_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the user",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "website": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "username": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a user by identifier",
+        "operationId": "delete_users_{id}",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Identifier of the user",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://jsonplaceholder.typicode.com/guide/"
+      }
+    }
+  },
+  "x-source-docs": "https://jsonplaceholder.typicode.com/guide/",
+  "x-source-kind": "documentation_derived",
+  "x-coverage": "Partial. Unlisted operations/fields are not automatically invalid. Example fields are not asserted to be universally required.",
+  "x-source-evidence": [
+    "https://jsonplaceholder.typicode.com/guide/",
+    "https://jsonplaceholder.typicode.com/"
+  ],
+  "x-response-note": "Only selected resource fields are modeled. Mutable fields other than the guide's post example need explicit team review. Writes are simulated by the service."
+}

@@ -1,0 +1,69 @@
+{
+  "status": "automated_checks_passed",
+  "task_count": 1000,
+  "api_counts": {
+    "JSONPlaceholder": 150,
+    "GitHub": 250,
+    "Open-Meteo": 150,
+    "DummyJSON": 150,
+    "REST Countries": 150,
+    "Petstore": 150
+  },
+  "http_methods": {
+    "GET": 538,
+    "POST": 233,
+    "PUT": 52,
+    "PATCH": 147,
+    "DELETE": 30
+  },
+  "categories": {
+    "read": 501,
+    "create": 233,
+    "update": 199,
+    "delete": 30,
+    "search_filter": 37
+  },
+  "difficulty_heuristic": {
+    "easy": 271,
+    "medium": 726,
+    "hard": 3
+  },
+  "authentication": {
+    "none": 501,
+    "bearer": 250,
+    "api_key": 155,
+    "oauth2": 94
+  },
+  "operation_families": {
+    "JSONPlaceholder": 36,
+    "GitHub": 65,
+    "Open-Meteo": 3,
+    "DummyJSON": 23,
+    "REST Countries": 4,
+    "Petstore": 11
+  },
+  "failure_count": 0,
+  "failures": [],
+  "human_review_status": "pending",
+  "live_api_execution": false,
+  "checks": [
+    "seven-field structure",
+    "unique task IDs/prompts/scenarios",
+    "pinned source hashes",
+    "source endpoint/method existence",
+    "required parameters",
+    "input JSON schemas",
+    "query and path serialization",
+    "reference code request via a restricted AST reader",
+    "reference output mode",
+    "prompt endpoint/library-call leakage"
+  ],
+  "limits": [
+    "This validator only understands our reference template; it is not an independent experimental evaluator.",
+    "Source documentation can omit conditions; passing schema checks does not establish complete semantic correctness.",
+    "Correlated variants share operation families; 1,000 records are not 1,000 independent API operations.",
+    "Difficulty, operation mix and authentication proportions must be reviewed against Progress Report 2.",
+    "No live response content, credentials, resource existence, account permissions or LLM outputs were evaluated."
+  ],
+  "prompt_export_matches": true
+}

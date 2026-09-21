@@ -1,0 +1,16 @@
+{
+  "release_ready": false,
+  "task_count": 1000,
+  "api_count_targets_met": true,
+  "automated_integrity_checks_passed": true,
+  "human_review_completed": false,
+  "review_queue_size": 100,
+  "operation_distribution_matches_report": false,
+  "difficulty_distribution_matches_report": false,
+  "issues": [
+    "Independent source and reference review pending",
+    "Operation/difficulty/authentication distributions differ from the report",
+    "Pilot overlap must be removed from a held-out final evaluation set",
+    "Independent experimental evaluator not implemented"
+  ]
+}

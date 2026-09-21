@@ -1,0 +1,162 @@
+[
+  {
+    "file": "github.openapi.json",
+    "url": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json",
+    "sha256": "4fbdc7d0102276803a07f9880d14ed543ba1afc10a4c9fd7bd3782408d9abaf7",
+    "bytes": 13012129,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "petstore.openapi.json",
+    "url": "https://petstore3.swagger.io/api/v3/openapi.json",
+    "sha256": "00441c05add60f28da55eb4563d3fb6bbda364ba8eb7b381e2e2c98613005c82",
+    "bytes": 17106,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "jsonplaceholder-guide.html",
+    "url": "https://jsonplaceholder.typicode.com/guide/",
+    "sha256": "8317d5767155779dca7d97d5ff8091028171aa0c82330e8a228ed2d07976f0af",
+    "bytes": 7344,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "dummyjson-products.html",
+    "url": "https://dummyjson.com/docs/products",
+    "sha256": "1457bb8edc1e99043841d40adec238b18af5ae17d559aa8f1d02c01786feebc2",
+    "bytes": 42303,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "restcountries-docs.html",
+    "url": "https://restcountries.com/docs",
+    "sha256": "e0951c876bf6edd94bafee24cdde9d3a673d5bee33aee65741ca41e320c83c85",
+    "bytes": 97148,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "openmeteo-directory.json",
+    "url": "https://api.github.com/repos/open-meteo/open-meteo/contents/openapi",
+    "sha256": "f3fc2e40bf13edf63727f51980e0f30ee9ec84f8e0b365811626bd966bee8012",
+    "bytes": 7499,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "openmeteo-docs.html",
+    "url": "https://open-meteo.com/en/docs",
+    "sha256": "b212c97609df9de68d2228362d1974c6f65eb7d5512b344cc0c59518d6fa7e3c",
+    "bytes": 515477,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "openmeteo-forecast.yml",
+    "url": "https://raw.githubusercontent.com/open-meteo/open-meteo/main/openapi/forecast.yml",
+    "sha256": "512e29bca2afb06a088cc27fae5c6793a05e272c6404a67e3632cecb87f8516f",
+    "bytes": 137054,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "openmeteo-air-quality.yml",
+    "url": "https://raw.githubusercontent.com/open-meteo/open-meteo/main/openapi/air-quality.yml",
+    "sha256": "e614b50a40457e51876ee092b6be74599a1fd87f24dce24493c94becf4c61f03",
+    "bytes": 21391,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "openmeteo-marine.yml",
+    "url": "https://raw.githubusercontent.com/open-meteo/open-meteo/main/openapi/marine.yml",
+    "sha256": "48ebec274d0cd097a3aa293831807a87125cd948c87a5fecc650896cb5fb456c",
+    "bytes": 21719,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "restcountries-countries.html",
+    "url": "https://restcountries.com/docs/countries",
+    "sha256": "985717647bc37ff3c12917379061f0541a4af9391bc3754edc8380134f8355fe",
+    "bytes": 385112,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "jsonplaceholder-home.html",
+    "url": "https://jsonplaceholder.typicode.com/",
+    "sha256": "f0fa02e341505e81d8ce418ec28d4c2c6d9ec872a725cd8144b36893fdb0b22d",
+    "bytes": 8840,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "github-license.txt",
+    "url": "https://raw.githubusercontent.com/github/rest-api-description/main/LICENSE.md",
+    "sha256": "3243761cbac07e6d169a5a2f4e7c25cc544da85248e735df74c3672e055cc87b",
+    "bytes": 1063,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "petstore-license.txt",
+    "url": "https://raw.githubusercontent.com/swagger-api/swagger-petstore/master/LICENSE",
+    "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+    "bytes": 11357,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "openmeteo-license.txt",
+    "url": "https://raw.githubusercontent.com/open-meteo/open-meteo/main/LICENSE",
+    "sha256": "20b067f86de375aae6db0f283ab2e65de24d537733b89bd58432c101259d84cf",
+    "bytes": 34522,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "dummyjson-users.html",
+    "url": "https://dummyjson.com/docs/users",
+    "sha256": "a5537dbee71f100d9157fb96dafd7fdd89b597be72eaa9c725603f9789bfb975",
+    "bytes": 46661,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "dummyjson-posts.html",
+    "url": "https://dummyjson.com/docs/posts",
+    "sha256": "362e6ce727f73aee73958670cf63ff7aa2200714390776e38f3b5da5d60de76e",
+    "bytes": 43017,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "dummyjson-carts.html",
+    "url": "https://dummyjson.com/docs/carts",
+    "sha256": "532e59a06bd5f3c3b67df8030924cf3988cc1daa6d6dddf597443e0dc3a0c74e",
+    "bytes": 37794,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "dummyjson-todos.html",
+    "url": "https://dummyjson.com/docs/todos",
+    "sha256": "a8ec5294883cceb817588ef8313572cd45520457b4dabaaa8cbe80f884b52937",
+    "bytes": 34310,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  },
+  {
+    "file": "dummyjson-auth.html",
+    "url": "https://dummyjson.com/docs/auth",
+    "sha256": "001ffa80acff01b2edcc319025bc1b61a44ae8e15f60cfdd6cb61fe7ed5e0616",
+    "bytes": 29230,
+    "retrieved_date": "2026-09-21",
+    "status": "downloaded"
+  }
+]

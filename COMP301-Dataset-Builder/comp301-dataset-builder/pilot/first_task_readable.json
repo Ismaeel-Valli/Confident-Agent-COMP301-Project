@@ -1,0 +1,121 @@
+{
+  "task_id": "REST_PY_JP_0001",
+  "language": "python",
+  "natural_language_instruction": "Write a Python function solve(inputs) for JSONPlaceholder. Retrieve the posts. Return the decoded JSON response. Return None for a successful empty response. Raise an exception for an unsuccessful HTTP response. Assume referenced resources and accounts exist. Do not execute the function.",
+  "api_specification": {
+    "api_name": "JSONPlaceholder",
+    "base_url": "https://jsonplaceholder.typicode.com",
+    "endpoint": "/posts",
+    "method": "GET",
+    "acceptable_methods": [
+      "GET"
+    ],
+    "parameters": [
+      {
+        "name": "userId",
+        "in": "query",
+        "required": false,
+        "description": "Filter by userId",
+        "schema": {
+          "type": "integer",
+          "example": 1
+        },
+        "type": "integer"
+      }
+    ],
+    "headers": [
+      {
+        "name": "Accept",
+        "value": "application/json"
+      }
+    ],
+    "request_body": null,
+    "response_schema": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "auth": null,
+    "source_file": "sources/jsonplaceholder.curated.openapi.json",
+    "source_sha256": "d2dfbc53622a7f84ce3265e36543edb125093a907049efda9dc3eb9211907853",
+    "source_pointer": "/paths/~1posts/get",
+    "openapi_url": null,
+    "coverage": "Partial. Unlisted operations/fields are not automatically invalid. Example fields are not asserted to be universally required."
+  },
+  "ground_truth": {
+    "code": "import requests\nfrom urllib.parse import quote\n\n\ndef solve(inputs):\n    url = 'https://jsonplaceholder.typicode.com/posts'\n    params = {}\n    headers = {}\n    headers['Accept'] = 'application/json'\n    response = requests.request('GET', url, params=params, headers=headers, timeout=20)\n    response.raise_for_status()\n    if response.status_code == 204 or not response.content:\n        return None\n    data = response.json()\n    return data\n",
+    "expected_behavior": "Retrieve the posts",
+    "verified_by": "source_contract_checks_and_static_reference_request_check; human_review_pending",
+    "verification_date": "2026-09-21",
+    "review_status": "pending_human_review"
+  },
+  "test_case": {
+    "inputs": {},
+    "expected_request": {
+      "method": "GET",
+      "url": "https://jsonplaceholder.typicode.com/posts",
+      "query": {},
+      "headers": {
+        "Accept": "application/json"
+      },
+      "json_body": null
+    },
+    "expected_output": {
+      "kind": "decoded_json_or_none",
+      "field": null,
+      "empty_response": null,
+      "response_schema_source": "api_specification.response_schema"
+    },
+    "evaluation_mode": "static_contract",
+    "fixture_origin": "synthetic_inputs_no_live_resource_claims"
+  },
+  "metadata": {
+    "api_name": "JSONPlaceholder",
+    "category": "read",
+    "difficulty": "easy",
+    "difficulty_status": "heuristic_pending_review",
+    "source_openapi": "sources/jsonplaceholder.curated.openapi.json",
+    "source_docs": "https://jsonplaceholder.typicode.com/guide/",
+    "created_date": "2026-09-21",
+    "reviewed_by": null,
+    "review_status": "pending_human_review",
+    "tags": [
+      "rest",
+      "python",
+      "get"
+    ],
+    "generation_method": "source_driven_templates",
+    "operation_family_id": "d68a2232492e6124",
+    "scenario_fingerprint": "0864bbfb50e80f53fb90757843d879e5e0c0c2536d84bce474590eb92b6d1cac",
+    "scenario": {
+      "parameters": [],
+      "body_fields": [],
+      "fixed": {},
+      "projection": null,
+      "output_mode": "json"
+    },
+    "input_bindings": [],
+    "source_kind": "documentation_derived",
+    "split": "unassigned_draft",
+    "assumptions": [
+      "Valid existing resources and appropriate account permissions are supplied.",
+      "Credentials are caller inputs; credential validity cannot be checked statically.",
+      "Missing entries in partial specifications are not proof of a hallucination."
+    ]
+  }
+}

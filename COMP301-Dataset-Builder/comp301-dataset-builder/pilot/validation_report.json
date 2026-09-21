@@ -1,0 +1,65 @@
+{
+  "status": "automated_checks_passed",
+  "task_count": 10,
+  "api_counts": {
+    "JSONPlaceholder": 2,
+    "GitHub": 2,
+    "Open-Meteo": 2,
+    "DummyJSON": 2,
+    "REST Countries": 1,
+    "Petstore": 1
+  },
+  "http_methods": {
+    "GET": 7,
+    "POST": 1,
+    "PATCH": 1,
+    "PUT": 1
+  },
+  "categories": {
+    "read": 7,
+    "create": 1,
+    "update": 2
+  },
+  "difficulty_heuristic": {
+    "easy": 4,
+    "medium": 6
+  },
+  "authentication": {
+    "none": 6,
+    "bearer": 2,
+    "api_key": 1,
+    "oauth2": 1
+  },
+  "operation_families": {
+    "JSONPlaceholder": 2,
+    "GitHub": 2,
+    "Open-Meteo": 2,
+    "DummyJSON": 2,
+    "REST Countries": 1,
+    "Petstore": 1
+  },
+  "failure_count": 0,
+  "failures": [],
+  "human_review_status": "pending",
+  "live_api_execution": false,
+  "checks": [
+    "seven-field structure",
+    "unique task IDs/prompts/scenarios",
+    "pinned source hashes",
+    "source endpoint/method existence",
+    "required parameters",
+    "input JSON schemas",
+    "query and path serialization",
+    "reference code request via a restricted AST reader",
+    "reference output mode",
+    "prompt endpoint/library-call leakage"
+  ],
+  "limits": [
+    "This validator only understands our reference template; it is not an independent experimental evaluator.",
+    "Source documentation can omit conditions; passing schema checks does not establish complete semantic correctness.",
+    "Correlated variants share operation families; 1,000 records are not 1,000 independent API operations.",
+    "Difficulty, operation mix and authentication proportions must be reviewed against Progress Report 2.",
+    "No live response content, credentials, resource existence, account permissions or LLM outputs were evaluated."
+  ],
+  "prompt_export_matches": true
+}
