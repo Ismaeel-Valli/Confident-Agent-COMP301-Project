@@ -1,0 +1,116 @@
+{
+  "method": "Independent mocked behavioral checks; no live HTTP; no EWCS input",
+  "fixtures": {
+    "original_pilot": {
+      "path": "tests/fixtures/pilot-return-none.py",
+      "sha256": "4e616ad902d2e8fcfd196007c610aec02e487024b3bffdfb6b39e841d82c40cd",
+      "passed": 6,
+      "total": 11,
+      "all_passed": false,
+      "cases": [
+        {
+          "case": "populated_200",
+          "passed": false,
+          "reason": "Expected [{'id': 1, 'userId': 1, 'title': 'development test', 'body': 'fixture'}], received None"
+        },
+        {
+          "case": "empty_body_200",
+          "passed": false,
+          "reason": "Unexpected JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+        },
+        {
+          "case": "empty_body_204",
+          "passed": false,
+          "reason": "Unexpected Exception: Unsuccessful HTTP response: 204"
+        },
+        {
+          "case": "populated_201",
+          "passed": false,
+          "reason": "Unexpected Exception: Unsuccessful HTTP response: 201"
+        },
+        {
+          "case": "empty_json_array",
+          "passed": false,
+          "reason": "Expected [], received None"
+        },
+        {
+          "case": "client_error_json",
+          "passed": true
+        },
+        {
+          "case": "client_error_empty",
+          "passed": true
+        },
+        {
+          "case": "server_error_json",
+          "passed": true
+        },
+        {
+          "case": "unresolved_redirect",
+          "passed": true
+        },
+        {
+          "case": "invalid_json_success",
+          "passed": true
+        },
+        {
+          "case": "transport_timeout",
+          "passed": true
+        }
+      ]
+    },
+    "corrected_reference": {
+      "path": "examples/jsonplaceholder-solve.py",
+      "sha256": "01381df246a35891f4eee287aa54451d66b22fd4f1c57210bc7217d3cacc8413",
+      "passed": 11,
+      "total": 11,
+      "all_passed": true,
+      "cases": [
+        {
+          "case": "populated_200",
+          "passed": true
+        },
+        {
+          "case": "empty_body_200",
+          "passed": true
+        },
+        {
+          "case": "empty_body_204",
+          "passed": true
+        },
+        {
+          "case": "populated_201",
+          "passed": true
+        },
+        {
+          "case": "empty_json_array",
+          "passed": true
+        },
+        {
+          "case": "client_error_json",
+          "passed": true
+        },
+        {
+          "case": "client_error_empty",
+          "passed": true
+        },
+        {
+          "case": "server_error_json",
+          "passed": true
+        },
+        {
+          "case": "unresolved_redirect",
+          "passed": true
+        },
+        {
+          "case": "invalid_json_success",
+          "passed": true
+        },
+        {
+          "case": "transport_timeout",
+          "passed": true
+        }
+      ]
+    }
+  }
+}
