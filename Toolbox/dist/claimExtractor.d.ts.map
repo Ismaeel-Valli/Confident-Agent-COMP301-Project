@@ -1,0 +1,1 @@
+{"version":3,"file":"claimExtractor.d.ts","sourceRoot":"","sources":["../src/claimExtractor.ts"],"names":[],"mappings":"AAEA,OAAO,EAAE,KAAK,UAAU,EAAY,MAAM,qBAAqB,CAAC;AAChE,wBAAsB,aAAa,CAAC,EAAE,IAAI,EAAE,cAAmB,EAAE,EAAE;IAAC,IAAI,EAAE,MAAM,CAAC;IAAC,cAAc,CAAC,EAAE,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAA;CAAC,GAAG,OAAO,CAAC,UAAU,CAAC,CAqB5I"}
