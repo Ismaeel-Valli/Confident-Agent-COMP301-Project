@@ -1,0 +1,7 @@
+{
+  "type": "plugin",
+  "runner": "node",
+  "owner": "beledarian",
+  "name": "confidence-agent-toolbox",
+  "revision": 1
+}
