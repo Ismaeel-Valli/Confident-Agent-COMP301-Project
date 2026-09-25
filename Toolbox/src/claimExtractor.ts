@@ -1,13 +1,11 @@
 import { spawn } from 'child_process';
 import { EXTRACTION_SCRIPT } from './extractorScript';
 import { type Extraction, hashCode } from './verificationTypes';
-const BOOTSTRAP = "import sys, json; exec(compile(json.loads(sys.stdin.readline()), '<extract_claims>', 'exec'))";
 export async function extractClaims({ code, input_bindings = {} }: {code: string; input_bindings?: Record<string, any>}): Promise<Extraction> {
   const failed = (error: string): Extraction => ({ claims: [], complete: false, issues: [], error, candidate_hash: hashCode(code) });
   if (!code.trim()) return failed('No candidate code supplied.');
   return new Promise(resolve => {
-    // The script travels on stdin (first line, JSON-encoded): Windows limits command lines to 32,767 characters.
-    const child = spawn(process.env.CONFIDENCE_PYTHON || 'python', ['-c', BOOTSTRAP], { stdio: 'pipe', timeout: 10000 });
+    const child = spawn(process.env.CONFIDENCE_PYTHON || 'python', ['-c', EXTRACTION_SCRIPT], { stdio: 'pipe', timeout: 10000 });
     let stdout = '', stderr = '';
     child.stdout.setEncoding('utf8'); child.stderr.setEncoding('utf8');
     child.stdout.on('data', d => { stdout += d; }); child.stderr.on('data', d => { stderr += d; });
@@ -22,6 +20,6 @@ export async function extractClaims({ code, input_bindings = {} }: {code: string
         resolve({ ...data, candidate_hash: hashCode(code) });
       } catch { resolve(failed(`Invalid extraction output: ${stderr || stdout.slice(0, 200)}`)); }
     });
-    child.stdin.end(JSON.stringify(EXTRACTION_SCRIPT) + '\n' + JSON.stringify({ code, input_bindings }));
+    child.stdin.end(JSON.stringify({ code, input_bindings }));
   });
 }

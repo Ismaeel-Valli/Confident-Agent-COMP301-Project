@@ -2,10 +2,10 @@ import { extractClaims } from './claimExtractor';
 import { verifyInterface, queryPypi, PackageEvidence } from './packageEvidence';
 import { createPyrightRunner, verifyIdentifier, RunPyright, PyrightResult } from './pyrightRunner';
 import { verifyAccessPoint, verifyInputContract, verifyOutputContract, verifyContextual } from './openApiVerifier';
-import { computeEwcs, makeDecision, presentReport, EWCSReport, DecisionPolicy, DEFAULT_POLICY } from './verificationPolicy';
-import { ALL_LAYERS, Claim, Extraction, LayerName, LayerResult, Decision, hashCode, ofType, unknown, extractionLimits } from './verificationTypes';
+import { computeEwcs, makeDecision, presentReport, EWCSReport } from './verificationPolicy';
+import { ALL_LAYERS, Claim, Extraction, LayerName, LayerResult, Decision, hashCode, ofType, unknown } from './verificationTypes';
 export interface VerificationRequest {code:string;spec:any;input_bindings?:Record<string,any>;task_id?:string;}
-export interface VerificationDeps {runPyright?:RunPyright;allowPyright?:boolean;lookupPackage?:(name:string)=>Promise<PackageEvidence>;extract?:(p:{code:string;input_bindings?:Record<string,any>})=>Promise<Extraction>;policy?:DecisionPolicy;}
+export interface VerificationDeps {runPyright?:RunPyright;allowPyright?:boolean;lookupPackage?:(name:string)=>Promise<PackageEvidence>;extract?:(p:{code:string;input_bindings?:Record<string,any>})=>Promise<Extraction>;}
 export interface Verification {
   candidate_hash:string; spec_hash:string; bindings_hash:string; extraction:Extraction;
   layers:LayerResult[]; ewcs_report:EWCSReport; decision:Decision;
@@ -41,19 +41,18 @@ export async function verifyCandidate(request:VerificationRequest,deps:Verificat
     contextual:()=>verifyContextual({claims,spec:snapshot})
   };
   const failed:LayerName[]=[],layers:LayerResult[]=[];
-  const limits=extractionLimits(extraction);
   for(const layer of ALL_LAYERS) {
     try {
       let r=await actions[layer]();
       if(!r || r.layer!==layer) throw new Error('Missing/mismatched layer result.');
-      if(limits.layers.has(layer) && r.state==='not_applicable') r=unknown(layer,'Extraction was incomplete for this layer; absence of relevant claims does not establish inapplicability.');
+      if(!extraction.complete && r.state==='not_applicable') r=unknown(layer,'Extraction was incomplete; absence of relevant claims does not establish inapplicability.');
       layers.push(r);
     } catch(e) {failed.push(layer);layers.push(unknown(layer,`Required verifier failed: ${String(e)}`));}
   }
   const ewcs_report=computeEwcs({layer_results:layers,task_id:request.task_id,extraction_complete:extraction.complete,failed_layers:failed});
   ewcs_report.candidate_hash=candidate_hash;
   return {candidate_hash,spec_hash:hashCode(JSON.stringify(snapshot ?? null)),bindings_hash:hashCode(JSON.stringify(bindings)),extraction,layers,ewcs_report,
-    decision:makeDecision(ewcs_report,0,deps.policy ?? DEFAULT_POLICY),evidence:{packages,pyright}};
+    decision:makeDecision(ewcs_report),evidence:{packages,pyright}};
 }
 export interface Attempt {code:string;verification:Verification;}
 export async function runIntervention(request:VerificationRequest,deps:VerificationDeps & {
@@ -70,9 +69,9 @@ export async function runIntervention(request:VerificationRequest,deps:Verificat
       attempts.push({code:revised,verification:await verifyCandidate({...frozen,code:revised},deps)});
     } catch(e) {correction_error=String(e);}
   }
-  const last=attempts[attempts.length-1], raw=makeDecision(last.verification.ewcs_report,attempts.length-1,deps.policy ?? DEFAULT_POLICY);
+  const last=attempts[attempts.length-1], raw=makeDecision(last.verification.ewcs_report,attempts.length-1);
   const decision:Decision=raw==='correct' || correction_error?'abstain':raw;
-  const rendered=presentReport({code:last.code,ewcs_report:last.verification.ewcs_report,decision,policy:deps.policy ?? DEFAULT_POLICY});
+  const rendered=presentReport({code:last.code,ewcs_report:last.verification.ewcs_report,decision});
   return {decision:rendered.decision,delivered_code:rendered.code_included?last.code:null,report:rendered.report,attempts,
     correction_attempted:attempts[0].verification.decision==='correct' && !!deps.correct,correction_error};
 }

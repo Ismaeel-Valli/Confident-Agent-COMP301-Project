@@ -1,6 +1,6 @@
 {
   "name": "confidence-agent-toolbox",
-  "version": "1.6.0",
+  "version": "1.5.0",
   "description": "Confidence Agent toolbox with conservative contract verification and a mandatory six-layer controller.",
   "main": "index.js",
   "scripts": {
@@ -12,8 +12,7 @@
     "ci": "npm run typecheck && npm run build && npm run test",
     "test:verification": "node --test tests/verification.test.js",
     "verify": "node dist/verificationCli.js",
-    "evaluate:pilot": "node scripts/evaluate-pilot.cjs",
-    "verify:references": "node scripts/verify-reference-solutions.cjs"
+    "evaluate:pilot": "node scripts/evaluate-pilot.cjs"
   },
   "author": "",
   "license": "ISC",

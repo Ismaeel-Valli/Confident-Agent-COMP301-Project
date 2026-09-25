@@ -32,10 +32,9 @@ export function createPyrightRunner(pythonExecutable = process.env.CONFIDENCE_PY
       const path = join(directory,'candidate.py');
       await writeFile(path, python, 'utf8');
       const config = join(directory,'pyrightconfig.json');
-      // Standard mode: identifier, attribute and call errors are reported; annotation
-      // completeness (strict mode) is a style question, not API-claim evidence.
-      await writeFile(config, JSON.stringify({typeCheckingMode:'standard', pythonVersion:'3.12', include:['candidate.py'],
-        reportMissingModuleSource:'warning'}));
+      await writeFile(config, JSON.stringify({typeCheckingMode:'strict', pythonVersion:'3.12', include:['candidate.py'],
+        reportMissingTypeStubs:'warning', reportUnknownVariableType:'warning', reportUnknownMemberType:'warning',
+        reportUnknownArgumentType:'warning', reportUnknownParameterType:'warning', reportUnknownLambdaType:'warning'}));
       // Launch the pinned npm CLI via Node on Windows and POSIX; no .cmd shell dependency.
       const r = await launch(process.execPath, [require.resolve('pyright/index.js'), '--outputjson', '--project', config,
         '--pythonpath', env.stdout.trim(), path], Math.min(60, Math.max(0.1, timeout_seconds)) * 1000);
@@ -62,32 +61,37 @@ export function parsePyright(r: PyrightResult, code: string): {diagnostics: Diag
     return {diagnostics:data.generalDiagnostics};
   } catch { return {diagnostics:[],error:'Missing, malformed or inconsistent Pyright JSON output.'}; }
 }
-/** Diagnostics that contradict the existence of a name, attribute, import symbol or call signature (H10). */
-const IDENTIFIER_RULES = new Set(['reportAttributeAccessIssue','reportUndefinedVariable','reportCallIssue','reportPrivateImportUsage']);
-/** Type errors that contradict a library callable's documented signature when they occur on an API-claim line. */
-const API_SIGNATURE_RULES = new Set(['reportArgumentType']);
-/** Missing environment evidence: identifiers from that import cannot be checked. */
-const EVIDENCE_GAP_RULES = new Set(['reportMissingImports']);
 export async function verifyIdentifier(code: string, runPyright: RunPyright, allowPyright = true, extraction?: Extraction): Promise<LayerResult> {
   if (!allowPyright) return unknown('identifier','Pyright is disabled.');
   if (!code.trim()) return unknown('identifier','No candidate supplied.');
   try {
     const parsed = parsePyright(await runPyright({python:code}), code);
     if (parsed.error) return unknown('identifier', parsed.error);
-    const context = extraction && extraction.candidate_hash === hashCode(code) ? extraction : await extractClaims({code});
-    // Pyright ranges are 0-indexed; AST claim lines are 1-indexed.
-    const apiLines = new Set((context.claims || []).filter(c => ['import','method_call','endpoint'].includes(c.type)).map(c => Number(c.line) - 1));
-    const errors = parsed.diagnostics.filter(d => d.severity === 'error' && !/^report(?:Unused|Unnecessary)/.test(d.rule || ''));
-    const onApiLine = (d: Diagnostic) => Number.isInteger(d.range?.start?.line) && apiLines.has(d.range.start.line);
-    const text = (d: Diagnostic) => `${d.rule || 'syntax/type error'} (line ${(d.range?.start?.line ?? -1) + 1}): ${d.message}`;
-    const incorrect = errors.filter(d => !d.rule || IDENTIFIER_RULES.has(d.rule) || API_SIGNATURE_RULES.has(d.rule) && onApiLine(d));
-    const gaps = errors.filter(d => !incorrect.includes(d) && (EVIDENCE_GAP_RULES.has(d.rule || '') || onApiLine(d)));
-    const general = errors.filter(d => !incorrect.includes(d) && !gaps.includes(d));
-    const generalNote = general.length ? '\nGeneral Python diagnostics (not API claims; reported separately, not scored): ' + general.map(text).join('; ') : '';
+    const contradictionRules = new Set(['reportUndefinedVariable','reportAttributeAccessIssue','reportCallIssue',
+      'reportArgumentType','reportAssignmentType','reportReturnType','reportOperatorIssue','reportIndexIssue',
+      'reportRedeclaration','reportUnboundVariable','reportPossiblyUnboundVariable']);
+    const annotationRules = new Set(['reportUnknownParameterType', 'reportMissingParameterType']);
+    let unused:NonNullable<Extraction['unused_parameters']> = [];
+    if (parsed.diagnostics.some(d => annotationRules.has(d.rule || ''))) {
+      const context = extraction || await extractClaims({code});
+      if (!context.error && context.candidate_hash === hashCode(code)) unused = context.unused_parameters || [];
+    }
+    const ignoredAnnotations = parsed.diagnostics.filter(d => annotationRules.has(d.rule || '') && unused.some(p =>
+      d.range?.start?.line === p.line && Number.isInteger(d.range?.start?.character) &&
+      d.range.start.character >= p.start_character && d.range.start.character < p.end_character));
+    const relevant = parsed.diagnostics.filter(d => !/^report(?:Unused|Unnecessary)/.test(d.rule || '') && !ignoredAnnotations.includes(d));
+    const incorrect = relevant.filter(d => d.severity === 'error' && (!d.rule || contradictionRules.has(d.rule)));
     if (incorrect.length) return result('identifier','verified_incorrect','tier_4','Pyright structured diagnostics',
-      incorrect.map(text).join('\n') + generalNote,'static_identifier_or_type_error');
-    if (gaps.length) return unknown('identifier','Incomplete static evidence for API identifiers: ' + gaps.map(text).join('\n') + generalNote);
+      incorrect.map(d => `${d.rule || 'syntax/type error'}: ${d.message}`).join('\n'),'static_identifier_or_type_error');
+    // Only errors are blocking. Warnings about missing annotations or unknown
+    // types describe completeness, not identifier correctness. The extractor
+    // separately tracks unused parameters, and a function whose parameters
+    // have no annotations still has well-defined identifiers.
+    const blocking = relevant.filter(d => d.severity === 'error');
+    if (blocking.length) return unknown('identifier',
+      'Incomplete static evidence: ' + blocking.map(d => `${d.rule}: ${d.message}`).join('\n'));
     return result('identifier','verified_correct','tier_4','Pyright structured diagnostics',
-      'No identifier, attribute or API-call diagnostics in the configured environment (Pyright standard mode). A clean check does not establish REST contracts or task behavior.' + generalNote);
+      'No blocking identifier/type diagnostics in the configured environment. Unused/unnecessary-code and missing-annotation notices do not establish an API error. This does not establish REST contracts or task behavior.' +
+      (ignoredAnnotations.length ? '\nNonblocking annotation diagnostics for AST-confirmed unused parameters: ' + ignoredAnnotations.map(d=>`${d.rule}: ${d.message}`).join('; ') : ''));
   } catch (e) { return unknown('identifier',`Pyright failed: ${String(e)}`); }
 }

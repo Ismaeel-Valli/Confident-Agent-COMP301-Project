@@ -52,20 +52,7 @@ export function computeEwcs({layer_results, task_id = 'candidate', extraction_co
   for (const r of layer_results) acc.record(r);
   return acc.finalise();
 }
-/**
- * Decision policy (progress report section 8.1), applied in order:
- * 1. any contradiction -> correct (once), then abstain;
- * 2. missing/failed verifiers, incomplete extraction or an unresolved
- *    delivery-critical check -> abstain (the uncertainty gate);
- * 3. EWCS thresholds.
- * Layer states carry critical checks only; noncritical limits are notes in the
- * evidence and never make a layer unverifiable. Disabling the gate is only for
- * labelled exploratory sensitivity runs.
- */
-export interface DecisionPolicy {uncertainty_gate: boolean; deliver_threshold: number; flag_threshold: number;}
-export const POLICY_VERSION = '2026-09-25.1';
-export const DEFAULT_POLICY: DecisionPolicy = Object.freeze({uncertainty_gate: true, deliver_threshold: 0.85, flag_threshold: 0.60});
-export function makeDecision(report: EWCSReport, correctionAttempts = 0, policy: DecisionPolicy = DEFAULT_POLICY): Decision {
+export function makeDecision(report: EWCSReport, correctionAttempts = 0): Decision {
   // Recompute from contributions; never trust model-supplied score/flags.
   try {
     if (!report || !Array.isArray(report.contributions)) return 'abstain';
@@ -79,14 +66,15 @@ export function makeDecision(report: EWCSReport, correctionAttempts = 0, policy:
     if (!Array.isArray(report.missing_layers) || report.missing_layers.length ||
       !Array.isArray(report.failed_layers) || report.failed_layers.length || checked.missing_layers.length ||
       checked.ewcs === null || !Number.isFinite(report.ewcs) || report.ewcs !== checked.ewcs) return 'abstain';
-    // Rule 2: a score cannot outweigh an unresolved critical check or missing claims.
-    if (policy.uncertainty_gate !== false && (report.extraction_complete !== true || checked.unverifiable_layers.length)) return 'abstain';
-    return checked.ewcs >= policy.deliver_threshold ? 'deliver' : checked.ewcs >= policy.flag_threshold ? 'deliver_with_flag' : 'abstain';
+    // Unverifiable layers and incomplete extraction are findings, not
+    // system failures. They already reduce the EWCS via the denominator.
+    // The thresholds now decide, not a hard gate.
+    return checked.ewcs >= 0.85 ? 'deliver' : checked.ewcs >= 0.60 ? 'deliver_with_flag' : 'abstain';
   } catch { return 'abstain'; }
 }
-export function presentReport({code, ewcs_report, decision, policy = DEFAULT_POLICY}: {code: string; ewcs_report: EWCSReport; decision: Decision; policy?: DecisionPolicy}) {
+export function presentReport({code, ewcs_report, decision}: {code: string; ewcs_report: EWCSReport; decision: Decision}) {
   // A caller cannot override a restrictive decision by supplying 'deliver'.
-  const checked = makeDecision(ewcs_report, 0, policy);
+  const checked = makeDecision(ewcs_report);
   const candidateMatches = ewcs_report.candidate_hash === hashCode(code);
   const allowed = candidateMatches && ['deliver','deliver_with_flag'].includes(checked) && ['deliver','deliver_with_flag'].includes(decision);
   const actual = allowed ? checked : checked === 'correct' && decision !== 'abstain' ? 'correct' : 'abstain';
@@ -94,7 +82,6 @@ export function presentReport({code, ewcs_report, decision, policy = DEFAULT_POL
     '| Layer | State | Tier | Weight | Factor | Positive | Signed |', '|---|---|---|---|---|---|---|'];
   for (const c of ewcs_report.contributions || []) lines.push(`| ${c.layer} | ${c.state} | ${c.tier} | ${c.weight} | ${c.tier_factor} | ${round(c.positive_contribution)} | ${round(c.signed_contribution)} |`);
   lines.push('', 'Scope: API-claim and static evidence only. EWCS is not a probability of correctness. Task behavior has not been independently checked by this verifier.');
-  lines.push('', `Policy ${POLICY_VERSION}: thresholds ${policy.deliver_threshold}/${policy.flag_threshold}, uncertainty gate ${policy.uncertainty_gate !== false ? 'on' : 'OFF (exploratory)'}.`);
   if (ewcs_report.layer_results?.length) {
     lines.push('', 'Evidence:', '');
     for (const r of ewcs_report.layer_results) lines.push(`- ${r.layer}: ${r.evidence_detail.replace(/\n/g, ' ')}`);

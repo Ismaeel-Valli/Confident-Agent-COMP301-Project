@@ -1,6 +1,6 @@
 {
   "name": "confidence-agent-toolbox",
-  "version": "2.1.0",
+  "version": "2.0.0",
   "description": "Standalone LM Studio toolbox: filesystem, confidence verification, web retrieval, Python, Pyright and memory.",
   "scripts": {
     "dev": "lms dev",

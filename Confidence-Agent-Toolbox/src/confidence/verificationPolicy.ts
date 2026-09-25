@@ -60,7 +60,10 @@ export function computeEwcs({layer_results, task_id = 'candidate', extraction_co
   for (const r of layer_results) acc.record(r);
   return acc.finalise();
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of e746e41 (Fixed the ToolBox)
 export function makeDecision(report: EWCSReport, correctionAttempts = 0): Decision {
   // Recompute from contributions; never trust model-supplied score/flags.
   try {
@@ -81,6 +84,7 @@ export function makeDecision(report: EWCSReport, correctionAttempts = 0): Decisi
     return checked.ewcs >= 0.85 ? 'deliver' : checked.ewcs >= 0.60 ? 'deliver_with_flag' : 'abstain';
   } catch { return 'abstain'; }
 }
+<<<<<<< HEAD
 
 export function presentReport({code, ewcs_report, decision}: {code: string; ewcs_report: EWCSReport; decision: Decision}) {
   // Guard: malformed input.
@@ -110,6 +114,21 @@ export function presentReport({code, ewcs_report, decision}: {code: string; ewcs
   for (const c of Array.isArray(ewcs_report.contributions) ? ewcs_report.contributions : []) {
     if (!c || typeof c !== 'object') continue;
     lines.push(`| ${c.layer ?? '?'} | ${c.state ?? '?'} | ${c.tier ?? '?'} | ${c.weight ?? '?'} | ${c.tier_factor ?? '?'} | ${round(c.positive_contribution)} | ${round(c.signed_contribution)} |`);
+=======
+export function presentReport({code, ewcs_report, decision}: {code: string; ewcs_report: EWCSReport; decision: Decision}) {
+  // A caller cannot override a restrictive decision by supplying 'deliver'.
+  const checked = makeDecision(ewcs_report);
+  const candidateMatches = ewcs_report.candidate_hash === hashCode(code);
+  const allowed = candidateMatches && ['deliver','deliver_with_flag'].includes(checked) && ['deliver','deliver_with_flag'].includes(decision);
+  const actual = allowed ? checked : checked === 'correct' && decision !== 'abstain' ? 'correct' : 'abstain';
+  const lines = ['### Confidence Agent Report', '', `**Decision:** ${actual}`, `**EWCS:** ${ewcs_report.ewcs ?? 'undefined (no applicable evidence)'} (signed: ${ewcs_report.signed_score ?? 'undefined'}, applicable weight: ${ewcs_report.total_applicable_weight})`, '',
+    '| Layer | State | Tier | Weight | Factor | Positive | Signed |', '|---|---|---|---|---|---|---|'];
+  for (const c of ewcs_report.contributions || []) lines.push(`| ${c.layer} | ${c.state} | ${c.tier} | ${c.weight} | ${c.tier_factor} | ${round(c.positive_contribution)} | ${round(c.signed_contribution)} |`);
+  lines.push('', 'Scope: API-claim and static evidence only. EWCS is not a probability of correctness. Task behavior has not been independently checked by this verifier.');
+  if (ewcs_report.layer_results?.length) {
+    lines.push('', 'Evidence:', '');
+    for (const r of ewcs_report.layer_results) lines.push(`- ${r.layer}: ${r.evidence_detail.replace(/\n/g, ' ')}`);
+>>>>>>> parent of e746e41 (Fixed the ToolBox)
   }
 
   lines.push('', 'Scope: API-claim and static evidence only. EWCS is not a probability of correctness. Task behavior has not been independently checked by this verifier.');

@@ -66,51 +66,8 @@ test('explicit runtime bindings resolve a parameterized URL without executing it
  const r=await extractClaims({code,input_bindings:{inputs:{url:'https://api.example.test/v1/users/1',query_params:{limit:2}}}});
  assert.equal(r.complete,true);assert.equal((await verifyInputContract({claims:r.claims,spec:fixture})).state,'verified_correct');
 });
-test('unsupported sessions and syntax errors are explicitly incomplete',async()=>{
- for(const code of ['import requests\ns=requests.Session()\ns.get("https://api.example.test/v1/posts")','def ('])assert.equal((await extractClaims({code})).complete,false);
-});
-test('branches and tracked mutations are followed; unfollowable mutations make values unknown, never stale',async()=>{
- const tracked=await extracted('import requests\nd={}\nd.update({"x":1})\nd["y"]=2\nif True:\n    print(1)\nrequests.get("https://api.example.test/v1/posts",params=d)');
- assert.equal(tracked.complete,true);assert.deepEqual(tracked.claims.find(c=>c.type==='endpoint').request.params.value,{x:1,y:2});
- const lost=await extracted('import requests\nd={"limit":2}\nadd_defaults(d)\nrequests.get("https://api.example.test/v1/users/1",params=d)');
- assert.equal(lost.claims.find(c=>c.type==='endpoint').request.params.keys_known,false);
- assert.equal((await verifyInputContract({claims:lost.claims,spec:fixture})).state,'unverifiable');
-});
-// Regression for the all-zero dataset scores: the benchmark reference template builds
-// headers/params by subscript assignment, fills the path with url.replace(quote(...))
-// and guards empty bodies. Every layer must be established, not zeroed.
-const datasetTemplate=`import requests
-from urllib.parse import quote
-
-
-def solve(inputs):
-    url = 'https://api.example.test/v1/users/{id}'
-    params = {}
-    headers = {}
-    headers['Accept'] = 'application/json'
-    params['limit'] = 2
-    url = url.replace('{id}', quote(str(inputs['user_id']), safe=''))
-    response = requests.request('GET', url, params=params, headers=headers, timeout=20)
-    response.raise_for_status()
-    if response.status_code == 204 or not response.content:
-        return None
-    data = response.json()
-    return data.get('name')
-`;
-test('dataset reference template verifies every layer; a dropped required input is contradicted',async()=>{
- const r=await verifyCandidate({code:datasetTemplate,spec:fixture},deps);
- assert.equal(r.extraction.complete,true,JSON.stringify(r.extraction.issues));
- assert.deepEqual(r.layers.map(l=>l.state),['verified_correct','verified_correct','verified_correct','verified_correct','verified_correct','not_applicable']);
- assert.equal(r.ewcs_report.ewcs,0.8385);assert.equal(r.decision,'deliver_with_flag');
- const mutant=await verifyCandidate({code:datasetTemplate.replace("    params['limit'] = 2\n",''),spec:fixture},deps);
- assert.equal(mutant.layers.find(l=>l.layer==='input_contract').state,'verified_incorrect');assert.equal(mutant.decision,'correct');
-});
-test('parameterized URL templates match path templates without runtime values',async()=>{
- const r=await extracted('import requests\ndef f(user_id):\n    r=requests.get(f"https://api.example.test/v1/users/{user_id}",params={"limit":2})\n    return r.json()["name"]');
- assert.equal(r.complete,true);
- for(const fn of [verifyAccessPoint,verifyInputContract,verifyOutputContract])assert.equal((await fn({claims:r.claims,spec:fixture})).state,'verified_correct',fn.name);
- const wrong=await extracted('import requests\ndef f(user_id):\n    return requests.get(f"https://api.example.test/v1/accounts/{user_id}")');
- assert.equal((await verifyAccessPoint({claims:wrong.claims,spec:fixture})).state,'verified_incorrect');
+test('unsupported session/branch/mutation and syntax errors are explicitly incomplete',async()=>{
+ for(const code of ['import requests\ns=requests.Session()\ns.get("https://api.example.test/v1/posts")','if True:\n    print(1)','d={}\nd.update({"x":1})','def ('])assert.equal((await extractClaims({code})).complete,false);
 });
 test('extraction never executes candidate side effects',async()=>{
  const r=await extracted('raise RuntimeError("MUST_NOT_EXECUTE")');assert.equal(r.complete,true);assert.equal(r.error,undefined);
@@ -168,13 +125,9 @@ test('URL query values, path-level required parameters and operation overrides a
  const s=clone(fixture);s.paths['/users/{id}'].parameters.push({name:'limit',in:'query',required:true,schema:{type:'string'}});
  assert.equal((await check(verifyInputContract,valid,s)).state,'verified_correct');
 });
-// A runtime input value makes no static claim about its content: its constraints are a
-// noncritical note. Unknown keys, and statically typed mismatches, still decide the layer.
-test('runtime input values are noted; unknown keys and typed mismatches still decide',async()=>{
- const runtime=await check(verifyInputContract,valid.replace('"limit": 2','"limit": runtime_limit'));
- assert.equal(runtime.state,'verified_correct');assert.match(runtime.evidence_detail,/not statically known/);
+test('unknown value and unsupported request serialization cannot pass',async()=>{
+ assert.equal((await check(verifyInputContract,valid.replace('"limit": 2','"limit": runtime_limit'))).state,'unverifiable');
  assert.equal((await check(verifyInputContract,valid.replace('params={"limit": 2}','params=unknown_dict'))).state,'unverifiable');
- assert.equal((await check(verifyInputContract,'import requests\nr=requests.post("https://api.example.test/v1/submit",json={"name":len(items)})')).state,'verified_incorrect');
 });
 test('body references, required properties, enum and additionalProperties enforced',async()=>{
  const prefix='import requests\nr=requests.post("https://api.example.test/v1/submit"';
@@ -302,12 +255,9 @@ test('shipped parameterized example is verifiable with task bindings and real Py
  const unbound=await runIntervention({code,spec},{lookupPackage:deps.lookupPackage});
  assert.equal(unbound.decision,'abstain');assert.equal(unbound.delivered_code,null);
 });
-test('style-only and general Python diagnostics are not API contradictions',async()=>{
+test('style-only diagnostics are not false contradictions and missing annotations remain uncertainty',async()=>{
  const unused=pyright([{severity:'error',rule:'reportUnusedImport',message:'Import is not accessed'}]);
  assert.equal((await verifyIdentifier('import json',async()=>unused)).state,'verified_correct');
- const missing=pyright([{severity:'error',rule:'reportMissingParameterType',message:'Parameter annotation missing',range:{start:{line:0,character:6}}}]);
- const r=await verifyIdentifier('def f(x):\n    return x',async()=>missing);
- assert.equal(r.state,'verified_correct');assert.match(r.evidence_detail,/General Python diagnostics/);
- const api=pyright([{severity:'error',rule:'reportArgumentType',message:'bad argument',range:{start:{line:1,character:0}}}]);
- assert.equal((await verifyIdentifier('import requests\nrequests.get(1)',async()=>api)).state,'verified_incorrect');
+ const missing=pyright([{severity:'error',rule:'reportMissingParameterType',message:'Parameter annotation missing'}]);
+ assert.equal((await verifyIdentifier('def f(x):\n    return x',async()=>missing)).state,'unverifiable');
 });
