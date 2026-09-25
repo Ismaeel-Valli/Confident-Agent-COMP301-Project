@@ -397,18 +397,8 @@ export async function verifyInputContract({claims,spec}:{claims:Claim[];spec:any
       } else if (isAbstract(val)) {
         merge(c,checkValue(val,p.schema,spec,`${p.in}.${p.name}`,true));
       } else {
-        const schema=deref(p.schema,spec).value, defaultStyle=['query','cookie'].includes(p.in)?'form':'simple';
-        const style=p.style ?? defaultStyle, explode=p.explode ?? style==='form';
-        if (p.content || style!==defaultStyle || schema?.type==='object') c.unknown.push(`Unsupported parameter serialization: ${p.name}`);
-        else if (schema?.type==='array') {
-          // form + explode:false is one comma-separated value; explode:true repeats the key per item.
-          const items=typeof val==='string' ? (explode ? [val] : val.split(',')) : Array.isArray(val) && explode ? val : null;
-          if (!items) c.unknown.push(`Parameter ${p.name}: the value's form does not match the declared array serialization (explode=${explode}).`);
-          else {
-            if (schema.minItems!==undefined && items.length<schema.minItems || schema.maxItems!==undefined && items.length>schema.maxItems) c.bad.push(`${p.in}.${p.name}: invalid array length.`);
-            items.forEach((x:any,i:number)=>merge(c,checkValue(x,schema.items,spec,`${p.in}.${p.name}[${i}]`,true)));
-          }
-        } else merge(c,checkValue(val,p.schema,spec,`${p.in}.${p.name}`,true));
+        if (p.content || p.style && p.style !== (['query','cookie'].includes(p.in)?'form':'simple') || p.schema?.type==='array' || p.schema?.type==='object') c.unknown.push(`Unsupported parameter serialization: ${p.name}`);
+        merge(c,checkValue(val,p.schema,spec,`${p.in}.${p.name}`,true));
       }
     }
     const authNames=securityNames(spec,m.operation);

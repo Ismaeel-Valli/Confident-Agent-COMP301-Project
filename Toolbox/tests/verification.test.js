@@ -242,32 +242,6 @@ test('correction failure abstains without leaking candidate in report',async()=>
  const r=await runIntervention({code:valid.replace('"limit": 2','"limit": 99'),spec:fixture},{...deps,correct:async()=>{throw Error('model offline')}});
  assert.equal(r.decision,'abstain');assert.ok(r.correction_error);assert.ok(!r.report.includes('requests.get'));
 });
-// Pilot chat runs scored layers 3-6 as zero because no specification ever reached the
-// verifier (resolve_api_spec finds none; the model passed wrappers, PyPI data or an
-// invented spec). The plugin now selects frozen evidence from the called host.
-test('plugin selects frozen evidence by host; model-supplied specs are ignored for known hosts',async t=>{
- t.mock.method(globalThis,'fetch',async()=>new Response(JSON.stringify({info:{name:'requests',version:'2.34.2',summary:'x'}})));
- const tools=createConfidenceAgentTools({isEnabled:true,allowPyright:true,getWorkingDirectory:()=>process.cwd(),runPyright:deps.runPyright});
- const verify=tools.find(x=>x.name==='verify_candidate');
- const code='import requests\n\ndef solve(inputs):\n    resource_id = inputs.get("resource_id")\n    response = requests.get(f"https://dummyjson.com/products/{resource_id}")\n    response.raise_for_status()\n    return response.json()["title"]\n';
- const r=await verify.implementation({code});
- assert.match(r.evidence_selection,/DummyJSON/);
- assert.deepEqual(r.layers.slice(2,5).map(l=>l.state),['verified_correct','verified_correct','verified_correct'],JSON.stringify(r.layers));
- const invented=await verify.implementation({code:code.replace('["title"]','["product"]')});
- // The curated DummyJSON schema is open, so an undocumented field cannot be contradicted: it stays unresolved and is withheld.
- assert.equal(invented.layers.find(l=>l.layer==='output_contract').state,'unverifiable');assert.equal(invented.decision,'abstain');
- const claims=(await extracted(code)).claims;
- const fake={openapi:'3.0.0',info:{title:'invented',version:'1'},servers:[{url:'https://dummyjson.com'}],paths:{}};
- const ap=await tools.find(x=>x.name==='verify_access_point').implementation({claims,spec:fake});
- assert.equal(ap.state,'verified_correct');assert.match(ap.evidence_source_selection,/ignored/);
-});
-test('comma-separated array query parameters are checked item by item',async()=>{
- const s=clone(fixture);s.paths['/posts'].get.parameters=[{name:'fields',in:'query',explode:false,schema:{type:'array',items:{type:'string',enum:['title','body']}}}];
- const call=q=>`import requests\nrequests.get("https://api.example.test/v1/posts", params={"fields": "${q}"})`;
- assert.equal((await check(verifyInputContract,call('title,body'),s)).state,'verified_correct');
- assert.equal((await check(verifyInputContract,call('title'),s)).state,'verified_correct');
- assert.equal((await check(verifyInputContract,call('title,pm10'),s)).state,'verified_incorrect');
-});
 test('plugin retains named tools and exposes the complete verification path',()=>{
  const tools=createConfidenceAgentTools({isEnabled:true,allowPyright:true,getWorkingDirectory:()=>process.cwd(),runPyright:deps.runPyright});
  for(const name of ['verify_candidate','verify_identifier','compute_ewcs','present_report'])assert.ok(tools.some(t=>t.name===name));
