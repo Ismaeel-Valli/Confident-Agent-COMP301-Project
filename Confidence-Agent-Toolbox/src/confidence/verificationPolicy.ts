@@ -100,7 +100,15 @@ export function presentReport({code, ewcs_report, decision, policy = DEFAULT_POL
   const candidateMatches = ewcs_report.candidate_hash === hashCode(safeCode);
   const allowed = candidateMatches && ['deliver','deliver_with_flag'].includes(checked) && ['deliver','deliver_with_flag'].includes(decision);
   const actual = allowed ? checked : checked === 'correct' && decision !== 'abstain' ? 'correct' : 'abstain';
-  const lines = ['### Confidence Agent Report', '', `**Decision:** ${actual}`, `**EWCS:** ${ewcs_report.ewcs ?? 'undefined (no applicable evidence)'} (signed: ${ewcs_report.signed_score ?? 'undefined'}, applicable weight: ${ewcs_report.total_applicable_weight ?? 'undefined'})`, '',
+  // State why code is withheld, so a withheld report is not misread as a threshold failure.
+  const reason = allowed ? null
+    : !candidateMatches ? (typeof ewcs_report.candidate_hash !== 'string'
+        ? 'This score report is not bound to any code (no candidate_hash). Reports assembled from the individual layer tools can be inspected but cannot authorize delivery; only verify_candidate binds a report to the exact code.'
+        : 'This score report belongs to different code (candidate_hash mismatch). The code must be verified exactly as it will be delivered.')
+    : checked === 'correct' ? 'A layer verified a contradiction; a correction is required.'
+    : !['deliver','deliver_with_flag'].includes(decision) ? `The caller requested ${decision}.`
+    : 'The decision policy withheld delivery (see unverifiable layers, extraction and thresholds below).';
+  const lines = ['### Confidence Agent Report', '', `**Decision:** ${actual}`, ...(reason ? [`**Reason:** ${reason}`] : []), `**EWCS:** ${ewcs_report.ewcs ?? 'undefined (no applicable evidence)'} (signed: ${ewcs_report.signed_score ?? 'undefined'}, applicable weight: ${ewcs_report.total_applicable_weight ?? 'undefined'})`, '',
     '| Layer | State | Tier | Weight | Factor | Positive | Signed |', '|---|---|---|---|---|---|---|'];
   for (const c of Array.isArray(ewcs_report.contributions) ? ewcs_report.contributions : []) {
     if (!c || typeof c !== 'object') continue;

@@ -43,7 +43,16 @@ export function createConfidenceAgentTools(deps:ConfidenceAgentToolsDeps):Tool[]
         reference_id:p.reference_id ?? null,evidence_selection:selected.source,spec_hash:v.spec_hash,reference_evidence:reference?.['x-confidence-evidence'] ?? null,
         ewcs_report:v.ewcs_report,layers:v.layers,extraction_issues:v.extraction.issues};
     });
-  add('resolve_api_spec','Discover a JSON OpenAPI 3.0 contract and provenance; unresolved discovery returns spec:null. Review and freeze a snapshot for experiments.',{base_url:z.string()},resolveApiSpec);
+  // Returns a summary only. The full document is never placed in the chat: it floods a small
+  // model's context (a Petstore pilot run stopped after the spec was pasted three times),
+  // and verification selects frozen evidence itself.
+  add('resolve_api_spec','Discovery only: report whether a JSON OpenAPI 3.0 document exists at common paths, with its source and hash. Does not return the document; verify_candidate selects frozen evidence itself.',{base_url:z.string()},async p=> {
+    const r:any=await resolveApiSpec(p);
+    if (!r.spec) return r;
+    const operations=Object.values<any>(r.spec.paths || {}).reduce((n,item)=>n+Object.keys(item || {}).filter(k=>['get','put','post','delete','patch','head','options'].includes(k)).length,0);
+    return {found:true,source_url:r.source_url,retrieved_at:r.retrieved_at,content_hash:r.content_hash,openapi:r.spec.openapi,title:r.spec.info?.title,version:r.spec.info?.version,operations,
+      note:'Summary only. Do not pass a specification to verification tools; call verify_candidate with the code and frozen evidence is selected by host.'};
+  });
   add('query_pypi','Query package metadata. exists:null/status:unverifiable means lookup failed, not that the package is nonexistent.',{library_name:z.string()},queryPypi);
   add('extract_claims','Static Python extraction for a documented requests subset. Returns complete/limitations, operation-linked claims and a candidate hash. Runtime input values can be bound explicitly.',{code:z.string(),input_bindings:z.record(z.any()).optional()},extractClaims);
   add('verify_interface','Check imports against registry evidence and explicit import/distribution mappings. Missing evidence and registry failures stay unverifiable.',{claims,pypi_data:z.record(z.any()).optional()},verifyInterface);

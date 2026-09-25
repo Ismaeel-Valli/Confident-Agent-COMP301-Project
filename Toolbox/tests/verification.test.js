@@ -261,6 +261,14 @@ test('plugin selects frozen evidence by host; model-supplied specs are ignored f
  const ap=await tools.find(x=>x.name==='verify_access_point').implementation({claims,spec:fake});
  assert.equal(ap.state,'verified_correct');assert.match(ap.evidence_source_selection,/ignored/);
 });
+// Pilot run: a chat assembled the score from the layer tools, then present_report withheld
+// the code and the model misread it as a threshold failure. The report now states the reason.
+test('present_report explains when a report is not bound to the code',()=>{
+ const r=computeEwcs({extraction_complete:true,layer_results:goodLayers()});
+ assert.match(presentReport({code:'x',ewcs_report:r,decision:'deliver'}).report,/not bound to any code/);
+ r.candidate_hash=hashCode('other');
+ assert.match(presentReport({code:'x',ewcs_report:r,decision:'deliver'}).report,/different code/);
+});
 test('comma-separated array query parameters are checked item by item',async()=>{
  const s=clone(fixture);s.paths['/posts'].get.parameters=[{name:'fields',in:'query',explode:false,schema:{type:'array',items:{type:'string',enum:['title','body']}}}];
  const call=q=>`import requests\nrequests.get("https://api.example.test/v1/posts", params={"fields": "${q}"})`;
