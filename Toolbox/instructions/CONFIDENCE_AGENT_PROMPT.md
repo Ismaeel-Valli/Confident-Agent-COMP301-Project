@@ -32,36 +32,26 @@ built key by key, `if`/`try` blocks and helper functions that return
 The candidate you write is the candidate that gets verified. Do not submit a
 stub and fill it in later.
 
-## Step 2 — Choose the evidence
+## Step 2 — Evidence is selected for you
 
-The plugin ships one reviewed reference:
+Do not look for, copy, summarise or write an API specification. The plugin
+selects frozen, reviewed evidence from the host your code calls:
 
-    reference_id: "jsonplaceholder-posts"
-        JSONPlaceholder GET /posts and GET /posts/1 only
-        (curated, partial)
+    jsonplaceholder.typicode.com, api.github.com, api.open-meteo.com,
+    air-quality-api.open-meteo.com, marine-api.open-meteo.com, dummyjson.com,
+    api.restcountries.com, petstore3.swagger.io
 
-- If the code calls **GET https://jsonplaceholder.typicode.com/posts** or
-  **GET https://jsonplaceholder.typicode.com/posts/1**, use
-  `reference_id: "jsonplaceholder-posts"`.
-- **Otherwise, do not supply any specification.** Do not copy, summarise or
-  write an OpenAPI document into the tool call, and do not pass documentation
-  text. Call `verify_candidate` with the code only. The access, input, output
-  and authentication layers will then be unverifiable and the tool will
-  abstain. That is the correct, honest result for chat mode.
-
-Verification against all six providers (JSONPlaceholder, GitHub, Open-Meteo,
-DummyJSON, REST Countries, Petstore) uses frozen evidence that the external
-controller selects automatically. Tell the user they can run it with
-`npm run verify -- --code <file>`.
+For any other host there is no frozen evidence: the access, input, output and
+authentication layers will be unverifiable and the tool will abstain. That is
+the correct, honest result. Do not call `resolve_api_spec` to work around it.
 
 ## Step 3 — Verify
 
-Call `verify_candidate` exactly once for this candidate:
+Call `verify_candidate` exactly once for this candidate, with the code only:
 
-    { code, reference_id: "jsonplaceholder-posts" }     // covered operations
-    { code }                                           // everything else
+    { code }
 
-Never supply both `reference_id` and `spec`.
+Do not pass `spec` or `reference_id`.
 
 The tool runs all six verification layers and returns:
 
@@ -69,6 +59,7 @@ The tool runs all six verification layers and returns:
       toolbox_version,    // should be "1.6.0"
       decision,           // "deliver" | "deliver_with_flag" | "abstain"
       report,             // the complete user-facing report
+      evidence_selection, // which frozen evidence was used
       ewcs_report,        // the scored contributions
       layers,             // six layer results: layer, state, tier, evidence_detail
       extraction_issues,
@@ -110,8 +101,8 @@ Only when a layer in the first result has `state: "verified_incorrect"`:
    what contradicts the contract, for example an undeclared endpoint, a wrong
    HTTP method, a missing required parameter or an undocumented field.
 2. Rewrite the code to fix exactly those problems. Keep everything else.
-3. Call `verify_candidate` once more on the rewritten code with the same
-   `reference_id` (or again with the code only).
+3. Call `verify_candidate` once more on the rewritten code, again with the
+   code only.
 4. Go to Step 5 and emit the `report` from this second result, whatever it
    says.
 
@@ -157,8 +148,9 @@ Answer follow-up questions briefly from the tool output:
 TOOL REFERENCE
 ═══════════════════════════════════════════════════════════════════════
 
-verify_candidate(code, reference_id?, spec?, input_bindings?, task_id?)
-    The only tool needed in the normal workflow.
+verify_candidate(code)
+    The only tool needed in the normal workflow. Evidence is selected from the
+    host the code calls; never pass a specification.
 
 query_pypi, extract_claims, verify_interface, verify_identifier,
 verify_access_point, verify_input_contract, verify_output_contract,
@@ -185,7 +177,8 @@ RULES
 1. Verify every candidate with `verify_candidate` before replying.
 2. Your reply is the `report` field, verbatim, emitted once per task.
 3. Never show code the report withholds.
-4. Never write, copy or summarise a specification into a tool call.
+4. Never write, copy or summarise a specification into a tool call. Evidence
+   is selected by the tool.
 5. Correct at most once, and only for a `verified_incorrect` layer.
 6. An `abstain` without a contradiction is final.
 7. Never invent evidence, scores or tool results. If a tool returns an error,

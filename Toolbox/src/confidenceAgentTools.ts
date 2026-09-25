@@ -12,6 +12,7 @@ import { computeEwcs, makeDecision, presentReport, EWCSReport } from './verifica
 import { runIntervention } from './verificationController';
 import { LayerResult } from './verificationTypes';
 import { BUNDLED_REFERENCES, TOOLBOX_VERSION } from './bundledReferences';
+import { evidenceFor, hostsFromClaims, hostsFromCode } from './evidenceRegistry';
 export * from './verificationTypes';
 export { EWCSAccumulator } from './verificationPolicy';
 export type { EWCSReport, LayerContribution } from './verificationPolicy';
@@ -25,14 +26,21 @@ export function createConfidenceAgentTools(deps:ConfidenceAgentToolsDeps):Tool[]
       try {return await implementation(p);} catch(e) {return {error:String(e)};}
     }}));
   }
-  add('verify_candidate','Run all six verifiers, score and report exact candidate API claims. For JSONPlaceholder GET /posts or /posts/1 use reference_id=jsonplaceholder-posts; otherwise supply reviewed spec or null. Does not prove task behavior. External controller enforces delivery and one correction.',
+  // Layer tools resolve frozen evidence from the claims' hosts; a model-supplied spec is used only for unknown hosts.
+  const withEvidence=(fn:(p:any)=>Promise<any>)=>async (p:any)=> {
+    const {spec:selected,source}=evidenceFor(hostsFromClaims(p.claims || []),p.spec);
+    const r=await fn({...p,spec:selected});
+    return r && typeof r==='object' ? {...r,evidence_source_selection:source} : r;
+  };
+  add('verify_candidate','Run all six verifiers, score and report exact candidate API claims. Pass only the code: frozen evidence for JSONPlaceholder, GitHub, Open-Meteo, DummyJSON, REST Countries and Petstore is selected from the host the code calls. Never write or copy a specification. Does not prove task behavior. External controller enforces delivery and one correction.',
     {code:z.string(),spec,reference_id:z.enum(['jsonplaceholder-posts']).optional(),input_bindings:z.record(z.any()).optional(),task_id:z.string().optional()},async p=> {
       if (p.reference_id && p.spec != null) throw new Error('Supply reference_id or spec, not both.');
-      const reference = p.reference_id ? structuredClone(BUNDLED_REFERENCES[p.reference_id]) : p.spec ?? null;
+      const selected = p.reference_id ? {spec:structuredClone(BUNDLED_REFERENCES[p.reference_id]),source:`Bundled reference ${p.reference_id}.`} : evidenceFor(hostsFromCode(p.code),p.spec);
+      const reference = selected.spec;
       const r=await runIntervention({...p,spec:reference},{runPyright:deps.runPyright,allowPyright:deps.allowPyright});
       const v=r.attempts[r.attempts.length-1].verification;
       return {toolbox_version:TOOLBOX_VERSION,decision:r.decision,report:r.report,candidate_hash:v.candidate_hash,
-        reference_id:p.reference_id ?? null,spec_hash:v.spec_hash,reference_evidence:reference?.['x-confidence-evidence'] ?? null,
+        reference_id:p.reference_id ?? null,evidence_selection:selected.source,spec_hash:v.spec_hash,reference_evidence:reference?.['x-confidence-evidence'] ?? null,
         ewcs_report:v.ewcs_report,layers:v.layers,extraction_issues:v.extraction.issues};
     });
   add('resolve_api_spec','Discover a JSON OpenAPI 3.0 contract and provenance; unresolved discovery returns spec:null. Review and freeze a snapshot for experiments.',{base_url:z.string()},resolveApiSpec);
@@ -40,10 +48,10 @@ export function createConfidenceAgentTools(deps:ConfidenceAgentToolsDeps):Tool[]
   add('extract_claims','Static Python extraction for a documented requests subset. Returns complete/limitations, operation-linked claims and a candidate hash. Runtime input values can be bound explicitly.',{code:z.string(),input_bindings:z.record(z.any()).optional()},extractClaims);
   add('verify_interface','Check imports against registry evidence and explicit import/distribution mappings. Missing evidence and registry failures stay unverifiable.',{claims,pypi_data:z.record(z.any()).optional()},verifyInterface);
   add('verify_identifier','Check structured Pyright diagnostics for the exact code. Missing packages/stubs and process failure are unverifiable.',{code:z.string()},p=>verifyIdentifier(p.code,deps.runPyright,deps.allowPyright));
-  add('verify_access_point','Match server origin/base path, endpoint and HTTP method. Dynamic endpoints and unsupported specs remain unverifiable.',{claims,spec},verifyAccessPoint);
-  add('verify_input_contract','Check every request separately: required parameters, locations, supported values and JSON bodies. Runtime values are noted, not guessed; unknown keys block verification.',{claims,spec},verifyInputContract);
-  add('verify_output_contract','Follow response provenance and local references to success schemas. A clean Pyright run never substitutes for JSON response evidence.',{claims,spec,code:z.string().optional()},p=>verifyOutputContract(p,deps.runPyright,deps.allowPyright));
-  add('verify_contextual','Check operation-level inherited authentication alternatives against actual request arguments. Comments are not authentication.',{claims,spec,code:z.string().optional()},verifyContextual);
+  add('verify_access_point','Match server origin/base path, endpoint and HTTP method. Dynamic endpoints and unsupported specs remain unverifiable.',{claims,spec},withEvidence(verifyAccessPoint));
+  add('verify_input_contract','Check every request separately: required parameters, locations, supported values and JSON bodies. Runtime values are noted, not guessed; unknown keys block verification.',{claims,spec},withEvidence(verifyInputContract));
+  add('verify_output_contract','Follow response provenance and local references to success schemas. A clean Pyright run never substitutes for JSON response evidence.',{claims,spec,code:z.string().optional()},withEvidence(p=>verifyOutputContract(p,deps.runPyright,deps.allowPyright)));
+  add('verify_contextual','Check operation-level inherited authentication alternatives against actual request arguments. Comments are not authentication.',{claims,spec,code:z.string().optional()},withEvidence(verifyContextual));
   add('compute_ewcs','Diagnostic score with canonical weights; missing checks retain weight and an empty applicable set has ewcs:null. Controller results are authoritative.',
     {layer_results:z.array(z.record(z.any())),task_id:z.string().optional(),extraction_complete:z.boolean().optional()},p=>Promise.resolve(computeEwcs(p as {layer_results:LayerResult[]})));
   add('make_decision','Validate all six contributions. Contradiction requests correction; incomplete/unverifiable critical checks abstain before thresholds 0.85/0.60.',{ewcs_report:z.record(z.any())},async p=>makeDecision(p.ewcs_report as EWCSReport));
