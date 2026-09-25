@@ -105,27 +105,23 @@ export function createConfidenceAgentTools(deps: ConfidenceAgentToolsDeps): Tool
     {
       code: z.string(),
       spec,
-      reference_id: z.enum(['jsonplaceholder-posts']).optional(),
+      reference_id: z.enum([
+        'jsonplaceholder-posts',
+        'petstore',
+        'github-orgs',
+        'openmeteo',
+        'dummyjson',
+        'restcountries-v5',
+      ]).optional(),
       input_bindings: z.record(z.any()).optional(),
       task_id: z.string().optional(),
     },
     async (p) => {
-      const required = [
-        'extract_claims',
-        'query_pypi',
-        'verify_interface',
-        'verify_identifier',
-        'verify_access_point',
-        'verify_input_contract',
-        'verify_output_contract',
-        'verify_contextual',
-        'compute_ewcs',
-        'make_decision',
-        'present_report',
-        'run_pyright',
-      ];
-      const disabled = required.filter((name) => !deps.context.enabled(name));
-      if (disabled.length) throw new Error('Required tools are disabled: ' + disabled.join(', '));
+      // The six layers and the scoring functions are called as direct functions
+      // inside runIntervention, not through the tool registry. Only run_pyright
+      // is a genuine external dependency, and it is passed in via deps.
+      // No tool-toggle check is required here; if a component is missing the
+      // layer returns unverifiable, which is the correct behaviour.
 
       // Validation: exactly one of reference_id or spec must be supplied.
       const hasReference = typeof p.reference_id === 'string' && p.reference_id.length > 0;

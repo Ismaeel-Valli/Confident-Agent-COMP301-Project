@@ -43,7 +43,9 @@ function pickDatum(container:Record<string,any> | undefined, top:string):Package
 export async function verifyInterface({claims,pypi_data = {}}:{claims:Claim[];pypi_data?:Record<string,PackageEvidence>}): Promise<LayerResult> {
   const rows = ofType(claims,'import').map(imp => {
     const top = String(imp.library || '').split('.')[0];
-    if (imp.stdlib === true) return result('interface','verified_correct','tier_4','Python standard library inventory',`${top} is in this interpreter's standard library.`);
+    // sys.stdlib_module_names of the pinned verification interpreter is a
+    // directly inspected, versioned inventory, as strong as registry metadata.
+    if (imp.stdlib === true) return result('interface','verified_correct','tier_2','Pinned interpreter standard-library inventory',`${top} is in the verification interpreter's standard library (sys.stdlib_module_names).`);
     if (imp.local) return unknown('interface',`Local import ${imp.library} cannot be verified without its source.`);
     const datum = pickDatum(pypi_data as any, top);
     if (!datum || datum.status === 'unverifiable' || datum.exists === null) return unknown('interface',`No usable package evidence for ${top}: ${datum?.summary || 'lookup missing'}`);

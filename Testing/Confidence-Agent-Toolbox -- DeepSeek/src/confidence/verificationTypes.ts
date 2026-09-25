@@ -21,7 +21,7 @@ export interface UnusedParameter {
 export interface Extraction {
   claims: Claim[];
   complete: boolean;
-  issues: Array<{line: number; reason: string}>;
+  issues: Array<{line: number; reason: string; affects?: string[]}>;
   unused_parameters?: UnusedParameter[];
   error?: string;
   candidate_hash?: string;
@@ -42,16 +42,40 @@ export function aggregate(layer: LayerName, rows: LayerResult[], emptyReason: st
 }
 export const ofType = (claims: Claim[], type: string) => claims.filter(c => c.type === type);
 
+/**
+ * Layers whose claim inventory an extraction limitation can make incomplete.
+ * Each extractor issue names the layers it affects; an issue without that
+ * information, or an extraction error, conservatively affects every layer.
+ */
+export function extractionLimits(source: Claim[] | Extraction): {layers: Set<LayerName>; reasons: string[]} {
+  const layers = new Set<LayerName>(), reasons: string[] = [];
+  const records: Array<{issues?: any[]; error?: any}> = Array.isArray(source)
+    ? source.filter(c => c.type === 'extraction_issue')
+    : (source.error || !source.complete ? [{issues: source.issues, error: source.error ?? (source.issues?.length ? undefined : 'Extraction incomplete.')}] : []);
+  for (const record of records) {
+    if (record.error) { ALL_LAYERS.forEach(l => layers.add(l)); reasons.push(String(record.error)); }
+    for (const i of record.issues || []) {
+      const affects = Array.isArray(i?.affects) && i.affects.length ? i.affects : ALL_LAYERS;
+      for (const l of affects) if ((ALL_LAYERS as string[]).includes(l)) layers.add(l as LayerName);
+      reasons.push(`line ${i?.line ?? '?'}: ${i?.reason ?? 'unsupported construct'}`);
+    }
+    if (!record.error && !(record.issues || []).length) ALL_LAYERS.forEach(l => layers.add(l));
+  }
+  return {layers, reasons};
+}
+
 export function aggregateExtracted(layer: LayerName, claims: Claim[], rows: LayerResult[], emptyReason: string): LayerResult {
   const r = aggregate(layer, rows, emptyReason);
   const relevant: Record<LayerName,string[]> = {interface:['import'],identifier:['method_call'],access_point:['endpoint'],input_contract:['endpoint','input_field'],output_contract:['output_field'],contextual:['endpoint','input_field']};
   r.claim_ids = claims.filter(c=>relevant[layer].includes(c.type) && typeof c.id==='string').map(c=>c.id);
-  // Only downgrade positive claims when extraction is incomplete. A layer with
-  // nothing to check (not_applicable) is excluded from the denominator by the
-  // EWCS policy regardless of extraction completeness. Downgrading it to
-  // unverifiable would wrongly include it in the denominator.
-  if (claims.some(c => c.type === 'extraction_issue') && r.state === 'verified_correct') {
-    return unknown(layer, 'Extraction is incomplete; unsupported claims may be missing. ' + r.evidence_detail);
+  const limits = extractionLimits(claims);
+  // A limitation that can hide claims of this layer means neither a positive
+  // result nor "nothing to check" is established. Contradictions still stand.
+  if (limits.layers.has(layer) && (r.state === 'verified_correct' || r.state === 'not_applicable')) {
+    return {...unknown(layer, `Extraction is incomplete for this layer; unsupported claims may be missing (${limits.reasons.join('; ')}). ` + r.evidence_detail), claim_ids: r.claim_ids};
+  }
+  if (limits.reasons.length && !limits.layers.has(layer)) {
+    r.evidence_detail += `\nExtraction limitations elsewhere do not affect this layer; evidence covers the extracted ${layer === 'interface' ? 'imports' : 'claims'} only.`;
   }
   return r;
 }
