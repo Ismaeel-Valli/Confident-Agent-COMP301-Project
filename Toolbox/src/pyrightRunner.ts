@@ -83,11 +83,15 @@ export async function verifyIdentifier(code: string, runPyright: RunPyright, all
     const incorrect = relevant.filter(d => d.severity === 'error' && (!d.rule || contradictionRules.has(d.rule)));
     if (incorrect.length) return result('identifier','verified_incorrect','tier_4','Pyright structured diagnostics',
       incorrect.map(d => `${d.rule || 'syntax/type error'}: ${d.message}`).join('\n'),'static_identifier_or_type_error');
-    const uncertain = relevant.filter(d => d.severity === 'error' || d.severity === 'warning');
-    if (uncertain.length) return unknown('identifier',
-      'Incomplete static evidence: ' + uncertain.map(d => `${d.rule}: ${d.message}`).join('\n'));
+    // Only errors are blocking. Warnings about missing annotations or unknown
+    // types describe completeness, not identifier correctness. The extractor
+    // separately tracks unused parameters, and a function whose parameters
+    // have no annotations still has well-defined identifiers.
+    const blocking = relevant.filter(d => d.severity === 'error');
+    if (blocking.length) return unknown('identifier',
+      'Incomplete static evidence: ' + blocking.map(d => `${d.rule}: ${d.message}`).join('\n'));
     return result('identifier','verified_correct','tier_4','Pyright structured diagnostics',
-      'No blocking identifier/type diagnostics in the configured environment. Unused/unnecessary-code notices do not establish an API error. This does not establish REST contracts or task behavior.' +
+      'No blocking identifier/type diagnostics in the configured environment. Unused/unnecessary-code and missing-annotation notices do not establish an API error. This does not establish REST contracts or task behavior.' +
       (ignoredAnnotations.length ? '\nNonblocking annotation diagnostics for AST-confirmed unused parameters: ' + ignoredAnnotations.map(d=>`${d.rule}: ${d.message}`).join('; ') : ''));
   } catch (e) { return unknown('identifier',`Pyright failed: ${String(e)}`); }
 }

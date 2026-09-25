@@ -30,9 +30,15 @@ export function deref(value:any,spec:any): {value?:any;error?:string} {
 }
 function specProblem(spec:any): string | undefined {
   if (!spec) return 'No API specification available.';
+  // Discovery-result wrapper: {spec, source_url, ...} rather than the spec itself.
   if (own(spec, 'spec') && !own(spec, 'openapi')) return 'Received a discovery-result wrapper. Pass its spec field (the OpenAPI document or null), or use a bundled reference with verify_candidate.';
+  // A PyPI datum accidentally passed in place of a spec.
+  if (own(spec, 'distribution') || own(spec, 'import_name')) return 'Received a PyPI package datum, not an OpenAPI spec. Pass the spec field from resolve_api_spec (the OpenAPI document) or null.';
+  // A discovery note accidentally passed in place of a spec.
+  if (own(spec, 'note') && !own(spec, 'openapi')) return 'Received a discovery note, not an OpenAPI document. Pass the spec field from resolve_api_spec or null.';
   if (!/^3\.0\./.test(spec.openapi || '')) return 'Only OpenAPI 3.0.x contracts are currently supported.';
   if (!spec.paths || typeof spec.paths !== 'object' || Array.isArray(spec.paths)) return 'Specification has no valid paths map.';
+  if (!Array.isArray(spec.servers) || spec.servers.length === 0) return 'Specification has no servers array. A spec without an absolute server URL cannot resolve endpoint origins. Use a bundled reference with verify_candidate, or a reviewed snapshot that includes servers.';
 }
 export interface Operation {pathKey:string; operation:any; pathItem:any; params:Record<string,string>; url:URL;}
 export function findOperation(spec:any, endpoint:Claim): {match?:Operation;bad?:string;unknown?:string} {

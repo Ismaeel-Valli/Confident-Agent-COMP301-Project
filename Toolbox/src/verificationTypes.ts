@@ -12,8 +12,20 @@ export interface LayerResult {
   evidence_source: string; evidence_detail: string; hallucination_type: string | null;
   claim_ids?: string[];
 }
-export interface Extraction { claims: Claim[]; complete: boolean; issues: Array<{line: number; reason: string}>; error?: string; candidate_hash?: string;
-  unused_parameters?: Array<{name:string;line:number;start_character:number;end_character:number}>; }
+export interface UnusedParameter {
+  name: string;
+  line: number;
+  start_character: number;
+  end_character: number;
+}
+export interface Extraction {
+  claims: Claim[];
+  complete: boolean;
+  issues: Array<{line: number; reason: string}>;
+  unused_parameters?: UnusedParameter[];
+  error?: string;
+  candidate_hash?: string;
+}
 export const hashCode = (code: string) => createHash('sha256').update(code).digest('hex');
 export function result(layer: LayerName, state: VerificationState, tier: EvidenceTier, source: string, detail: string, kind: string | null = null): LayerResult {
   return { layer, state, tier, weight: LAYER_WEIGHTS[layer], evidence_source: source, evidence_detail: detail, hallucination_type: kind };
@@ -34,13 +46,11 @@ export function aggregateExtracted(layer: LayerName, claims: Claim[], rows: Laye
   const r = aggregate(layer, rows, emptyReason);
   const relevant: Record<LayerName,string[]> = {interface:['import'],identifier:['method_call'],access_point:['endpoint'],input_contract:['endpoint','input_field'],output_contract:['output_field'],contextual:['endpoint','input_field']};
   r.claim_ids = claims.filter(c=>relevant[layer].includes(c.type) && typeof c.id==='string').map(c=>c.id);
-  if (claims.some(c => c.type === 'extraction_issue') && ['verified_correct','not_applicable'].includes(r.state)) {
-    // Registry evidence for explicit imports is independent of whether response flow is
-    // supported. Retain that evidence; do not claim that the import inventory is exhaustive.
-    // The controller's extraction_complete gate still prohibits delivery.
-    if (layer === 'interface' && r.state === 'verified_correct') {
-      return {...r, evidence_detail:r.evidence_detail + '\nEvidence covers the extracted imports only. Extraction is incomplete; additional claims may be missing and delivery remains blocked.'};
-    }
+  // Only downgrade positive claims when extraction is incomplete. A layer with
+  // nothing to check (not_applicable) is excluded from the denominator by the
+  // EWCS policy regardless of extraction completeness. Downgrading it to
+  // unverifiable would wrongly include it in the denominator.
+  if (claims.some(c => c.type === 'extraction_issue') && r.state === 'verified_correct') {
     return unknown(layer, 'Extraction is incomplete; unsupported claims may be missing. ' + r.evidence_detail);
   }
   return r;

@@ -18,12 +18,34 @@ export async function queryPypi({library_name}:{library_name:string}, fetcher:ty
     return {...base,exists:true,status:'found',latest_version:data.info.version,summary:data.info.summary || ''};
   } catch(e) { return {...base,exists:null,status:'unverifiable',summary:`Package lookup failed: ${String(e)}`}; }
 }
+/**
+ * Look up the package evidence for a single import name.
+ *
+ * The caller is expected to pass a dictionary keyed by import name, e.g.
+ *   { "requests": { exists: true, ... } }
+ *
+ * But some callers (notably an LLM in the native chat path) pass the bare
+ * datum returned by `query_pypi` when there is only one import. That shape
+ * is { source_url, import_name, distribution, exists, status, ... }.
+ *
+ * To stay robust against that shape, if the top-level key is missing but
+ * the object's own `distribution` (or `import_name`) matches the import,
+ * use the object itself.
+ */
+function pickDatum(container:Record<string,any> | undefined, top:string):PackageEvidence | undefined {
+  if (!container) return undefined;
+  const direct = (container as any)[top];
+  if (direct) return direct as PackageEvidence;
+  const self = container as any;
+  if (self.distribution === top || self.import_name === top) return self as PackageEvidence;
+  return undefined;
+}
 export async function verifyInterface({claims,pypi_data = {}}:{claims:Claim[];pypi_data?:Record<string,PackageEvidence>}): Promise<LayerResult> {
   const rows = ofType(claims,'import').map(imp => {
     const top = String(imp.library || '').split('.')[0];
     if (imp.stdlib === true) return result('interface','verified_correct','tier_4','Python standard library inventory',`${top} is in this interpreter's standard library.`);
     if (imp.local) return unknown('interface',`Local import ${imp.library} cannot be verified without its source.`);
-    const datum = pypi_data[top];
+    const datum = pickDatum(pypi_data as any, top);
     if (!datum || datum.status === 'unverifiable' || datum.exists === null) return unknown('interface',`No usable package evidence for ${top}: ${datum?.summary || 'lookup missing'}`);
     // Unknown import-to-distribution mappings (including legitimate private modules) stay unknown.
     if (!Object.hasOwn(IMPORT_DISTRIBUTIONS, top)) return unknown('interface',`No reviewed import-to-distribution mapping for ${top}; registry existence or 404 cannot settle this import.`);

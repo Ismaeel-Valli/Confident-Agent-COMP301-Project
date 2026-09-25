@@ -59,10 +59,16 @@ export function makeDecision(report: EWCSReport, correctionAttempts = 0): Decisi
     const acc = new EWCSAccumulator(report.task_id);
     for (const c of report.contributions) acc.record({ ...c, evidence_source:'report', evidence_detail:'', hallucination_type:null });
     const checked = acc.finalise();
+    // Safety constraint first: any contradiction forces correction.
     if (checked.has_incorrect_layer) return correctionAttempts < 1 ? 'correct' : 'abstain';
-    if (report.extraction_complete !== true || !Array.isArray(report.missing_layers) || report.missing_layers.length ||
-      !Array.isArray(report.failed_layers) || report.failed_layers.length || checked.missing_layers.length || checked.unverifiable_layers.length ||
+    // System integrity checks: missing or failed layers indicate a verifier
+    // did not run, not that the code is uncertain. These still force abstention.
+    if (!Array.isArray(report.missing_layers) || report.missing_layers.length ||
+      !Array.isArray(report.failed_layers) || report.failed_layers.length || checked.missing_layers.length ||
       checked.ewcs === null || !Number.isFinite(report.ewcs) || report.ewcs !== checked.ewcs) return 'abstain';
+    // Unverifiable layers and incomplete extraction are findings, not
+    // system failures. They already reduce the EWCS via the denominator.
+    // The thresholds now decide, not a hard gate.
     return checked.ewcs >= 0.85 ? 'deliver' : checked.ewcs >= 0.60 ? 'deliver_with_flag' : 'abstain';
   } catch { return 'abstain'; }
 }

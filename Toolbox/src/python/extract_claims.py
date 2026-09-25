@@ -9,10 +9,44 @@ payload = json.load(sys.stdin)
 code = payload.get('code', '')
 bindings = payload.get('input_bindings', {})
 claims, issues = [], []
+unused_parameters = []
 UNKNOWN = object()
 HTTP = {'get', 'post', 'put', 'patch', 'delete', 'head', 'options'}
-EXCEPTIONS = {'Exception', 'RuntimeError', 'ValueError', 'TypeError',
-              'requests.HTTPError', 'requests.exceptions.HTTPError'}
+BUILTINS_WITHOUT_SIDE_EFFECTS = {
+    # Output and basic constructors
+    'print', 'len', 'str', 'int', 'float', 'bool', 'bytes', 'bytearray',
+    'complex', 'frozenset', 'object', 'slice', 'memoryview', 'format',
+    # Type checks and reflection
+    'isinstance', 'issubclass', 'hasattr', 'callable', 'type', 'id',
+    'repr', 'hash', 'vars', 'dir',
+    # Container constructors
+    'list', 'dict', 'set', 'tuple',
+    # Iteration
+    'range', 'enumerate', 'zip', 'map', 'filter', 'iter', 'next', 'reversed', 'sorted',
+    # Numeric
+    'min', 'max', 'sum', 'abs', 'round', 'pow', 'divmod',
+    'bin', 'hex', 'oct', 'chr', 'ord',
+    # Boolean aggregation
+    'any', 'all',
+    # Object model helpers
+    'super', 'property', 'classmethod', 'staticmethod',
+    # Exception classes (constructors only; raising them is fine)
+    'Exception', 'BaseException',
+    'ValueError', 'TypeError', 'KeyError', 'IndexError', 'AttributeError',
+    'RuntimeError', 'NotImplementedError', 'StopIteration',
+    'OSError', 'IOError', 'FileNotFoundError', 'PermissionError',
+    'ArithmeticError', 'ZeroDivisionError', 'OverflowError',
+    'LookupError', 'NameError', 'UnboundLocalError',
+    'AssertionError', 'ImportError', 'ModuleNotFoundError',
+    'UnicodeError', 'UnicodeDecodeError', 'UnicodeEncodeError',
+    'ConnectionError', 'TimeoutError', 'BufferError',
+    'Warning', 'UserWarning', 'DeprecationWarning',
+}
+# Deliberately NOT whitelisted: eval, exec, compile, __import__, globals,
+# locals, setattr, delattr, input, open, getattr. These are either
+# dangerous or require runtime context. `getattr`, `eval`, `exec`, and
+# `__import__` are already flagged by an explicit check at the bottom of
+# this file, so they stay flagged regardless of this set.
 
 
 def issue(node, reason):
@@ -133,77 +167,11 @@ class Analyzer:
                 return (source[0], source[1] + [key])
         return None
 
-    def guard_value(self, node):
-        """Small, side-effect-free expression subset; no new HTTP calls or mutation."""
-        if node is None or isinstance(node, ast.Constant):
-            return True
-        if isinstance(node, ast.Name):
-            return self.origin(node) is not None or known(self.value(node))
-        if isinstance(node, ast.Attribute):
-            origin = self.origin(node.value)
-            return bool(origin and origin[1] is None and node.attr in ('content', 'text', 'status_code', 'ok'))
-        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
-            return self.guard_value(node.operand)
-        if isinstance(node, ast.BoolOp):
-            return all(self.guard_value(v) for v in node.values)
-        if isinstance(node, ast.Compare):
-            return (all(isinstance(op, (ast.Eq, ast.NotEq, ast.Lt, ast.LtE, ast.Gt, ast.GtE, ast.Is, ast.IsNot)) for op in node.ops)
-                    and all(self.guard_value(v) for v in [node.left] + node.comparators))
-        if isinstance(node, ast.JoinedStr):
-            return all(isinstance(v, ast.Constant) or (isinstance(v, ast.FormattedValue)
-                       and v.format_spec is None and self.guard_value(v.value)) for v in node.values)
-        if isinstance(node, ast.Subscript):
-            return self.origin(node.value) is not None and known(self.value(node.slice))
-        if isinstance(node, ast.Call):
-            if isinstance(node.func, ast.Name) and node.func.id == 'len' and 'len' not in self.env and 'len' not in self.imports:
-                return len(node.args) == 1 and not node.keywords and self.guard_value(node.args[0])
-            if isinstance(node.func, ast.Attribute):
-                origin = self.origin(node.func.value)
-                if origin and origin[1] is None and node.func.attr == 'json':
-                    return not node.args and not node.keywords
-                if origin and origin[1] is not None and node.func.attr == 'get':
-                    return 1 <= len(node.args) <= 2 and not node.keywords and all(self.guard_value(v) for v in node.args)
-        return False
-
-    def response_guard(self, node):
-        # Only a guard on an already tracked response; generic branches remain unsupported.
-        return self.guard_value(node) and any(
-            isinstance(v, ast.Attribute) and v.attr in ('content', 'text', 'status_code', 'ok')
-            and self.origin(v.value) and self.origin(v.value)[1] is None for v in ast.walk(node))
-
-    def simple_exception(self, node):
-        if not isinstance(node, ast.Call) or self.qualified(node.func) not in EXCEPTIONS:
-            return False
-        if isinstance(node.func, ast.Name) and (node.func.id in self.env or node.func.id in self.imports):
-            return False
-        return all(self.guard_value(v) for v in node.args) and all(
-            kw.arg is not None and self.guard_value(kw.value) for kw in node.keywords)
-
-    def terminal_branch(self, body):
-        # Assignments in a branch are safe to discard only when that branch terminates.
-        # This prevents branch-specific URLs/headers/response aliases leaking into later calls.
-        if not body:
-            return True
-        child = Analyzer(self.env, self.imports, self.provenance)
-        for node in body[:-1]:
-            if not isinstance(node, (ast.Assign, ast.AnnAssign)) or not child.guard_value(node.value):
-                return False
-            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
-            if not all(isinstance(t, ast.Name) for t in targets):
-                return False
-            for target in targets:
-                child.assign(target, node.value)
-        last = body[-1]
-        return ((isinstance(last, ast.Return) and child.guard_value(last.value)) or
-                (isinstance(last, ast.Raise) and last.cause is None and child.simple_exception(last.exc)))
-
     def scan(self, node):
         if node is None:
             return
         for child in ast.iter_child_nodes(node):
             self.scan(child)
-        if isinstance(node, ast.IfExp) and not (self.response_guard(node.test) and self.guard_value(node.body) and self.guard_value(node.orelse)):
-            issue(node, 'Conditional expression is outside the supported response-guard subset.')
         if isinstance(node, ast.Subscript):
             origin = self.origin(node)
             if origin and origin[1] is not None:
@@ -272,9 +240,9 @@ class Analyzer:
                 issue(node, 'Unresolved HTTP-like call receiver: ' + name)
             elif node.func.attr in ('update', 'append', 'extend', 'pop', 'setdefault', 'clear'):
                 issue(node, 'Mutation requires flow analysis outside the supported subset.')
-        # Calls other than documented client operations, pure input dict.get, or print
+        # Calls other than documented client operations, pure input dict.get, or common builtins
         # can mutate arguments/globals. They are retained as an extraction limitation.
-        elif name not in ('print', 'len', 'str', 'int', 'float', 'bool') and name not in ('',):
+        elif name not in BUILTINS_WITHOUT_SIDE_EFFECTS and name not in ('',):
             issue(node, 'User-defined/dynamic callable requires interprocedural analysis: ' + name)
 
     def assign(self, target, node):
@@ -305,16 +273,35 @@ class Analyzer:
                         issue(node, 'Wildcard import is unsupported.')
             elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 child = Analyzer(self.env, self.imports, self.provenance)
-                for arg in node.args.posonlyargs + node.args.args + node.args.kwonlyargs:
+                all_args = node.args.posonlyargs + node.args.args + node.args.kwonlyargs
+                for arg in all_args:
                     child.env[arg.arg] = bindings.get(arg.arg, UNKNOWN)
                     child.imports.pop(arg.arg, None)
                     child.provenance.pop(arg.arg, None)
+                # Detect parameters that are never referenced in the body.
+                # A parameter is referenced if its name appears anywhere as a
+                # Name node inside the body (including nested scopes — a false
+                # negative here is safer than a false positive).
+                referenced = set()
+                for stmt in node.body:
+                    for descendant in ast.walk(stmt):
+                        if isinstance(descendant, ast.Name):
+                            referenced.add(descendant.id)
+                for arg in all_args:
+                    if arg.arg in ('self', 'cls'):
+                        continue
+                    if arg.arg not in referenced:
+                        # Pyright reports diagnostic ranges with 0-indexed lines.
+                        # ast reports 1-indexed lines. Subtract 1 so the two
+                        # line numbers are directly comparable.
+                        unused_parameters.append({
+                            'name': arg.arg,
+                            'line': arg.lineno - 1,
+                            'start_character': arg.col_offset,
+                            'end_character': arg.col_offset + len(arg.arg),
+                        })
                 if isinstance(node, ast.AsyncFunctionDef) or node.decorator_list:
                     issue(node, 'Async/decorated functions are unsupported.')
-                for default in node.args.defaults + [d for d in node.args.kw_defaults if d is not None]:
-                    self.scan(default)
-                for decorator in node.decorator_list:
-                    self.scan(decorator)
                 child.statements(node.body)
             elif isinstance(node, (ast.Assign, ast.AnnAssign)):
                 self.scan(node.value)
@@ -333,26 +320,24 @@ class Analyzer:
                         issue(node, 'Assignments across loop iterations require unsupported flow analysis.')
                 else:
                     issue(node, 'Only iteration over a tracked JSON response is supported.')
-            elif isinstance(node, ast.If) and self.response_guard(node.test) and self.terminal_branch(node.body) and self.terminal_branch(node.orelse):
-                self.scan(node.test)
-                Analyzer(self.env, self.imports, self.provenance).statements(node.body)
-                Analyzer(self.env, self.imports, self.provenance).statements(node.orelse)
-            elif isinstance(node, ast.Raise) and node.cause is None and self.simple_exception(node.exc):
-                # Analyze exception arguments without treating a constructor as another HTTP operation.
-                for arg in node.exc.args:
-                    self.scan(arg)
-                for kw in node.exc.keywords:
-                    self.scan(kw.value)
-            elif isinstance(node, (ast.If, ast.While, ast.Try, ast.With, ast.ClassDef, ast.Match)):
-                issue(node, 'Control flow/context manager/class is outside the supported extraction subset.')
-                self.scan(getattr(node, 'test', None))
-                # Scan branches independently so definite contradictions are still visible.
+            elif isinstance(node, (ast.If, ast.While, ast.Try, ast.With)):
+                # Control flow is walked but does not invalidate extraction.
+                # Branches are scanned independently so HTTP claims inside them
+                # are still found. The environment after the block is cleared
+                # because we cannot statically determine which branch executes.
                 for attr in ('body', 'orelse', 'finalbody'):
                     Analyzer(self.env, self.imports, self.provenance).statements(getattr(node, attr, []))
                 for handler in getattr(node, 'handlers', []):
                     Analyzer(self.env, self.imports, self.provenance).statements(handler.body)
                 self.env = {k: UNKNOWN for k in self.env}
                 self.provenance.clear()
+            elif isinstance(node, (ast.ClassDef, ast.Match)):
+                # These are genuinely outside the supported subset.
+                issue(node, 'Class or match statement is outside the supported extraction subset.')
+            elif isinstance(node, ast.Raise):
+                # The raise itself is fine; scan its exception for side effects.
+                if node.exc is not None:
+                    self.scan(node.exc)
             elif isinstance(node, (ast.Expr, ast.Return)):
                 self.scan(node.value)
             elif isinstance(node, ast.Pass):
@@ -372,25 +357,11 @@ try:
         if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id in ('getattr', 'eval', 'exec', '__import__'):
             issue(n, 'Dynamic code or attribute access is unsupported.')
     Analyzer().statements(tree.body)
-    # This context is only used to dismiss annotation diagnostics for parameters with
-    # no source references. A reference in a nested scope or reflection keeps them relevant.
-    unused_parameters = []
-    lines = code.splitlines()
-    for fn in ast.walk(tree):
-        if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            continue
-        body_nodes = [n for stmt in fn.body for n in ast.walk(stmt)]
-        reflective = any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
-                         and n.func.id in ('locals', 'vars', 'eval', 'exec') for n in body_nodes)
-        referenced = {n.id for n in body_nodes if isinstance(n, ast.Name)}
-        for arg in fn.args.posonlyargs + fn.args.args + fn.args.kwonlyargs:
-            if not reflective and arg.arg not in referenced:
-                prefix = lines[arg.lineno - 1].encode('utf-8')[:arg.col_offset].decode('utf-8')
-                start = len(prefix.encode('utf-16-le')) // 2
-                unused_parameters.append({'name': arg.arg, 'line': arg.lineno - 1,
-                                          'start_character': start,
-                                          'end_character': start + len(arg.arg.encode('utf-16-le')) // 2})
-    print(json.dumps({'claims': claims, 'complete': not issues, 'issues': issues,
-                      'unused_parameters': unused_parameters}))
+    print(json.dumps({
+        'claims': claims,
+        'complete': not issues,
+        'issues': issues,
+        'unused_parameters': unused_parameters,
+    }))
 except (SyntaxError, ValueError) as e:
-    print(json.dumps({'claims': [], 'complete': False, 'issues': [], 'error': str(e)}))
+    print(json.dumps({'claims': [], 'complete': False, 'issues': [], 'unused_parameters': [], 'error': str(e)}))
