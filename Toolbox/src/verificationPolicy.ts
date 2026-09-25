@@ -52,7 +52,20 @@ export function computeEwcs({layer_results, task_id = 'candidate', extraction_co
   for (const r of layer_results) acc.record(r);
   return acc.finalise();
 }
-export function makeDecision(report: EWCSReport, correctionAttempts = 0): Decision {
+/**
+ * Decision policy (progress report section 8.1), applied in order:
+ * 1. any contradiction -> correct (once), then abstain;
+ * 2. missing/failed verifiers, incomplete extraction or an unresolved
+ *    delivery-critical check -> abstain (the uncertainty gate);
+ * 3. EWCS thresholds.
+ * Layer states carry critical checks only; noncritical limits are notes in the
+ * evidence and never make a layer unverifiable. Disabling the gate is only for
+ * labelled exploratory sensitivity runs.
+ */
+export interface DecisionPolicy {uncertainty_gate: boolean; deliver_threshold: number; flag_threshold: number;}
+export const POLICY_VERSION = '2026-09-25.1';
+export const DEFAULT_POLICY: DecisionPolicy = Object.freeze({uncertainty_gate: true, deliver_threshold: 0.85, flag_threshold: 0.60});
+export function makeDecision(report: EWCSReport, correctionAttempts = 0, policy: DecisionPolicy = DEFAULT_POLICY): Decision {
   // Recompute from contributions; never trust model-supplied score/flags.
   try {
     if (!report || !Array.isArray(report.contributions)) return 'abstain';
@@ -66,34 +79,51 @@ export function makeDecision(report: EWCSReport, correctionAttempts = 0): Decisi
     if (!Array.isArray(report.missing_layers) || report.missing_layers.length ||
       !Array.isArray(report.failed_layers) || report.failed_layers.length || checked.missing_layers.length ||
       checked.ewcs === null || !Number.isFinite(report.ewcs) || report.ewcs !== checked.ewcs) return 'abstain';
-    // Unverifiable layers and incomplete extraction are findings, not
-    // system failures. They already reduce the EWCS via the denominator.
-    // The thresholds now decide, not a hard gate.
-    return checked.ewcs >= 0.85 ? 'deliver' : checked.ewcs >= 0.60 ? 'deliver_with_flag' : 'abstain';
+    // Rule 2: a score cannot outweigh an unresolved critical check or missing claims.
+    if (policy.uncertainty_gate !== false && (report.extraction_complete !== true || checked.unverifiable_layers.length)) return 'abstain';
+    return checked.ewcs >= policy.deliver_threshold ? 'deliver' : checked.ewcs >= policy.flag_threshold ? 'deliver_with_flag' : 'abstain';
   } catch { return 'abstain'; }
 }
-export function presentReport({code, ewcs_report, decision}: {code: string; ewcs_report: EWCSReport; decision: Decision}) {
+export function presentReport({code, ewcs_report, decision, policy = DEFAULT_POLICY}: {code: string; ewcs_report: EWCSReport; decision: Decision; policy?: DecisionPolicy}) {
+  // Guards for malformed tool input (from the standalone toolbox, commit 596987a).
+  const safeCode = typeof code === 'string' ? code : '';
+  if (!ewcs_report || typeof ewcs_report !== 'object') {
+    return {
+      report: '### Confidence Agent Report\n\n**Decision:** abstain\n\n**Reason:** Malformed or missing EWCS report.\n\nCode withheld pending successful verification.',
+      decision: 'abstain' as Decision,
+      code_included: false,
+    };
+  }
+  const show = (v: unknown) => typeof v === 'number' && Number.isFinite(v) ? round(v) : 'undefined';
   // A caller cannot override a restrictive decision by supplying 'deliver'.
-  const checked = makeDecision(ewcs_report);
-  const candidateMatches = ewcs_report.candidate_hash === hashCode(code);
+  const checked = makeDecision(ewcs_report, 0, policy);
+  const candidateMatches = ewcs_report.candidate_hash === hashCode(safeCode);
   const allowed = candidateMatches && ['deliver','deliver_with_flag'].includes(checked) && ['deliver','deliver_with_flag'].includes(decision);
   const actual = allowed ? checked : checked === 'correct' && decision !== 'abstain' ? 'correct' : 'abstain';
-  const lines = ['### Confidence Agent Report', '', `**Decision:** ${actual}`, `**EWCS:** ${ewcs_report.ewcs ?? 'undefined (no applicable evidence)'} (signed: ${ewcs_report.signed_score ?? 'undefined'}, applicable weight: ${ewcs_report.total_applicable_weight})`, '',
+  const lines = ['### Confidence Agent Report', '', `**Decision:** ${actual}`, `**EWCS:** ${ewcs_report.ewcs ?? 'undefined (no applicable evidence)'} (signed: ${ewcs_report.signed_score ?? 'undefined'}, applicable weight: ${ewcs_report.total_applicable_weight ?? 'undefined'})`, '',
     '| Layer | State | Tier | Weight | Factor | Positive | Signed |', '|---|---|---|---|---|---|---|'];
-  for (const c of ewcs_report.contributions || []) lines.push(`| ${c.layer} | ${c.state} | ${c.tier} | ${c.weight} | ${c.tier_factor} | ${round(c.positive_contribution)} | ${round(c.signed_contribution)} |`);
-  lines.push('', 'Scope: API-claim and static evidence only. EWCS is not a probability of correctness. Task behavior has not been independently checked by this verifier.');
-  if (ewcs_report.layer_results?.length) {
-    lines.push('', 'Evidence:', '');
-    for (const r of ewcs_report.layer_results) lines.push(`- ${r.layer}: ${r.evidence_detail.replace(/\n/g, ' ')}`);
+  for (const c of Array.isArray(ewcs_report.contributions) ? ewcs_report.contributions : []) {
+    if (!c || typeof c !== 'object') continue;
+    lines.push(`| ${c.layer ?? '?'} | ${c.state ?? '?'} | ${c.tier ?? '?'} | ${c.weight ?? '?'} | ${c.tier_factor ?? '?'} | ${show(c.positive_contribution)} | ${show(c.signed_contribution)} |`);
   }
-  if (ewcs_report.missing_layers?.length) lines.push('', `Missing layers: ${ewcs_report.missing_layers.join(', ')}`);
-  if (ewcs_report.unverifiable_layers?.length) lines.push('', `Unverifiable layers: ${ewcs_report.unverifiable_layers.join(', ')}`);
+  lines.push('', 'Scope: API-claim and static evidence only. EWCS is not a probability of correctness. Task behavior has not been independently checked by this verifier.');
+  lines.push('', `Policy ${POLICY_VERSION}: thresholds ${policy.deliver_threshold}/${policy.flag_threshold}, uncertainty gate ${policy.uncertainty_gate !== false ? 'on' : 'OFF (exploratory)'}.`);
+  if (Array.isArray(ewcs_report.layer_results) && ewcs_report.layer_results.length) {
+    lines.push('', 'Evidence:', '');
+    for (const r of ewcs_report.layer_results) {
+      if (!r || typeof r !== 'object') continue;
+      const detail = typeof r.evidence_detail === 'string' ? r.evidence_detail : '(no detail)';
+      lines.push(`- ${r.layer ?? '?'}: ${detail.replace(/\n/g, ' ')}`);
+    }
+  }
+  if (Array.isArray(ewcs_report.missing_layers) && ewcs_report.missing_layers.length) lines.push('', `Missing layers: ${ewcs_report.missing_layers.join(', ')}`);
+  if (Array.isArray(ewcs_report.unverifiable_layers) && ewcs_report.unverifiable_layers.length) lines.push('', `Unverifiable layers: ${ewcs_report.unverifiable_layers.join(', ')}`);
   if (!ewcs_report.extraction_complete) lines.push('', 'Extraction was incomplete or failed.');
   if (actual === 'deliver_with_flag') lines.push('', 'Flag: some checks rely on supporting static or package metadata evidence; the code was not executed.');
   if (allowed) {
     // Use a fence longer than any candidate run of backticks.
-    const fence = '`'.repeat(Math.max(3, ...((code.match(/`+/g) || []).map(s => s.length + 1))));
-    lines.push('', fence + 'python', code, fence);
+    const fence = '`'.repeat(Math.max(3, ...((safeCode.match(/`+/g) || []).map(s => s.length + 1))));
+    lines.push('', fence + 'python', safeCode, fence);
   } else lines.push('', 'Code withheld pending successful verification.');
   return { report:lines.join('\n'), decision:actual, code_included:allowed };
 }

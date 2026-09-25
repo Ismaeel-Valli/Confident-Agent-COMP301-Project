@@ -1,15 +1,50 @@
 import { Claim, LayerName, LayerResult, EvidenceTier, ofType, result, unknown, aggregateExtracted } from './verificationTypes';
 import { RunPyright, parsePyright } from './pyrightRunner';
-type Check = {bad: string[]; unknown: string[]};
+/**
+ * bad: supported contradictions. unknown: unresolved critical checks.
+ * notes: noncritical limits (runtime input values, optional presence, undeclared
+ * headers). Notes are reported but do not change the check state.
+ */
+type Check = {bad: string[]; unknown: string[]; notes?: string[]};
 const empty = (): Check => ({bad:[], unknown:[]});
-const merge = (a:Check,b:Check) => { a.bad.push(...b.bad); a.unknown.push(...b.unknown); return a; };
-const own = (v:any,k:string) => v != null && Object.hasOwn(v,k);
-function tier(spec:any): EvidenceTier { return spec?.['x-confidence-evidence']?.kind === 'curated' ? 'tier_2' : 'tier_1'; }
+const note = (c:Check, text:string) => { (c.notes ||= []).push(text); return c; };
+const merge = (a:Check,b:Check) => { a.bad.push(...b.bad); a.unknown.push(...b.unknown); if (b.notes?.length) (a.notes ||= []).push(...b.notes); return a; };
+const own = (v:any,k:string) => v != null && typeof v === 'object' && Object.hasOwn(v,k);
+const evidenceOf = (spec:any) => (spec && typeof spec === 'object' && spec['x-confidence-evidence']) || {};
+function tier(spec:any): EvidenceTier { return evidenceOf(spec).kind === 'curated' ? 'tier_2' : 'tier_1'; }
 function finish(layer:LayerName,c:Check,spec:any,success:string): LayerResult {
-  if (c.bad.length) return result(layer,'verified_incorrect',tier(spec),'OpenAPI contract',c.bad.join('\n'),'contract_violation');
-  if (c.unknown.length) return unknown(layer,c.unknown.join('\n'));
-  return result(layer,'verified_correct',tier(spec),'OpenAPI contract',success);
+  const notes = c.notes?.length ? '\nNoncritical: ' + [...new Set(c.notes)].join('; ') : '';
+  if (c.bad.length) return result(layer,'verified_incorrect',tier(spec),'OpenAPI contract',c.bad.join('\n') + notes,'contract_violation');
+  if (c.unknown.length) return unknown(layer,c.unknown.join('\n') + notes);
+  return result(layer,'verified_correct',tier(spec),'OpenAPI contract',success + notes);
 }
+
+// ---------------------------------------------------------------- abstract values
+// The extractor encodes runtime values as {$ca:'unknown'} and partially known strings
+// as {$ca:'template', parts:[string | {hole}]}. Everything else is a concrete JSON value.
+const isMarker = (v:any, kind:string) => v != null && typeof v === 'object' && !Array.isArray(v) && v.$ca === kind;
+const isOpaque = (v:any) => isMarker(v,'unknown');
+const isTemplate = (v:any) => isMarker(v,'template');
+const isAbstract = (v:any) => isOpaque(v) || isTemplate(v);
+function concrete(v:any):boolean {
+  if (isAbstract(v)) return false;
+  if (Array.isArray(v)) return v.every(concrete);
+  if (v && typeof v === 'object') return Object.values(v).every(concrete);
+  return true;
+}
+const templateText = (t:any) => (t.parts || []).map((p:any) => typeof p === 'string' ? p : `{${p.hole}}`).join('');
+const describe = (v:any) => isTemplate(v) ? `template "${templateText(v)}"` : isOpaque(v) ? `runtime value ${v.label || ''}`.trim() : JSON.stringify(v);
+/** Shape of a request container or field, tolerating claims from older extractors. */
+function shapeOf(entry:any, fallbackLabel:string):any {
+  if (entry == null) return undefined;
+  if (own(entry,'shape')) return entry.shape;
+  if (entry.known) return entry.value;
+  if (entry.keys_known && entry.fields) return Object.fromEntries(Object.entries(entry.fields).map(([k,v]:[string,any]) => [k, shapeOf(v,k)]));
+  return {$ca:'unknown', label:fallbackLabel, type:null};
+}
+const PY_TO_JSON: Record<string,string[]> = {str:['string'], int:['integer','number'], float:['number'], bool:['boolean'], dict:['object'], list:['array'], NoneType:['null']};
+
+// ---------------------------------------------------------------- specification
 export function deref(value:any,spec:any): {value?:any;error?:string} {
   const seen = new Set<string>();
   while (value && typeof value === 'object' && own(value,'$ref')) {
@@ -22,11 +57,17 @@ export function deref(value:any,spec:any): {value?:any;error?:string} {
       if (!own(target,key)) return {error:`Unresolved reference ${ref}`};
       target = target[key];
     }
-    // OpenAPI 3.0 ignores siblings of a Reference Object.
+    // OpenAPI 3.0 ignores siblings of a Reference Object; 3.1 schema siblings are merged by schemaView.
     value = target;
   }
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {error:'Missing or unsupported schema/object.'};
   return {value};
+}
+const isOas31 = (spec:any) => /^3\.1\./.test(spec?.openapi || '');
+function rootServers(spec:any):any[] {
+  if (Array.isArray(spec.servers) && spec.servers.length) return spec.servers;
+  const overlay = evidenceOf(spec).servers;
+  return Array.isArray(overlay) ? overlay : [];
 }
 function specProblem(spec:any): string | undefined {
   if (!spec) return 'No API specification available.';
@@ -36,49 +77,138 @@ function specProblem(spec:any): string | undefined {
   if (own(spec, 'distribution') || own(spec, 'import_name')) return 'Received a PyPI package datum, not an OpenAPI spec. Pass the spec field from resolve_api_spec (the OpenAPI document) or null.';
   // A discovery note accidentally passed in place of a spec.
   if (own(spec, 'note') && !own(spec, 'openapi')) return 'Received a discovery note, not an OpenAPI document. Pass the spec field from resolve_api_spec or null.';
-  if (!/^3\.0\./.test(spec.openapi || '')) return 'Only OpenAPI 3.0.x contracts are currently supported.';
+  if (own(spec,'swagger')) return 'Swagger/OpenAPI 2.0 documents are not read as OpenAPI 3.x; convert and review them first.';
+  if (!/^3\.[01]\./.test(spec.openapi || '')) return 'Only OpenAPI 3.0.x and 3.1.x contracts are supported.';
   if (!spec.paths || typeof spec.paths !== 'object' || Array.isArray(spec.paths)) return 'Specification has no valid paths map.';
-  if (!Array.isArray(spec.servers) || spec.servers.length === 0) return 'Specification has no servers array. A spec without an absolute server URL cannot resolve endpoint origins. Use a bundled reference with verify_candidate, or a reviewed snapshot that includes servers.';
+  if (!rootServers(spec).length) return 'Specification has no servers array. A spec without a server URL cannot resolve endpoint origins. Supply a reviewed snapshot whose x-confidence-evidence.servers cites the official base URL.';
 }
-export interface Operation {pathKey:string; operation:any; pathItem:any; params:Record<string,string>; url:URL;}
+/** Absolute base URLs for a server list, expanding variables and resolving relative URLs. */
+function serverBases(spec:any, servers:any[]):{bases:URL[];uncertain:boolean} {
+  const bases:URL[] = []; let uncertain = false;
+  const documentUrl = evidenceOf(spec).document_url;
+  for (const server of servers) {
+    if (!server || typeof server.url !== 'string') { uncertain = true; continue; }
+    let urls = [server.url];
+    for (const [name] of server.url.matchAll(/\{([^}]+)\}/g)) {
+      const variable = server.variables?.[name.slice(1,-1)];
+      if (!variable || typeof variable.default !== 'string') { uncertain = true; urls = []; break; }
+      const options = Array.isArray(variable.enum) && variable.enum.length ? variable.enum : [variable.default];
+      urls = urls.flatMap(u => options.map((o:string) => u.replace(name, o)));
+    }
+    for (const u of urls) {
+      try { bases.push(documentUrl ? new URL(u, documentUrl) : new URL(u)); }
+      catch { uncertain = true; }
+    }
+  }
+  return {bases, uncertain};
+}
+
+// ---------------------------------------------------------------- request targets
+type Segment = {lit:string} | {hole:string} | {mixed:any[]};
+interface Target {origin?:string; segments?:Segment[]; query:{values:Record<string,any>;complete:boolean}; display:string; problem?:string}
+const HOLE = '\u0000';
+function parseTarget(ep:Claim):Target {
+  const empty = {values:{},complete:true};
+  if (typeof ep.endpoint === 'string') {
+    let url:URL;
+    try { url = new URL(ep.endpoint); } catch { return {query:empty,display:ep.endpoint,problem:'An absolute endpoint URL is required to establish the server.'}; }
+    if (!['http:','https:'].includes(url.protocol)) return {query:empty,display:ep.endpoint,problem:'bad-protocol'};
+    if (url.username || url.password) return {query:empty,display:ep.endpoint,problem:'Credentials embedded in URLs are outside supported authentication analysis.'};
+    const values:Record<string,any> = Object.create(null); let complete = true;
+    for (const [k,v] of url.searchParams) { if (own(values,k)) complete = false; else values[k] = v; }
+    const segments = url.pathname.split('/').slice(1).map(s => { try { return {lit:decodeURIComponent(s)}; } catch { return {mixed:[s]}; } });
+    return {origin:url.origin, segments, query:{values,complete}, display:`${url.origin}${url.pathname}`};
+  }
+  if (!isTemplate(ep.endpoint_template)) return {query:empty,display:'(dynamic)',problem:'Endpoint or method is dynamic/unresolved.'};
+  const parts:any[] = ep.endpoint_template.parts, holes:string[] = [];
+  const rendered = parts.map(p => typeof p === 'string' ? p.replace(/\u0000/g,'') : (holes.push(p.hole), HOLE)).join('');
+  const display = templateText(ep.endpoint_template);
+  const m = /^(https?):\/\/([^/?#\u0000]+)(?=$|[/?#])/i.exec(rendered);
+  if (!m) return {query:empty,display,problem:'The endpoint origin is a runtime value; the server cannot be established.'};
+  let origin:string;
+  try { const u = new URL(m[0]); if (u.username || u.password) return {query:empty,display,problem:'Credentials embedded in URLs are outside supported authentication analysis.'}; origin = u.origin; }
+  catch { return {query:empty,display,problem:'Invalid endpoint origin.'}; }
+  let rest = rendered.slice(m[0].length).split('#')[0];
+  const q = rest.indexOf('?');
+  const pathText = q >= 0 ? rest.slice(0,q) : rest, queryText = q >= 0 ? rest.slice(q+1) : '';
+  let holeIndex = 0;
+  const fragment = (text:string):any => {
+    // Rebuild a template value from rendered text, consuming holes in order.
+    const pieces:any[] = [];
+    text.split(HOLE).forEach((lit,i,all) => { if (lit) pieces.push(lit); if (i < all.length-1) pieces.push({hole:holes[holeIndex++] ?? 'value'}); });
+    if (pieces.length === 1 && typeof pieces[0] !== 'string') return {$ca:'unknown', label:pieces[0].hole, type:'str'};
+    return pieces.every(p => typeof p === 'string') ? pieces.join('') : {$ca:'template', parts:pieces};
+  };
+  const segments:Segment[] = (pathText || '/').split('/').slice(1).map(seg => {
+    if (!seg.includes(HOLE)) { try { return {lit:decodeURIComponent(seg)}; } catch { return {mixed:[seg]}; } }
+    const value = fragment(seg);
+    return isOpaque(value) ? {hole:value.label} : {mixed:value.parts};
+  });
+  const values:Record<string,any> = Object.create(null); let complete = true;
+  for (const pair of queryText ? queryText.split('&') : []) {
+    const eq = pair.indexOf('='), key = eq >= 0 ? pair.slice(0,eq) : pair, raw = eq >= 0 ? pair.slice(eq+1) : '';
+    if (key.includes(HOLE)) { complete = false; fragment(key); fragment(raw); continue; }
+    let name:string; try { name = decodeURIComponent(key.replace(/\+/g,' ')); } catch { complete = false; continue; }
+    const value = raw.includes(HOLE) ? fragment(raw) : (() => { try { return decodeURIComponent(raw.replace(/\+/g,' ')); } catch { return raw; } })();
+    if (own(values,name)) complete = false; else values[name] = value;
+  }
+  return {origin, segments, query:{values,complete}, display};
+}
+
+export interface Operation {pathKey:string; operation:any; pathItem:any; params:Record<string,any>; query:{values:Record<string,any>;complete:boolean}; display:string;}
 export function findOperation(spec:any, endpoint:Claim): {match?:Operation;bad?:string;unknown?:string} {
   const problem = specProblem(spec);
   if (problem) return {unknown:problem};
-  if (endpoint.resolved === false || typeof endpoint.endpoint !== 'string' || typeof endpoint.http_method !== 'string') return {unknown:'Endpoint or method is dynamic/unresolved.'};
-  let url:URL;
-  try { url = new URL(endpoint.endpoint); } catch { return {unknown:'An absolute endpoint URL is required to establish the server.'}; }
-  if (!['http:','https:'].includes(url.protocol)) return {bad:'The request does not use an HTTP(S) URL.'};
-  if (url.username || url.password) return {unknown:'Credentials embedded in URLs are outside supported authentication analysis.'};
-  let serverKnown = false, serverMatches = false, uncertainServer = false;
+  if (endpoint.resolved === false || typeof endpoint.http_method !== 'string' || (typeof endpoint.endpoint !== 'string' && !isTemplate(endpoint.endpoint_template)))
+    return {unknown:'Endpoint or method is dynamic/unresolved.'};
+  const target = parseTarget(endpoint);
+  if (target.problem === 'bad-protocol') return {bad:'The request does not use an HTTP(S) URL.'};
+  if (target.problem || !target.segments) return {unknown:target.problem || 'Endpoint unresolved.'};
+  let serverKnown = false, serverMatches = false, uncertainServer = false, prefixUnresolved = false;
   const matches:Operation[] = [];
-  for (const pathKey of Object.keys(spec.paths).sort((a,b) => Number(a.includes('{')) - Number(b.includes('{')))) {
+  for (const pathKey of Object.keys(spec.paths)) {
     const item = deref(spec.paths[pathKey],spec);
     if (item.error) { uncertainServer = true; continue; }
     const pathItem = item.value, operation = pathItem[endpoint.http_method.toLowerCase()];
-    const servers = operation?.servers ?? pathItem.servers ?? spec.servers;
+    const servers = operation?.servers ?? pathItem.servers ?? rootServers(spec);
     if (!Array.isArray(servers) || !servers.length) { uncertainServer = true; continue; }
-    for (const server of servers) {
-      if (typeof server.url !== 'string' || server.url.includes('{')) { uncertainServer = true; continue; }
-      let base:URL;
-      try { base = new URL(server.url); } catch { uncertainServer = true; continue; }
+    const {bases, uncertain} = serverBases(spec, servers);
+    if (uncertain) uncertainServer = true;
+    for (const base of bases) {
       serverKnown = true;
-      if (base.origin !== url.origin) continue;
-      const prefix = base.pathname.replace(/\/$/,'');
-      if (url.pathname !== prefix && !url.pathname.startsWith(prefix + '/')) continue;
+      if (base.origin !== target.origin) continue;
+      const prefix = base.pathname.split('/').filter(Boolean).map(s => { try { return decodeURIComponent(s); } catch { return s; } });
+      const segs = target.segments;
+      const head = segs.slice(0, prefix.length);
+      if (head.some(s => !('lit' in s))) { prefixUnresolved = true; continue; }
+      if (segs.length < prefix.length || head.some((s,i) => (s as any).lit !== prefix[i])) continue;
       serverMatches = true;
-      const path = url.pathname.slice(prefix.length) || '/';
-      const keys:string[] = [];
-      const regex = '^' + pathKey.split('/').map(segment => {
-        const m = /^\{([^}]+)\}$/.exec(segment);
-        if (m) { keys.push(m[1]); return '([^/]+)'; }
-        return segment.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-      }).join('/') + '$';
-      const m = new RegExp(regex).exec(path);
-      if (!m || !operation || typeof operation !== 'object') continue;
-      let params:Record<string,string>;
-      try { params = Object.fromEntries(keys.map((k,i) => [k,decodeURIComponent(m[i+1])])); }
-      catch { return {unknown:'Invalid percent-encoding in the path.'}; }
-      matches.push({pathKey,operation,pathItem,params,url});
+      let rest = segs.slice(prefix.length);
+      if (rest.length === 1 && 'lit' in rest[0] && rest[0].lit === '' ) rest = [];
+      const keys = pathKey.split('/').slice(1);
+      if (pathKey === '/') keys.length = 0;
+      if (keys.length !== rest.length || !operation || typeof operation !== 'object') continue;
+      const params:Record<string,any> = Object.create(null);
+      let ok = true;
+      keys.forEach((key,i) => {
+        if (!ok) return;
+        const seg = rest[i], whole = /^\{([^}]+)\}$/.exec(key);
+        if (whole) {
+          if ('lit' in seg) params[whole[1]] = seg.lit;
+          else if ('hole' in seg) params[whole[1]] = {$ca:'unknown', label:seg.hole, type:'str'};
+          else params[whole[1]] = {$ca:'template', parts:seg.mixed};
+          return;
+        }
+        if (!key.includes('{')) { ok = 'lit' in seg && seg.lit === key; return; }
+        // Partial-segment template, e.g. {id}.json: only literal code segments can be matched.
+        if (!('lit' in seg)) { ok = false; return; }
+        const names:string[] = [];
+        const regex = new RegExp('^' + key.split(/(\{[^}]+\})/).map(p => { const n = /^\{([^}]+)\}$/.exec(p); if (n) { names.push(n[1]); return '([^/]+)'; } return p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }).join('') + '$');
+        const m = regex.exec(seg.lit);
+        if (!m) { ok = false; return; }
+        names.forEach((n,j) => { params[n] = m[j+1]; });
+      });
+      if (ok) matches.push({pathKey,operation,pathItem,params,query:target.query,display:target.display});
     }
   }
   if (matches.length) {
@@ -87,45 +217,76 @@ export function findOperation(spec:any, endpoint:Claim): {match?:Operation;bad?:
     if (new Set(selected.map(m => m.pathKey)).size > 1) return {unknown:'Ambiguous templated path match.'};
     return {match:selected[0]};
   }
+  if (prefixUnresolved) return {unknown:'The server base path of the endpoint is a runtime value.'};
   if (!serverKnown || uncertainServer) return {unknown:'Server identity or operation could not be resolved from the specification.'};
-  if (!serverMatches) return {bad:`Endpoint origin/base path does not match the declared API servers: ${url.origin}${url.pathname}`};
-  if (spec['x-confidence-evidence']?.partial) return {unknown:'Operation is outside the curated reference subset.'};
-  return {bad:`No declared operation matches ${endpoint.http_method} ${url.pathname}.`};
+  if (!serverMatches) return {bad:`Endpoint origin/base path does not match the declared API servers: ${target.display}`};
+  if (evidenceOf(spec).partial) return {unknown:'Operation is outside the curated reference subset.'};
+  return {bad:`No declared operation matches ${endpoint.http_method} ${target.display}.`};
 }
-const supported = new Set(['type','properties','required','items','additionalProperties','enum','nullable','minimum','maximum','exclusiveMinimum','exclusiveMaximum','minLength','maxLength','pattern','minItems','maxItems','uniqueItems','minProperties','maxProperties','multipleOf','title','description','default','example','examples','deprecated','readOnly','writeOnly','xml','externalDocs']);
-function schemaProblems(schema:any):string[] {
+
+// ---------------------------------------------------------------- schema values
+const supported = new Set(['type','properties','required','items','additionalProperties','enum','nullable','minimum','maximum','exclusiveMinimum','exclusiveMaximum','minLength','maxLength','pattern','minItems','maxItems','uniqueItems','minProperties','maxProperties','multipleOf','title','description','default','example','examples','deprecated','readOnly','writeOnly','xml','externalDocs','format',
+  // JSON Schema 2020-12 annotations used by OpenAPI 3.1 documents.
+  'const','$schema','$id','$comment','$anchor','contentMediaType','contentEncoding','$defs']);
+const TYPES = ['object','array','string','integer','number','boolean'];
+function typesOf(s:any, spec:any):string[]|undefined {
+  if (s.type === undefined) return undefined;
+  const list = Array.isArray(s.type) ? s.type : [s.type];
+  return s.nullable === true ? [...list, 'null'] : list;
+}
+function schemaProblems(schema:any, spec?:any):string[] {
   const errors = Object.keys(schema).filter(k => !supported.has(k) && !k.startsWith('x-')).map(k => `Unsupported schema constraint: ${k}`);
   if (schema.required !== undefined && (!Array.isArray(schema.required) || schema.required.some((x:any)=>typeof x !== 'string'))) errors.push('Invalid required declaration.');
   if (schema.enum !== undefined && !Array.isArray(schema.enum)) errors.push('Invalid enum declaration.');
-  if (schema.type !== undefined && !['object','array','string','integer','number','boolean'].includes(schema.type)) errors.push('Unsupported schema type.');
+  if (schema.type !== undefined) {
+    const list = Array.isArray(schema.type) && (spec === undefined || isOas31(spec)) ? schema.type : [schema.type];
+    if (!list.length || list.some((t:any) => !TYPES.includes(t) && !(t === 'null' && Array.isArray(schema.type)))) errors.push('Unsupported schema type.');
+  }
   if (schema.properties !== undefined && (!schema.properties || typeof schema.properties !== 'object' || Array.isArray(schema.properties))) errors.push('Invalid properties declaration.');
-  for (const key of ['nullable','uniqueItems','exclusiveMinimum','exclusiveMaximum','readOnly','writeOnly']) if (schema[key] !== undefined && typeof schema[key] !== 'boolean') errors.push('Invalid '+key+' declaration.');
+  for (const key of ['nullable','uniqueItems','readOnly','writeOnly']) if (schema[key] !== undefined && typeof schema[key] !== 'boolean') errors.push('Invalid '+key+' declaration.');
+  for (const key of ['exclusiveMinimum','exclusiveMaximum']) if (schema[key] !== undefined && typeof schema[key] !== 'boolean' && (typeof schema[key] !== 'number' || !Number.isFinite(schema[key]))) errors.push('Invalid '+key+' declaration.');
   for (const key of ['minimum','maximum','multipleOf','minLength','maxLength','minItems','maxItems','minProperties','maxProperties']) if (schema[key] !== undefined && (typeof schema[key] !== 'number' || !Number.isFinite(schema[key]))) errors.push('Invalid '+key+' declaration.');
   return errors;
 }
+const INT_FORMATS: Record<string,[number,number]> = {int32:[-(2**31), 2**31-1], int64:[Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER]};
 export function checkValue(value:any,raw:any,spec:any,label:string,serialized=false,depth=0):Check {
   const c=empty();
   if (depth>30) {c.unknown.push(`${label}: schema depth limit`);return c;}
   const resolved=deref(raw,spec);
   if (resolved.error) {c.unknown.push(`${label}: ${resolved.error}`);return c;}
   const s=resolved.value;
-  c.unknown.push(...schemaProblems(s).map(x=>`${label}: ${x}`));
+  c.unknown.push(...schemaProblems(s, spec).map(x=>`${label}: ${x}`));
   if (c.unknown.length) return c;
-  if (value===null && s.nullable===true) return c;
-  let v=value;
-  if (serialized && typeof v==='string') {
-    if ((s.type==='integer' || s.type==='number') && /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(v)) v=Number(v);
-    if (s.type==='boolean' && ['true','false'].includes(v)) v=v==='true';
+  const types = typesOf(s, spec);
+  if (isAbstract(value)) {
+    // A runtime value: the code makes no static claim about its content.
+    const pyType = isTemplate(value) ? 'str' : value.type;
+    const jsonTypes = pyType ? PY_TO_JSON[pyType] : undefined;
+    if (!serialized && types && jsonTypes && !jsonTypes.some(t => types.includes(t))) c.bad.push(`${label}: a Python ${pyType} value is sent where the contract expects ${types.join('/')}.`);
+    else note(c, `${label}: ${describe(value)} is not statically known; its value constraints are not checked`);
+    return c;
   }
-  const type=s.type;
-  const valid = type==='string' ? typeof v==='string' : type==='integer' ? Number.isInteger(v) : type==='number' ? typeof v==='number' && Number.isFinite(v)
-    : type==='boolean' ? typeof v==='boolean' : type==='array' ? Array.isArray(v) : type==='object' ? v!==null && typeof v==='object' && !Array.isArray(v) : false;
-  if (!type) {c.unknown.push(`${label}: schema type is unspecified.`);return c;}
-  else if (!valid) {c.bad.push(`${label}: expected ${type}.`);return c;}
+  if (value===null && types?.includes('null')) return c;
+  let v=value;
+  if (serialized && typeof v==='string' && types) {
+    if ((types.includes('integer') || types.includes('number')) && !types.includes('string') && /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(v)) v=Number(v);
+    if (types.includes('boolean') && !types.includes('string') && ['true','false'].includes(v)) v=v==='true';
+  }
+  if (!types) {c.unknown.push(`${label}: schema type is unspecified.`);return c;}
+  const matchesType = (type:string) => type==='string' ? typeof v==='string' : type==='integer' ? Number.isInteger(v) : type==='number' ? typeof v==='number' && Number.isFinite(v)
+    : type==='boolean' ? typeof v==='boolean' : type==='array' ? Array.isArray(v) : type==='object' ? v!==null && typeof v==='object' && !Array.isArray(v) : type==='null' ? v===null : false;
+  if (!types.some(matchesType)) {c.bad.push(`${label}: expected ${types.join('/')}.`);return c;}
+  if (s.const!==undefined && JSON.stringify(s.const)!==JSON.stringify(v)) c.bad.push(`${label}: value differs from const.`);
   if (Array.isArray(s.enum) && !s.enum.some((x:any)=>JSON.stringify(x)===JSON.stringify(v))) c.bad.push(`${label}: value is outside enum.`);
+  if (typeof s.format==='string' && v!==null) {
+    if (INT_FORMATS[s.format] && typeof v==='number') { const [lo,hi]=INT_FORMATS[s.format]; if (v<lo || v>hi) c.bad.push(`${label}: outside ${s.format} range.`); }
+    else if (!['float','double','int32','int64'].includes(s.format) || typeof v!=='number') c.unknown.push(`${label}: format ${s.format} is not validated.`);
+  }
   if (typeof v==='number') {
-    if (s.minimum!==undefined && (s.exclusiveMinimum ? v<=s.minimum : v<s.minimum)) c.bad.push(`${label}: below minimum.`);
-    if (s.maximum!==undefined && (s.exclusiveMaximum ? v>=s.maximum : v>s.maximum)) c.bad.push(`${label}: above maximum.`);
+    const exMin = typeof s.exclusiveMinimum==='number' ? s.exclusiveMinimum : s.exclusiveMinimum===true ? s.minimum : undefined;
+    const exMax = typeof s.exclusiveMaximum==='number' ? s.exclusiveMaximum : s.exclusiveMaximum===true ? s.maximum : undefined;
+    if (exMin!==undefined && v<=exMin || s.minimum!==undefined && s.exclusiveMinimum!==true && v<s.minimum) c.bad.push(`${label}: below minimum.`);
+    if (exMax!==undefined && v>=exMax || s.maximum!==undefined && s.exclusiveMaximum!==true && v>s.maximum) c.bad.push(`${label}: above maximum.`);
     if (s.multipleOf!==undefined && (s.multipleOf<=0 || Math.abs(v/s.multipleOf-Math.round(v/s.multipleOf))>1e-9)) c.bad.push(`${label}: violates multipleOf.`);
   }
   if (typeof v==='string') {
@@ -137,7 +298,7 @@ export function checkValue(value:any,raw:any,spec:any,label:string,serialized=fa
   }
   if (Array.isArray(v)) {
     if (s.minItems!==undefined && v.length<s.minItems || s.maxItems!==undefined && v.length>s.maxItems) c.bad.push(`${label}: invalid array length.`);
-    if (s.uniqueItems && new Set(v.map(x=>JSON.stringify(x))).size!==v.length) c.bad.push(`${label}: items are not unique.`);
+    if (s.uniqueItems && concrete(v) && new Set(v.map(x=>JSON.stringify(x))).size!==v.length) c.bad.push(`${label}: items are not unique.`);
     v.forEach((x,i)=>merge(c,checkValue(x,s.items,spec,`${label}[${i}]`,false,depth+1)));
   } else if (v && typeof v==='object') {
     if (s.minProperties!==undefined && Object.keys(v).length<s.minProperties || s.maxProperties!==undefined && Object.keys(v).length>s.maxProperties) c.bad.push(`${label}: invalid property count.`);
@@ -148,6 +309,7 @@ export function checkValue(value:any,raw:any,spec:any,label:string,serialized=fa
         merge(c,checkValue(val,s.properties[key],spec,`${label}.${key}`,false,depth+1));
       } else if (s.additionalProperties===false) c.bad.push(`${label}: undeclared property ${key}.`);
       else if (typeof s.additionalProperties==='object') merge(c,checkValue(val,s.additionalProperties,spec,`${label}.${key}`,false,depth+1));
+      else note(c, `${label}: property ${key} is not declared; the schema allows additional properties`);
     }
   }
   return c;
@@ -160,7 +322,10 @@ function locate(layer:LayerName,spec:any,ep:Claim):{match?:Operation;row?:LayerR
 export async function verifyAccessPoint({claims,spec}:{claims:Claim[];spec:any}) {
   return aggregateExtracted('access_point',claims,ofType(claims,'endpoint').map(ep=> {
     const l=locate('access_point',spec,ep);
-    return l.row || result('access_point','verified_correct',tier(spec),'OpenAPI servers + path + method',`${ep.http_method} ${ep.endpoint} matches the declared server and operation.`);
+    if (l.row) return l.row;
+    const m=l.match!, templated = typeof ep.endpoint !== 'string';
+    return result('access_point','verified_correct',tier(spec),'OpenAPI servers + path + method',`${ep.http_method} ${m.display} matches the declared server and operation ${ep.http_method} ${m.pathKey}.` +
+      (templated ? '\nNoncritical: runtime path values are assumed to stay within one path segment.' : ''));
   }),'No HTTP calls in the supported extraction.');
 }
 function parameters(match:Operation,spec:any):{values:any[];errors:string[]} {
@@ -177,22 +342,25 @@ function parameters(match:Operation,spec:any):{values:any[];errors:string[]} {
   }
   return {values:[...map.values()],errors};
 }
-function fields(ep:Claim,via:string):{values:Record<string,{known:boolean;value:any}>;complete:boolean} {
+type Sent = {values:Record<string,any>;complete:boolean};
+function fields(ep:Claim,via:string):Sent {
   const container=ep.request?.[via];
   if (!container) return {values:{},complete:ep.request_complete===true};
-  if (container.known && container.value===null) return {values:{},complete:true};
-  if (!container.keys_known) return {values:{},complete:false};
-  const values:Record<string,{known:boolean;value:any}>=Object.create(null);
-  for (const [k,v] of Object.entries(container.fields || {}) as Array<[string,any]>) values[via==='headers'?k.toLowerCase():k]=v;
+  const shape=shapeOf(container,via);
+  if (shape===null) return {values:{},complete:true};
+  if (!shape || typeof shape!=='object' || Array.isArray(shape) || isAbstract(shape)) return {values:{},complete:false};
+  const values:Record<string,any>=Object.create(null);
+  for (const [k,v] of Object.entries(shape)) values[via==='headers'?k.toLowerCase():k]=v;
   return {values,complete:true};
 }
 function requestFields(ep:Claim,match:Operation) {
   const query=fields(ep,'params');
-  for (const [key,value] of match.url.searchParams) {
+  for (const [key,value] of Object.entries(match.query.values)) {
     if (own(query.values,key)) query.complete=false; // duplicate serialization not guessed
-    else query.values[key]={known:true,value};
+    else query.values[key]=value;
   }
-  return {query,header:fields(ep,'headers'),cookie:fields(ep,'cookies'),path:{values:Object.fromEntries(Object.entries(match.params).map(([k,v])=>[k,{known:true,value:v}])),complete:true}};
+  if (!match.query.complete) query.complete=false;
+  return {query,header:fields(ep,'headers'),cookie:fields(ep,'cookies'),path:{values:match.params,complete:true}};
 }
 function securityNames(spec:any,operation:any):Record<string,Set<string>> {
   const names:Record<string,Set<string>>={header:new Set(['authorization','content-type','accept','user-agent']),query:new Set(),cookie:new Set()};
@@ -205,6 +373,16 @@ function securityNames(spec:any,operation:any):Record<string,Set<string>> {
   }
   return names;
 }
+const JSON_MEDIA = /^application\/(?:[\w.+-]+\+)?json\s*(?:;.*)?$/i;
+function jsonSchemaOf(content:any):{schema?:any;found:boolean} {
+  if (!content || typeof content!=='object') return {found:false};
+  const key=Object.keys(content).find(k=>JSON_MEDIA.test(k));
+  return key ? {schema:content[key]?.schema,found:true} : {found:false};
+}
+function basicAuthShape(shape:any):boolean {
+  if (isOpaque(shape) && /HTTPBasicAuth$/.test(shape.type || '')) return true;
+  return Array.isArray(shape) && shape.length===2 && shape.every((v:any)=>typeof v==='string' || isTemplate(v) || isOpaque(v) && (v.type==null || v.type==='str'));
+}
 export async function verifyInputContract({claims,spec}:{claims:Claim[];spec:any}) {
   const rows=ofType(claims,'endpoint').map(ep=> {
     const l=locate('input_contract',spec,ep); if (l.row) return l.row;
@@ -214,12 +392,13 @@ export async function verifyInputContract({claims,spec}:{claims:Claim[];spec:any
     for (const p of pars.values) {
       const location=sent[p.in as keyof typeof sent], key=p.in==='header'?p.name.toLowerCase():p.name;
       const val=location.values[key];
-      if (!val || val.known && val.value===null) {
+      if (val===undefined || val===null) {
         if (p.required) (location.complete ? c.bad : c.unknown).push(`Missing required ${p.in} parameter ${p.name}.`);
-      } else if (!val.known) c.unknown.push(`Value of ${p.in} parameter ${p.name} is unresolved.`);
-      else {
+      } else if (isAbstract(val)) {
+        merge(c,checkValue(val,p.schema,spec,`${p.in}.${p.name}`,true));
+      } else {
         if (p.content || p.style && p.style !== (['query','cookie'].includes(p.in)?'form':'simple') || p.schema?.type==='array' || p.schema?.type==='object') c.unknown.push(`Unsupported parameter serialization: ${p.name}`);
-        merge(c,checkValue(val.value,p.schema,spec,`${p.in}.${p.name}`,true));
+        merge(c,checkValue(val,p.schema,spec,`${p.in}.${p.name}`,true));
       }
     }
     const authNames=securityNames(spec,m.operation);
@@ -227,64 +406,135 @@ export async function verifyInputContract({claims,spec}:{claims:Claim[];spec:any
       if (!sent[loc].complete) c.unknown.push(`${loc} dictionary has unresolved keys.`);
       const declared=new Set(pars.values.filter(p=>p.in===loc).map(p=>loc==='header'?p.name.toLowerCase():p.name));
       for (const key of Object.keys(sent[loc].values)) if (!declared.has(key) && !authNames[loc].has(key)) {
-        // OpenAPI does not forbid extra query/header/cookie parameters by default.
-        c.unknown.push(`Undeclared ${loc} parameter ${key}; acceptance is undocumented.`);
+        // OpenAPI does not forbid extra inputs. An undeclared query parameter may be a
+        // hallucinated filter, so it stays unresolved; extra headers are ordinarily ignored.
+        if (loc==='header') note(c,`Undeclared header ${key}; acceptance is undocumented`);
+        else c.unknown.push(`Undeclared ${loc} parameter ${key}; acceptance is undocumented.`);
       }
     }
-    const auth=ep.request?.auth;
-    if (auth?.provided && !(auth.known && (auth.value===null || Array.isArray(auth.value) && auth.value.length===2 && auth.value.every((v:any)=>typeof v==='string')))) c.unknown.push('Custom/dynamic request authentication is outside the supported subset.');
+    const auth=ep.request?.auth, authShape=auth?.provided ? shapeOf(auth,'auth') : undefined;
+    if (auth?.provided && authShape!==null && !basicAuthShape(authShape)) c.unknown.push('Custom/dynamic request authentication is outside the supported subset.');
     const rb=deref(m.operation.requestBody,spec);
     const body=ep.request?.json, form=ep.request?.data;
-    if (body?.provided && (!body.known || body.value!==null)) {
+    const bodyShape=body?.provided ? shapeOf(body,'json') : undefined, formShape=form?.provided ? shapeOf(form,'data') : undefined;
+    if (body?.provided && bodyShape!==null) {
       const contentType=sent.header.values['content-type'];
-      if (contentType && !contentType.known) c.unknown.push('Request Content-Type is unresolved.');
-      else if (contentType && (typeof contentType.value!=='string' || contentType.value.split(';')[0].trim().toLowerCase()!=='application/json')) c.bad.push('JSON body sent with a non-JSON Content-Type.');
+      if (contentType!==undefined && typeof contentType!=='string') c.unknown.push('Request Content-Type is unresolved.');
+      else if (typeof contentType==='string' && contentType.split(';')[0].trim().toLowerCase()!=='application/json') c.bad.push('JSON body sent with a non-JSON Content-Type.');
     }
-    if (form?.provided && !(form.known && form.value===null)) c.unknown.push('Form/raw body encoding is unsupported.');
+    if (form?.provided && formShape!==null) c.unknown.push('Form/raw body encoding is unsupported.');
     if (m.operation.requestBody) {
       if (rb.error) c.unknown.push(rb.error);
       else {
-        if (rb.value.required && (!body?.provided || body.known && body.value===null) && !form?.provided) c.bad.push('Required request body is missing.');
-        if (body?.provided && body.value!==null) {
-          const schema=rb.value.content?.['application/json']?.schema;
+        if (rb.value.required && (!body?.provided || bodyShape===null) && !(form?.provided && formShape!==null)) c.bad.push('Required request body is missing.');
+        if (body?.provided && bodyShape!==null) {
+          const {schema}=jsonSchemaOf(rb.value.content);
           if (!schema) c.unknown.push('No JSON request schema available.');
-          else if (!body.known) c.unknown.push('Request body includes unresolved values.');
-          else merge(c,checkValue(body.value,schema,spec,'body'));
-        } else if (body?.provided && !body.known) c.unknown.push('Request body is unresolved.');
+          else if (isAbstract(bodyShape) || bodyShape===undefined) c.unknown.push('Request body is unresolved.');
+          else merge(c,checkValue(bodyShape,schema,spec,'body'));
+        }
       }
-    } else if (body?.provided && (!body.known || body.value!==null)) c.unknown.push('Code sends a JSON body with no declared request-body contract.');
-    return finish('input_contract',c,spec,`Required inputs, locations and supported value constraints checked for ${ep.call_id}.`);
+    } else if (body?.provided && bodyShape!==null) c.unknown.push('Code sends a JSON body with no declared request-body contract.');
+    return finish('input_contract',c,spec,`Required inputs, locations and supported value constraints checked for ${ep.call_id} (${m.pathKey}).`);
   });
   return aggregateExtracted('input_contract',claims,rows,'No HTTP calls; no input contract to check.');
 }
-function checkOutputPath(path:any[],raw:any,spec:any,optional=false):Check {
-  const c=empty(); let schema=raw;
-  for (const key of path) {
-    const r=deref(schema,spec);
-    if (r.error) {c.unknown.push(r.error);return c;}
-    schema=r.value;
-    c.unknown.push(...schemaProblems(schema));
-    if (c.unknown.length) return c;
-    if (!schema.type) {c.unknown.push('Response schema type is unspecified.');return c;}
-    if (schema.nullable) c.unknown.push('Response container can be null.');
-    if (typeof key==='number') {
-      if (schema.type!=='array') {c.bad.push('Array indexing used on a non-array response.');return c;}
-      if (!Number.isInteger(key)) {c.unknown.push('Non-integer response index.');return c;}
-      // Existence of a particular array element is not established by its item schema.
-      schema=schema.items;
-    } else if (key==='*') {c.unknown.push('Dynamic response field is unresolved.');return c;}
-    else {
-      if (schema.type==='array') {c.bad.push(`String field ${key} read directly from an array.`);return c;}
-      if (schema.type && schema.type!=='object') {c.bad.push(`Field ${key} read from a scalar response.`);return c;}
-      if (!own(schema.properties,key)) {
-        if (schema.additionalProperties===false) c.bad.push(`Response field ${key} is forbidden by the closed schema.`);
-        else c.unknown.push(`Response field ${key} is not documented; schema allows unspecified properties.`);
-        return c;
-      }
-      if (!optional && !(schema.required || []).includes(key)) c.unknown.push(`Response field ${key} is optional; presence is not guaranteed.`);
-      schema=schema.properties[key];
-      if (schema.writeOnly) c.unknown.push(`Response field ${key} is writeOnly.`);
+
+// ---------------------------------------------------------------- response schemas
+interface View {types?:string[]; properties:Record<string,any>; required:Set<string>; additional:any; items?:any; nullable:boolean; writeOnly:boolean; alternatives?:any[]; problems:string[]}
+/** A normalised view of a response schema: $ref resolved, allOf merged, pure unions expanded. */
+function schemaView(raw:any,spec:any,depth=0):View {
+  const v:View={properties:{},required:new Set(),additional:undefined,nullable:false,writeOnly:false,problems:[]};
+  if (depth>20) {v.problems.push('Schema composition depth limit.');return v;}
+  let s=raw;
+  if (isOas31(spec) && s && typeof s==='object' && own(s,'$ref') && Object.keys(s).some(k=>!['$ref','description','summary'].includes(k))) {
+    const {$ref,...siblings}=s; s={allOf:[{$ref},siblings]};
+  }
+  const r=deref(s,spec);
+  if (r.error) {v.problems.push(r.error);return v;}
+  s=r.value;
+  const {allOf,oneOf,anyOf,discriminator,...rest}=s;
+  const union=oneOf ?? anyOf;
+  const structural=Object.keys(rest).filter(k=>['properties','items','additionalProperties','required'].includes(k));
+  if (union!==undefined && (structural.length || allOf!==undefined || !Array.isArray(union))) {
+    v.problems.push('Unsupported schema constraint: '+(oneOf!==undefined?'oneOf':'anyOf')+' combined with other structure.');
+    return v;
+  }
+  if (union!==undefined) {
+    v.alternatives=union;
+    v.nullable=rest.nullable===true || (Array.isArray(rest.type) && rest.type.includes('null'));
+    return v;
+  }
+  v.problems.push(...schemaProblems(rest,spec));
+  v.types=typesOf(rest,spec);
+  v.nullable=v.types?.includes('null') ?? false;
+  v.writeOnly=rest.writeOnly===true;
+  Object.assign(v.properties,rest.properties || {});
+  for (const k of rest.required || []) v.required.add(k);
+  v.additional=rest.additionalProperties;
+  v.items=rest.items;
+  if (allOf!==undefined) {
+    if (!Array.isArray(allOf)) {v.problems.push('Invalid allOf declaration.');return v;}
+    for (const member of allOf) {
+      const m=schemaView(member,spec,depth+1);
+      v.problems.push(...m.problems);
+      if (m.alternatives) {v.problems.push('Unsupported schema constraint: union inside allOf.');continue;}
+      if (m.types) v.types=v.types ? v.types.filter(t=>m.types!.includes(t) || t==='number' && m.types!.includes('integer')) : m.types;
+      Object.assign(v.properties,m.properties);
+      m.required.forEach(k=>v.required.add(k));
+      v.items ??= m.items;
+      if (m.nullable && (!v.types || v.types.includes('null'))) v.nullable=true;
     }
+    // additionalProperties inside allOf members only sees that member's properties; treat the merge as open.
+    if (v.additional===false) v.additional=undefined;
+  }
+  if (!v.types && Object.keys(v.properties).length) v.types=['object'];
+  return v;
+}
+type Step = {c:Check; next:any[]};
+function stepInto(view:View,key:any,spec:any,optional:boolean):Step {
+  const c=empty();
+  if (view.problems.length) {c.unknown.push(...view.problems);return {c,next:[]};}
+  if (view.alternatives) {
+    const results=view.alternatives.map(a=>stepInto(schemaView(a,spec),key,spec,optional));
+    const ok=results.filter(r=>!r.c.bad.length && !r.c.unknown.length);
+    if (ok.length===results.length) { results.forEach(r=>merge(c,{bad:[],unknown:[],notes:r.c.notes})); return {c,next:results.flatMap(r=>r.next)}; }
+    if (results.every(r=>r.c.bad.length)) {c.bad.push(...new Set(results.flatMap(r=>r.c.bad)));return {c,next:[]};}
+    c.unknown.push(`Response field ${JSON.stringify(key)} is documented in only some schema alternatives.`);
+    return {c,next:[]};
+  }
+  if (!view.types) {c.unknown.push('Response schema type is unspecified.');return {c,next:[]};}
+  if (view.nullable) note(c,'a response container on this path can be null');
+  if (typeof key==='number' || key==='*' && view.types.includes('array') && !view.types.includes('object')) {
+    if (!view.types.includes('array')) {c.bad.push('Array indexing used on a non-array response.');return {c,next:[]};}
+    if (typeof key==='number' && !Number.isInteger(key)) {c.unknown.push('Non-integer response index.');return {c,next:[]};}
+    // Existence of a particular array element is not established by its item schema.
+    if (view.items===undefined) {c.unknown.push('Array item schema is unspecified.');return {c,next:[]};}
+    return {c,next:[view.items]};
+  }
+  if (key==='*') {c.unknown.push('Dynamic response field is unresolved.');return {c,next:[]};}
+  if (!view.types.includes('object')) {
+    c.bad.push(view.types.includes('array') ? `String field ${key} read directly from an array.` : `Field ${key} read from a scalar response.`);
+    return {c,next:[]};
+  }
+  if (!own(view.properties,key)) {
+    if (view.additional===false) c.bad.push(`Response field ${key} is forbidden by the closed schema.`);
+    else c.unknown.push(`Response field ${key} is not documented; schema allows unspecified properties.`);
+    return {c,next:[]};
+  }
+  // The field is documented. Presence is a robustness question, not an API-claim contradiction.
+  if (!optional && !view.required.has(key)) note(c,`response field ${key} is optional in the contract; presence is not guaranteed`);
+  const child=schemaView(view.properties[key],spec);
+  if (child.writeOnly) c.unknown.push(`Response field ${key} is writeOnly.`);
+  return {c,next:[view.properties[key]]};
+}
+function checkOutputPath(path:any[],raw:any,spec:any,optional=false):Check {
+  const c=empty(); let schemas=[raw];
+  for (const [i,key] of path.entries()) {
+    const steps=schemas.map(s=>stepInto(schemaView(s,spec),key,spec,optional && i===path.length-1));
+    steps.forEach(s=>merge(c,s.c));
+    if (c.bad.length || c.unknown.length) return c;
+    schemas=steps.flatMap(s=>s.next);
   }
   return c;
 }
@@ -302,9 +552,9 @@ export async function verifyOutputContract({claims,spec,code}:{claims:Claim[];sp
     if (!success.length) {rows.push(unknown('output_contract','No documented success-response schema; a default/error response is insufficient.'));continue;}
     const checks=success.map(([status,raw])=> {
       const r=deref(raw,spec);
-      if (r.error) return {bad:[],unknown:[r.error]};
-      const schema=r.value.content?.['application/json']?.schema;
-      if (!schema) return {bad:[],unknown:[`No JSON schema for success status ${status}.`]};
+      if (r.error) return {bad:[],unknown:[r.error]} as Check;
+      const {schema}=jsonSchemaOf(r.value.content);
+      if (!schema) return {bad:[],unknown:[`No JSON schema for success status ${status}.`]} as Check;
       return checkOutputPath(Array.isArray(f.path)?f.path:[f.field],schema,spec,f.optional_access===true);
     });
     const combined=empty();
@@ -313,7 +563,8 @@ export async function verifyOutputContract({claims,spec,code}:{claims:Claim[];sp
       combined.unknown.push(...checks.flatMap(c=>c.unknown));
       if (checks.some(c=>c.bad.length)) combined.unknown.push('Field validity depends on an unresolved success status.');
     }
-    rows.push(finish('output_contract',combined,spec,`Response path ${JSON.stringify(f.path || [f.field])} is documented for ${f.call_id}.`));
+    checks.forEach(c=>{ if (c.notes?.length) (combined.notes ||= []).push(...c.notes); });
+    rows.push(finish('output_contract',combined,spec,`Response path ${JSON.stringify(f.path || [f.field])} is documented for ${f.call_id} (${l.match!.pathKey}).`));
   }
   const verdict=aggregateExtracted('output_contract',claims,rows,'No output checks.');
   if (verdict.state==='unverifiable' && code && runPyright && allowPyright) {
@@ -324,6 +575,9 @@ export async function verifyOutputContract({claims,spec,code}:{claims:Claim[];sp
   }
   return verdict;
 }
+
+// ---------------------------------------------------------------- authentication
+const SCHEME_PREFIX:Record<string,RegExp>={bearer:/^Bearer\s+\S/i, basic:/^Basic\s+[A-Za-z0-9+/]+=*$/i};
 function authCheck(name:string,scopes:any,ep:Claim,match:Operation,spec:any):Check {
   const c=empty(), resolved=deref(spec.components?.securitySchemes?.[name],spec);
   if (resolved.error) {c.unknown.push(`Security scheme ${name}: ${resolved.error}`);return c;}
@@ -332,19 +586,31 @@ function authCheck(name:string,scopes:any,ep:Claim,match:Operation,spec:any):Che
   if (s.type==='apiKey' && ['header','query','cookie'].includes(s.in)) {
     const loc=sent[s.in as 'header'|'query'|'cookie'];
     val=loc.values[s.in==='header'?String(s.name).toLowerCase():s.name]; complete=loc.complete;
+    if (isAbstract(val)) note(c,`credential ${name} is placed as documented; its runtime value is not tested`);
   } else if (s.type==='http' && ['bearer','basic'].includes(s.scheme?.toLowerCase())) {
+    const scheme=s.scheme.toLowerCase();
     val=sent.header.values.authorization;complete=sent.header.complete;
-    if (!val && ep.request?.auth?.provided) {
-      const a=ep.request.auth;
-      if (s.scheme.toLowerCase()==='basic' && a.known && Array.isArray(a.value) && a.value.length===2 && a.value.every((x:any)=>typeof x==='string'&&x.length)) return c;
+    if (val===undefined && ep.request?.auth?.provided) {
+      if (scheme==='basic' && basicAuthShape(shapeOf(ep.request.auth,'auth'))) return note(c,`basic credentials are supplied through requests auth; their validity is not tested`);
       c.unknown.push('Authentication adapter/value could not be established.');return c;
     }
-    if (val?.known && typeof val.value==='string' && !(s.scheme.toLowerCase()==='bearer'?/^Bearer\s+\S+$/i:/^Basic\s+[A-Za-z0-9+/]+=*$/i).test(val.value)) c.bad.push(`Authorization header does not match ${s.scheme}.`);
+    if (typeof val==='string') {
+      if (!SCHEME_PREFIX[scheme].test(val.trim() ? val : '')) c.bad.push(`Authorization header does not match ${s.scheme}.`);
+    } else if (isTemplate(val)) {
+      // The literal prefix of a template such as "Bearer {token}" establishes the scheme.
+      const first=val.parts[0];
+      if (typeof first!=='string') c.unknown.push(`The Authorization scheme is a runtime value; ${s.scheme} placement cannot be established.`);
+      else if (scheme==='bearer' ? !/^Bearer\s+$/i.test(first) && !/^Bearer\s+\S/i.test(first) : !/^Basic\s+/i.test(first)) c.bad.push(`Authorization header does not match ${s.scheme}.`);
+      else note(c,`the ${s.scheme} credential is a runtime value; its validity is not tested`);
+      return c;
+    } else if (isOpaque(val)) {
+      c.unknown.push(`Credential ${name} has an unresolved runtime value; the ${s.scheme} scheme cannot be established.`);return c;
+    }
   } else {c.unknown.push(`Unsupported authentication scheme/scopes: ${name} (${s.type}).`);return c;}
   if (Array.isArray(scopes) && scopes.length) c.unknown.push('Required OAuth scopes cannot be established statically.');
-  if (!val) (complete?c.bad:c.unknown).push(`Required credential ${name} is absent from the request.`);
-  else if (!val.known) c.unknown.push(`Credential ${name} has an unresolved runtime value.`);
-  else if (typeof val.value!=='string' || !val.value.trim()) c.bad.push(`Credential ${name} is empty or invalid.`);
+  if (val===undefined || val===null) (complete?c.bad:c.unknown).push(`Required credential ${name} is absent from the request.`);
+  else if (typeof val==='string' && !val.trim()) c.bad.push(`Credential ${name} is empty or invalid.`);
+  else if (!isAbstract(val) && typeof val!=='string') c.bad.push(`Credential ${name} is empty or invalid.`);
   return c;
 }
 export async function verifyContextual({claims,spec}:{claims:Claim[];spec:any;code?:string}) {
@@ -360,7 +626,8 @@ export async function verifyContextual({claims,spec}:{claims:Claim[];spec:any;co
       for (const [name,scopes] of Object.entries(requirement)) merge(c,authCheck(name,scopes,ep,m,spec));
       return c;
     });
-    if (alternatives.some(c=>!c.bad.length && !c.unknown.length)) return finish('contextual',empty(),spec,'Required authentication placement and static shape match one security alternative. Credential validity is not tested.');
+    const satisfied=alternatives.find(c=>!c.bad.length && !c.unknown.length);
+    if (satisfied) return finish('contextual',{bad:[],unknown:[],notes:satisfied.notes},spec,'Required authentication placement and static shape match one security alternative. Credential validity is not tested.');
     if (alternatives.every(c=>c.bad.length)) return finish('contextual',{bad:alternatives.flatMap(c=>c.bad),unknown:[]},spec,'');
     return unknown('contextual',alternatives.flatMap(c=>[...c.bad,...c.unknown]).join('\n'));
   });
