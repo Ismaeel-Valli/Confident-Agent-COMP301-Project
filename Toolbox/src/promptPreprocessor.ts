@@ -128,8 +128,9 @@ export async function promptPreprocessor(ctl: PromptPreprocessorController, user
       delegationHint = rt.delegationHintHardTasks;
   }
 
-  // Append the hint to the user message (effective system instruction for this turn)
-  if (delegationHint) {
+  // Append the hint to the user message (effective system instruction for this turn).
+  // Only when the secondary agent is enabled: otherwise the hint sends the model to a tool that always errors.
+  if (delegationHint && pluginConfig.get("enableSecondaryAgent")) {
       currentContent += delegationHint;
   }
 
