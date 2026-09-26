@@ -1,7 +1,0 @@
-{
-  "type": "plugin",
-  "runner": "node",
-  "owner": "comp301-skeptics",
-  "name": "confident-agent-toolbox",
-  "revision": 1
-}
