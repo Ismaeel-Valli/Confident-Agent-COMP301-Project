@@ -1,0 +1,29 @@
+{
+  "id": "chatcmpl-4wrfbrjjz6qn5gu645o6qm",
+  "object": "chat.completion",
+  "created": 1790452075,
+  "model": "qwen/qwen3.5-9b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "```python\nimport requests\n\ndef solve(inputs):\n    \"\"\"\n    Retrieves posts from JSONPlaceholder using the provided inputs (though typically \n    no specific input filtering is needed for a basic 'get all posts' request).\n    \n    Args:\n        inputs (dict): A dictionary that may contain optional parameters like 'userId', \n                       though this function will fetch all posts by default.\n    \n    Returns:\n        list or None: The decoded JSON response as a list of posts, or None if the \n                      response is an empty list.\n    \n    Raises:\n        requests.exceptions.RequestException: If the HTTP request fails (non-2xx status).\n    \"\"\"\n    # Base URL for JSONPlaceholder API\n    base_url = \"https://jsonplaceholder.typicode.com\"\n    \n    # Construct the endpoint for posts. \n    # Note: The 'inputs' parameter is accepted but not strictly used here to fetch all posts.\n    # If specific filtering (like userId) was intended, it could be added to the URL query params.\n    url = f\"{base_url}/posts\"\n    \n    try:\n        response = requests.get(url)\n        \n        # Raise an exception for unsuccessful HTTP responses (non-2xx status codes)\n        response.raise_for_status()\n        \n        # Decode the JSON response\n        data = response.json()\n        \n        # Return None for a successful empty response\n        if not data:\n            return None\n            \n        return data\n        \n    except requests.exceptions.RequestException as e:\n        raise RuntimeError(f\"Failed to retrieve posts from JSONPlaceholder: {e}\")\n```",
+        "reasoning_content": "",
+        "tool_calls": []
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 106,
+    "completion_tokens": 337,
+    "total_tokens": 443,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen/qwen3.5-9b"
+}

@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 168,
+      "completion_tokens": 653,
+      "total_tokens": 821,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    },
+    "error": null,
+    "task_id": "REST_PY_PS_0001",
+    "mode": "baseline",
+    "model": "qwen/qwen3.5-9b",
+    "model_label": "Qwen3.5-9B-Q4_K_M",
+    "instruction": "Write a Python function solve(inputs) for Swagger Petstore (OpenAPI 3 service). Update an existing pet. The inputs dictionary provides: new_resource_id: value for the id attribute; new_name: value for the name attribute; new_photo_links: value for the photo Urls attribute. Use the caller-supplied credential in inputs[\"credential\"], assumed to have the necessary permissions. Return the decoded JSON response. Return None for a successful empty response. Raise an exception for an unsuccessful HTTP response. Assume referenced resources and accounts exist. Do not execute the function.",
+    "finished": "2026-09-26T19:48:47+00:00",
+    "duration_seconds": 9.406
+  },
+  "jsonl": {
+    "prompt_id": "REST_PY_PS_0001",
+    "model": "qwen/qwen3.5-9b",
+    "model_label": "Qwen3.5-9B-Q4_K_M",
+    "code": "import requests\nimport json\n\ndef solve(inputs):\n    \"\"\"\n    Updates an existing pet in the Swagger Petstore (OpenAPI 3) service.\n    \n    Args:\n        inputs (dict): A dictionary containing:\n            - new_resource_id (str): The new ID for the pet.\n            - new_name (str): The new name for the pet.\n            - new_photo_links (list of str): The new photo URLs for the pet.\n            - credential (dict): Caller-supplied credentials (e.g., API key or token).\n    \n    Returns:\n        dict or None: The decoded JSON response from the server, or None if the response is empty.\n    \n    Raises:\n        Exception: If the HTTP response indicates an unsuccessful status code.\n    \"\"\"\n    # Base URL for Swagger Petstore (OpenAPI 3) - assuming standard public instance\n    base_url = \"https://petstore.swagger.io/v2\"\n    \n    # Construct the payload for updating the pet\n    payload = {\n        \"id\": inputs[\"new_resource_id\"],\n        \"name\": inputs[\"new_name\"],\n        \"photoUrls\": inputs[\"new_photo_links\"]\n    }\n    \n    # Determine the endpoint and method\n    # Assuming we are updating an existing pet by ID, which is typically a PUT request to /pet/{petId}\n    # However, since the input provides a new_resource_id, we will use that as the path parameter.\n    # Note: In OpenAPI 3, 'id' is often read-only and not updatable via standard update endpoints, \n    # but per the problem statement, we proceed with updating the pet using the provided ID.\n    \n    endpoint = f\"/pet/{inputs['new_resource_id']}\"\n    url = f\"{base_url}{endpoint}\"\n    \n    # Prepare headers for authentication (assuming Bearer token or API key in credential)\n    # Adjust based on actual credential structure; here we assume a common pattern.\n    headers = {\n        \"Content-Type\": \"application/json\",\n        \"Authorization\": f\"Bearer {inputs['credential'].get('token', inputs['credential'].get('api_key', ''))}\"\n    }\n    \n    try:\n        response = requests.put(url, json=payload, headers=headers)\n        \n        # Raise an exception for unsuccessful HTTP responses (4xx or 5xx)\n        response.raise_for_status()\n        \n        # Decode the JSON response\n        response_data = response.json()\n        \n        # Return None if the response is empty (though JSONDecodeError might occur if body is empty string)\n        if not response_data:\n            return None\n        \n        return response_data\n    \n    except requests.exceptions.HTTPError as e:\n        raise Exception(f\"HTTP Error occurred while updating pet: {e}\")\n    except requests.exceptions.RequestException as e:\n        raise Exception(f\"A request error occurred while updating pet: {e}\")\n    except json.JSONDecodeError as e:\n        raise Exception(f\"Failed to decode JSON response: {e}\")",
+    "has_code_block": true,
+    "finish_reason": "stop",
+    "error": null
+  },
+  "summary": "code"
+}

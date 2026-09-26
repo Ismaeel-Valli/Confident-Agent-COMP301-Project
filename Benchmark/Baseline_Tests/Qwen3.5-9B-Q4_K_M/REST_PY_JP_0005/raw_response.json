@@ -1,0 +1,29 @@
+{
+  "id": "chatcmpl-n38vyoqr9uy3kjcncvj4",
+  "object": "chat.completion",
+  "created": 1790452441,
+  "model": "qwen/qwen3.5-9b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "```python\nimport requests\n\ndef solve(inputs):\n    \"\"\"\n    Updates the title of a post on JSONPlaceholder.\n    \n    Args:\n        inputs (dict): A dictionary containing:\n            - resource_id (int): The ID of the post to update.\n            - new_title (str): The new title for the post.\n    \n    Returns:\n        None if the request is successful (HTTP 200 OK with empty body).\n        The decoded JSON response if the server returns data.\n    \n    Raises:\n        requests.RequestException: If the HTTP response status code indicates an error.\n    \"\"\"\n    resource_id = inputs['resource_id']\n    new_title = inputs['new_title']\n    \n    url = f\"https://jsonplaceholder.typicode.com/posts/{resource_id}\"\n    data = {\"title\": new_title}\n    \n    response = requests.put(url, json=data)\n    \n    if response.status_code == 200:\n        # JSONPlaceholder returns an empty body for successful PUT requests on posts\n        return None\n    \n    response.raise_for_status()\n```",
+        "reasoning_content": "",
+        "tool_calls": []
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 131,
+    "completion_tokens": 233,
+    "total_tokens": 364,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen/qwen3.5-9b"
+}

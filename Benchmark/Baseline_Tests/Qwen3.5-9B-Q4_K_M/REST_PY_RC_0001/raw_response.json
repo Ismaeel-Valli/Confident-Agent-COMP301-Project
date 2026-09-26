@@ -1,0 +1,29 @@
+{
+  "id": "chatcmpl-36ug01byp4r0vyprinc072",
+  "object": "chat.completion",
+  "created": 1790452114,
+  "model": "qwen/qwen3.5-9b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "```python\nimport requests\n\ndef solve(inputs):\n    \"\"\"\n    Retrieves one page of countries from REST Countries v5 API using provided credentials.\n    \n    Args:\n        inputs (dict): A dictionary containing 'credential' key with necessary permissions.\n        \n    Returns:\n        dict or None: Decoded JSON response if successful, None for empty response.\n        \n    Raises:\n        Exception: For unsuccessful HTTP responses.\n    \"\"\"\n    url = \"https://restcountries.com/v5/all\"\n    credential = inputs[\"credential\"]\n    \n    headers = {\n        \"Authorization\": f\"Bearer {credential}\"\n    }\n    \n    response = requests.get(url, headers=headers)\n    \n    if response.status_code != 200:\n        raise Exception(f\"Unsuccessful HTTP response: {response.status_code} - {response.text}\")\n    \n    data = response.json()\n    \n    return data if data else None\n```",
+        "reasoning_content": "",
+        "tool_calls": []
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 128,
+    "completion_tokens": 200,
+    "total_tokens": 328,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen/qwen3.5-9b"
+}

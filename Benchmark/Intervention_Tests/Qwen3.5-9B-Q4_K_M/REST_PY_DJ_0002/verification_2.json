@@ -1,0 +1,225 @@
+{
+  "toolbox_version": "3.0.0",
+  "decision": "deliver_with_flag",
+  "report": "### Confidence Agent Report\n\n**Decision:** deliver_with_flag\n**EWCS:** 0.7308 (signed: 0.7308, applicable weight: 13)\n\n| Layer | State | Tier | Weight | Factor | Positive | Signed |\n|---|---|---|---|---|---|---|\n| interface | verified_correct | tier_2 | 3 | 0.8 | 2.4 | 2.4 |\n| identifier | verified_correct | tier_4 | 3 | 0.5 | 1.5 | 1.5 |\n| access_point | verified_correct | tier_2 | 4 | 0.8 | 3.2 | 3.2 |\n| input_contract | verified_correct | tier_2 | 2 | 0.8 | 1.6 | 1.6 |\n| output_contract | verified_correct | tier_2 | 1 | 0.8 | 0.8 | 0.8 |\n| contextual | not_applicable | none | 2 | 0 | 0 | 0 |\n\nScope: API-claim and static evidence only. EWCS is not a probability of correctness. Task behavior has not been independently checked by this verifier.\n\nPolicy 2026-09-25.1: thresholds 0.85/0.6, uncertainty gate on.\n\nEvidence:\n\n- interface: requests maps to requests (2.34.2). Installation/callables checked separately by Pyright.\n- identifier: No identifier, attribute or API-call diagnostics in the configured environment (Pyright standard mode). A clean check does not establish REST contracts or task behavior.\n- access_point: GET https://dummyjson.com/products/{resource_id} matches the declared server and operation GET /products/{id}. Noncritical: runtime path values are assumed to stay within one path segment.\n- input_contract: Required inputs, locations and supported value constraints checked for call_6_15 (/products/{id}). Noncritical: path.id: runtime value resource_id is not statically known; its value constraints are not checked\n- output_contract: Response path [\"title\"] is documented for call_6_15 (/products/{id}).\n- contextual: No authentication requirement for this operation. Unused security definitions are not requirements.\n\nFlag: some checks rely on supporting static or package metadata evidence; the code was not executed.\n\n```python\nimport requests\n\ndef solve(inputs):\n    resource_id = inputs[\"resource_id\"]\n    url = f\"https://dummyjson.com/products/{resource_id}\"\n    response = requests.get(url)\n    if response.status_code == 200:\n        data = response.json()\n        return data.get(\"title\") if data else None\n    elif response.status_code in (404,):\n        return None\n    else:\n        raise Exception(f\"HTTP {response.status_code}: {response.text}\")\n```",
+  "candidate_hash": "99531519a46e7aad77651b9c3812e701549e0291b63fe6883311f6ce17248c09",
+  "reference_id": null,
+  "evidence_selection": "Frozen evidence dummyjson.curated.openapi.json selected for DummyJSON.",
+  "spec_hash": "8ac1b043053a3df0156e5f8ba015a69949f5f185eebfc80c627ca44a914ea133",
+  "reference_evidence": {
+    "kind": "curated",
+    "snapshot": "dummyjson.curated.openapi.json"
+  },
+  "ewcs_report": {
+    "task_id": "candidate",
+    "ewcs": 0.7308,
+    "signed_score": 0.7308,
+    "has_incorrect_layer": false,
+    "total_applicable_weight": 13,
+    "positive_weight": 9.5,
+    "contributions": [
+      {
+        "layer": "interface",
+        "state": "verified_correct",
+        "tier": "tier_2",
+        "weight": 3,
+        "tier_factor": 0.8,
+        "positive_contribution": 2.4,
+        "signed_contribution": 2.4
+      },
+      {
+        "layer": "identifier",
+        "state": "verified_correct",
+        "tier": "tier_4",
+        "weight": 3,
+        "tier_factor": 0.5,
+        "positive_contribution": 1.5,
+        "signed_contribution": 1.5
+      },
+      {
+        "layer": "access_point",
+        "state": "verified_correct",
+        "tier": "tier_2",
+        "weight": 4,
+        "tier_factor": 0.8,
+        "positive_contribution": 3.2,
+        "signed_contribution": 3.2
+      },
+      {
+        "layer": "input_contract",
+        "state": "verified_correct",
+        "tier": "tier_2",
+        "weight": 2,
+        "tier_factor": 0.8,
+        "positive_contribution": 1.6,
+        "signed_contribution": 1.6
+      },
+      {
+        "layer": "output_contract",
+        "state": "verified_correct",
+        "tier": "tier_2",
+        "weight": 1,
+        "tier_factor": 0.8,
+        "positive_contribution": 0.8,
+        "signed_contribution": 0.8
+      },
+      {
+        "layer": "contextual",
+        "state": "not_applicable",
+        "tier": "none",
+        "weight": 2,
+        "tier_factor": 0,
+        "positive_contribution": 0,
+        "signed_contribution": 0
+      }
+    ],
+    "missing_layers": [],
+    "extraction_complete": true,
+    "failed_layers": [],
+    "unverifiable_layers": [],
+    "layer_results": [
+      {
+        "layer": "interface",
+        "state": "verified_correct",
+        "tier": "tier_2",
+        "weight": 3,
+        "evidence_source": "PyPI metadata + reviewed import mapping",
+        "evidence_detail": "requests maps to requests (2.34.2). Installation/callables checked separately by Pyright.",
+        "hallucination_type": null,
+        "claim_ids": [
+          "claim_1"
+        ]
+      },
+      {
+        "layer": "identifier",
+        "state": "verified_correct",
+        "tier": "tier_4",
+        "weight": 3,
+        "evidence_source": "Pyright structured diagnostics",
+        "evidence_detail": "No identifier, attribute or API-call diagnostics in the configured environment (Pyright standard mode). A clean check does not establish REST contracts or task behavior.",
+        "hallucination_type": null
+      },
+      {
+        "layer": "access_point",
+        "state": "verified_correct",
+        "tier": "tier_2",
+        "weight": 4,
+        "evidence_source": "OpenAPI servers + path + method",
+        "evidence_detail": "GET https://dummyjson.com/products/{resource_id} matches the declared server and operation GET /products/{id}.\nNoncritical: runtime path values are assumed to stay within one path segment.",
+        "hallucination_type": null,
+        "claim_ids": [
+          "claim_3"
+        ]
+      },
+      {
+        "layer": "input_contract",
+        "state": "verified_correct",
+        "tier": "tier_2",
+        "weight": 2,
+        "evidence_source": "OpenAPI contract",
+        "evidence_detail": "Required inputs, locations and supported value constraints checked for call_6_15 (/products/{id}).\nNoncritical: path.id: runtime value resource_id is not statically known; its value constraints are not checked",
+        "hallucination_type": null,
+        "claim_ids": [
+          "claim_3"
+        ]
+      },
+      {
+        "layer": "output_contract",
+        "state": "verified_correct",
+        "tier": "tier_2",
+        "weight": 1,
+        "evidence_source": "OpenAPI contract",
+        "evidence_detail": "Response path [\"title\"] is documented for call_6_15 (/products/{id}).",
+        "hallucination_type": null,
+        "claim_ids": [
+          "claim_4"
+        ]
+      },
+      {
+        "layer": "contextual",
+        "state": "not_applicable",
+        "tier": "none",
+        "weight": 2,
+        "evidence_source": "extraction / specification",
+        "evidence_detail": "No authentication requirement for this operation. Unused security definitions are not requirements.",
+        "hallucination_type": null,
+        "claim_ids": [
+          "claim_3"
+        ]
+      }
+    ],
+    "candidate_hash": "99531519a46e7aad77651b9c3812e701549e0291b63fe6883311f6ce17248c09"
+  },
+  "layers": [
+    {
+      "layer": "interface",
+      "state": "verified_correct",
+      "tier": "tier_2",
+      "weight": 3,
+      "evidence_source": "PyPI metadata + reviewed import mapping",
+      "evidence_detail": "requests maps to requests (2.34.2). Installation/callables checked separately by Pyright.",
+      "hallucination_type": null,
+      "claim_ids": [
+        "claim_1"
+      ]
+    },
+    {
+      "layer": "identifier",
+      "state": "verified_correct",
+      "tier": "tier_4",
+      "weight": 3,
+      "evidence_source": "Pyright structured diagnostics",
+      "evidence_detail": "No identifier, attribute or API-call diagnostics in the configured environment (Pyright standard mode). A clean check does not establish REST contracts or task behavior.",
+      "hallucination_type": null
+    },
+    {
+      "layer": "access_point",
+      "state": "verified_correct",
+      "tier": "tier_2",
+      "weight": 4,
+      "evidence_source": "OpenAPI servers + path + method",
+      "evidence_detail": "GET https://dummyjson.com/products/{resource_id} matches the declared server and operation GET /products/{id}.\nNoncritical: runtime path values are assumed to stay within one path segment.",
+      "hallucination_type": null,
+      "claim_ids": [
+        "claim_3"
+      ]
+    },
+    {
+      "layer": "input_contract",
+      "state": "verified_correct",
+      "tier": "tier_2",
+      "weight": 2,
+      "evidence_source": "OpenAPI contract",
+      "evidence_detail": "Required inputs, locations and supported value constraints checked for call_6_15 (/products/{id}).\nNoncritical: path.id: runtime value resource_id is not statically known; its value constraints are not checked",
+      "hallucination_type": null,
+      "claim_ids": [
+        "claim_3"
+      ]
+    },
+    {
+      "layer": "output_contract",
+      "state": "verified_correct",
+      "tier": "tier_2",
+      "weight": 1,
+      "evidence_source": "OpenAPI contract",
+      "evidence_detail": "Response path [\"title\"] is documented for call_6_15 (/products/{id}).",
+      "hallucination_type": null,
+      "claim_ids": [
+        "claim_4"
+      ]
+    },
+    {
+      "layer": "contextual",
+      "state": "not_applicable",
+      "tier": "none",
+      "weight": 2,
+      "evidence_source": "extraction / specification",
+      "evidence_detail": "No authentication requirement for this operation. Unused security definitions are not requirements.",
+      "hallucination_type": null,
+      "claim_ids": [
+        "claim_3"
+      ]
+    }
+  ],
+  "extraction_issues": []
+}

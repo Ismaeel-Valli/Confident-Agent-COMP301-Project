@@ -1,0 +1,29 @@
+{
+  "id": "chatcmpl-k2nfhlff9ajlru953d9oss",
+  "object": "chat.completion",
+  "created": 1790452445,
+  "model": "qwen/qwen3.5-9b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "```python\nimport requests\n\ndef solve(inputs):\n    \"\"\"\n    Deletes a post by identifier from JSONPlaceholder.\n    \n    Args:\n        inputs (dict): A dictionary containing 'resource_id' as the post ID to delete.\n        \n    Returns:\n        None if deletion is successful (empty response).\n        The decoded JSON response otherwise.\n        \n    Raises:\n        Exception for unsuccessful HTTP responses.\n    \"\"\"\n    resource_id = inputs['resource_id']\n    url = f\"https://jsonplaceholder.typicode.com/posts/{resource_id}\"\n    \n    try:\n        response = requests.delete(url)\n        response.raise_for_status()\n        \n        if response.status_code == 204:\n            return None\n        \n        return response.json()\n    except requests.exceptions.HTTPError as e:\n        raise Exception(f\"HTTP Error occurred while deleting post: {e}\")\n```",
+        "reasoning_content": "",
+        "tool_calls": []
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 121,
+    "completion_tokens": 188,
+    "total_tokens": 309,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen/qwen3.5-9b"
+}

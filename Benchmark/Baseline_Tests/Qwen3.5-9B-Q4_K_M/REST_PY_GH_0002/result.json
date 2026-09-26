@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 157,
+      "completion_tokens": 518,
+      "total_tokens": 675,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    },
+    "error": null,
+    "task_id": "REST_PY_GH_0002",
+    "mode": "baseline",
+    "model": "qwen/qwen3.5-9b",
+    "model_label": "Qwen3.5-9B-Q4_K_M",
+    "instruction": "Write a Python function solve(inputs) for GitHub REST API version 2026-03-10. Update an organization. The inputs dictionary provides: organization: The organization name; new_name: value for the name attribute. Use the caller-supplied credential in inputs[\"credential\"], assumed to have the necessary permissions. Return the decoded JSON response. Return None for a successful empty response. Raise an exception for an unsuccessful HTTP response. Assume referenced resources and accounts exist. Do not execute the function.",
+    "finished": "2026-09-26T19:48:17+00:00",
+    "duration_seconds": 7.916
+  },
+  "jsonl": {
+    "prompt_id": "REST_PY_GH_0002",
+    "model": "qwen/qwen3.5-9b",
+    "model_label": "Qwen3.5-9B-Q4_K_M",
+    "code": "import requests\nfrom requests.exceptions import RequestException, HTTPError\n\ndef solve(inputs):\n    \"\"\"\n    Updates an organization's name via the GitHub REST API (version 2026-03-10).\n    \n    Args:\n        inputs (dict): A dictionary containing:\n            - 'organization': str, The organization name.\n            - 'new_name': str, The new name for the organization.\n            - 'credential': dict, Contains authentication details (e.g., token or username/password).\n    \n    Returns:\n        None if the response is empty and successful.\n        The decoded JSON response otherwise.\n    \n    Raises:\n        Exception for unsuccessful HTTP responses.\n    \"\"\"\n    org_name = inputs['organization']\n    new_name = inputs['new_name']\n    credential = inputs['credential']\n    \n    # Construct the API URL for updating an organization\n    url = f\"https://api.github.com/orgs/{org_name}\"\n    \n    # Prepare headers with authentication\n    headers = {\n        'Accept': 'application/vnd.github.v3+json',\n        'X-GitHub-Api-Version': '2026-03-10'\n    }\n    \n    # Determine authentication method based on credential structure\n    if 'token' in credential:\n        headers['Authorization'] = f'token {credential[\"token\"]}'\n    elif 'username' in credential and 'password' in credential:\n        auth = (credential['username'], credential['password'])\n    else:\n        raise ValueError(\"Credential must contain either a 'token' or both 'username' and 'password'.\")\n    \n    # Prepare the payload for updating the organization name\n    payload = {\n        \"name\": new_name\n    }\n    \n    try:\n        response = requests.put(url, headers=headers, json=payload)\n        \n        # Raise an HTTPError for bad responses (4xx or 5xx)\n        response.raise_for_status()\n        \n        # Return None if the response is empty (successful update with no content)\n        if not response.text:\n            return None\n        \n        # Decode and return the JSON response\n        return response.json()\n    \n    except HTTPError as http_err:\n        raise Exception(f\"HTTP error occurred: {http_err}\")\n    except RequestException as req_err:\n        raise Exception(f\"Request error occurred: {req_err}\")",
+    "has_code_block": true,
+    "finish_reason": "stop",
+    "error": null
+  },
+  "summary": "code"
+}

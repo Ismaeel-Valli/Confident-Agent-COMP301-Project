@@ -1,0 +1,29 @@
+{
+  "id": "chatcmpl-oozf4af2768wy6ohqxdkpm",
+  "object": "chat.completion",
+  "created": 1790452432,
+  "model": "qwen/qwen3.5-9b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "```python\nimport requests\n\ndef solve(inputs):\n    \"\"\"\n    Retrieves a post by identifier from JSONPlaceholder.\n    \n    Args:\n        inputs (dict): A dictionary containing 'resource_id' as the post identifier.\n        \n    Returns:\n        dict or None: The decoded JSON response if successful and not empty, \n                      None if the response is successfully empty.\n                      \n    Raises:\n        Exception: If the HTTP response is unsuccessful.\n    \"\"\"\n    resource_id = inputs['resource_id']\n    url = f\"https://jsonplaceholder.typicode.com/posts/{resource_id}\"\n    \n    response = requests.get(url)\n    \n    if response.status_code != 200:\n        raise Exception(f\"Unsuccessful HTTP response: {response.status_code}\")\n    \n    data = response.json()\n    \n    # JSONPlaceholder doesn't typically return empty responses for valid post IDs,\n    # but per instructions, we return None for a successful empty response.\n    if not data:\n        return None\n        \n    return data\n```",
+        "reasoning_content": "",
+        "tool_calls": []
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 121,
+    "completion_tokens": 220,
+    "total_tokens": 341,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen/qwen3.5-9b"
+}

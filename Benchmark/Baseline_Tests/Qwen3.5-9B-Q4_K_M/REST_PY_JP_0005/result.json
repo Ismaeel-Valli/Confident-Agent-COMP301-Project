@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 131,
+      "completion_tokens": 233,
+      "total_tokens": 364,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    },
+    "error": null,
+    "task_id": "REST_PY_JP_0005",
+    "mode": "baseline",
+    "model": "qwen/qwen3.5-9b",
+    "model_label": "Qwen3.5-9B-Q4_K_M",
+    "instruction": "Write a Python function solve(inputs) for JSONPlaceholder. Change selected fields of a post. The inputs dictionary provides: resource_id: Identifier of the post; new_title: value for the title attribute. Return the decoded JSON response. Return None for a successful empty response. Raise an exception for an unsuccessful HTTP response. Assume referenced resources and accounts exist. Do not execute the function.",
+    "finished": "2026-09-26T19:54:05+00:00",
+    "duration_seconds": 3.762
+  },
+  "jsonl": {
+    "prompt_id": "REST_PY_JP_0005",
+    "model": "qwen/qwen3.5-9b",
+    "model_label": "Qwen3.5-9B-Q4_K_M",
+    "code": "import requests\n\ndef solve(inputs):\n    \"\"\"\n    Updates the title of a post on JSONPlaceholder.\n    \n    Args:\n        inputs (dict): A dictionary containing:\n            - resource_id (int): The ID of the post to update.\n            - new_title (str): The new title for the post.\n    \n    Returns:\n        None if the request is successful (HTTP 200 OK with empty body).\n        The decoded JSON response if the server returns data.\n    \n    Raises:\n        requests.RequestException: If the HTTP response status code indicates an error.\n    \"\"\"\n    resource_id = inputs['resource_id']\n    new_title = inputs['new_title']\n    \n    url = f\"https://jsonplaceholder.typicode.com/posts/{resource_id}\"\n    data = {\"title\": new_title}\n    \n    response = requests.put(url, json=data)\n    \n    if response.status_code == 200:\n        # JSONPlaceholder returns an empty body for successful PUT requests on posts\n        return None\n    \n    response.raise_for_status()",
+    "has_code_block": true,
+    "finish_reason": "stop",
+    "error": null
+  },
+  "summary": "code"
+}

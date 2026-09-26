@@ -1,0 +1,38 @@
+{
+  "id": "chatcmpl-2pdpogge5zvmtsmuzvmf6",
+  "object": "chat.completion",
+  "created": 1790452236,
+  "model": "qwen/qwen3.5-9b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "reasoning_content": "",
+        "tool_calls": [
+          {
+            "type": "function",
+            "id": "0MhfHv6ztca0MjqpGqvulX64txGVSYPZ",
+            "function": {
+              "name": "verify_candidate",
+              "arguments": "{\"code\":\"import requests\\n\\ndef solve(inputs):\\n    \\\"\\\"\\\"\\n    Retrieve hourly temperature at two metres from Open-Meteo public API.\\n    \\n    Args:\\n        inputs (dict): Must contain 'latitude' and 'longitude'.\\n        \\n    Returns:\\n        dict or None: Decoded JSON response, or None if successful but empty.\\n        \\n    Raises:\\n        Exception: For unsuccessful HTTP responses.\\n    \\\"\\\"\\\"\\n    base_url = \\\"https://api.open-meteo.com\\\"\\n    endpoint = \\\"/v1/forecast\\\"\\n    \\n    params = {\\n        \\\"latitude\\\": inputs[\\\"latitude\\\"],\\n        \\\"longitude\\\": inputs[\\\"longitude\\\"],\\n        \\\"hourly\\\": \\\"temperature_2m\\\",\\n        \\\"format\\\": \\\"json\\\"\\n    }\\n    \\n    url = f\\\"{base_url}{endpoint}\\\"\\n    \\n    response = requests.get(url, params=params)\\n    \\n    if response.status_code != 200:\\n        raise Exception(f\\\"HTTP {response.status_code}: {response.text}\\\")\\n    \\n    data = response.json()\\n    \\n    return data if data else None\"}"
+            }
+          }
+        ]
+      },
+      "logprobs": null,
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 10371,
+    "completion_tokens": 254,
+    "total_tokens": 10625,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen/qwen3.5-9b"
+}

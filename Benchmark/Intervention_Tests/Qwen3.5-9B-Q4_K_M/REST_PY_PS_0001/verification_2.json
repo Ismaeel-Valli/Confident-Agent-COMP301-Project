@@ -1,0 +1,247 @@
+{
+  "toolbox_version": "3.0.0",
+  "decision": "abstain",
+  "report": "### Confidence Agent Report\n\n**Decision:** abstain\n**Reason:** A layer verified a contradiction; a correction is required.\n**EWCS:** 0.2786 (signed: -0.0071, applicable weight: 14)\n\n| Layer | State | Tier | Weight | Factor | Positive | Signed |\n|---|---|---|---|---|---|---|\n| interface | verified_correct | tier_2 | 3 | 0.8 | 2.4 | 2.4 |\n| identifier | verified_correct | tier_4 | 3 | 0.5 | 1.5 | 1.5 |\n| access_point | verified_incorrect | tier_1 | 4 | 1 | 0 | -4 |\n| input_contract | unverifiable | none | 2 | 0 | 0 | 0 |\n| output_contract | not_applicable | none | 1 | 0 | 0 | 0 |\n| contextual | unverifiable | none | 2 | 0 | 0 | 0 |\n\nScope: API-claim and static evidence only. EWCS is not a probability of correctness. Task behavior has not been independently checked by this verifier.\n\nPolicy 2026-09-25.1: thresholds 0.85/0.6, uncertainty gate on.\n\nEvidence:\n\n- interface: requests maps to requests (2.34.2). Installation/callables checked separately by Pyright.\n- identifier: No identifier, attribute or API-call diagnostics in the configured environment (Pyright standard mode). A clean check does not establish REST contracts or task behavior.\n- access_point: No declared operation matches PUT https://petstore3.swagger.io/api/v3/pet/{new_resource_id}. Closest declared operations (paths relative to the server): /pet/{petId} allows GET, POST, DELETE; PUT is declared on /pet.\n- input_contract: No declared operation matches PUT https://petstore3.swagger.io/api/v3/pet/{new_resource_id}. Closest declared operations (paths relative to the server): /pet/{petId} allows GET, POST, DELETE; PUT is declared on /pet.\n- output_contract: No tracked response-field accesses.\n- contextual: No declared operation matches PUT https://petstore3.swagger.io/api/v3/pet/{new_resource_id}. Closest declared operations (paths relative to the server): /pet/{petId} allows GET, POST, DELETE; PUT is declared on /pet.\n\nUnverifiable layers: input_contract, contextual\n\nCode withheld pending successful verification.",
+  "candidate_hash": "db39b5edec1870687a61335e6e2ae27f5502b0183204caee860561dd4b9eaf59",
+  "reference_id": null,
+  "evidence_selection": "Frozen evidence petstore.openapi.json selected for Petstore.",
+  "spec_hash": "3485af8f6e40c42e3e4dcafd3dafa0c8f884cbeee03a941f23362224bd3a2144",
+  "reference_evidence": {
+    "kind": "official",
+    "document_url": "https://petstore3.swagger.io/api/v3/openapi.json",
+    "note": "The document declares the relative server /api/v3. OpenAPI resolves relative server URLs against the document location recorded in sources/manifest.json.",
+    "review_status": "prepared by coding assistant 2026-09-25; team review pending",
+    "snapshot": "petstore.openapi.json"
+  },
+  "ewcs_report": {
+    "task_id": "candidate",
+    "ewcs": 0.2786,
+    "signed_score": -0.0071,
+    "has_incorrect_layer": true,
+    "total_applicable_weight": 14,
+    "positive_weight": 3.9,
+    "contributions": [
+      {
+        "layer": "interface",
+        "state": "verified_correct",
+        "tier": "tier_2",
+        "weight": 3,
+        "tier_factor": 0.8,
+        "positive_contribution": 2.4,
+        "signed_contribution": 2.4
+      },
+      {
+        "layer": "identifier",
+        "state": "verified_correct",
+        "tier": "tier_4",
+        "weight": 3,
+        "tier_factor": 0.5,
+        "positive_contribution": 1.5,
+        "signed_contribution": 1.5
+      },
+      {
+        "layer": "access_point",
+        "state": "verified_incorrect",
+        "tier": "tier_1",
+        "weight": 4,
+        "tier_factor": 1,
+        "positive_contribution": 0,
+        "signed_contribution": -4
+      },
+      {
+        "layer": "input_contract",
+        "state": "unverifiable",
+        "tier": "none",
+        "weight": 2,
+        "tier_factor": 0,
+        "positive_contribution": 0,
+        "signed_contribution": 0
+      },
+      {
+        "layer": "output_contract",
+        "state": "not_applicable",
+        "tier": "none",
+        "weight": 1,
+        "tier_factor": 0,
+        "positive_contribution": 0,
+        "signed_contribution": 0
+      },
+      {
+        "layer": "contextual",
+        "state": "unverifiable",
+        "tier": "none",
+        "weight": 2,
+        "tier_factor": 0,
+        "positive_contribution": 0,
+        "signed_contribution": 0
+      }
+    ],
+    "missing_layers": [],
+    "extraction_complete": true,
+    "failed_layers": [],
+    "unverifiable_layers": [
+      "input_contract",
+      "contextual"
+    ],
+    "layer_results": [
+      {
+        "layer": "interface",
+        "state": "verified_correct",
+        "tier": "tier_2",
+        "weight": 3,
+        "evidence_source": "PyPI metadata + reviewed import mapping",
+        "evidence_detail": "requests maps to requests (2.34.2). Installation/callables checked separately by Pyright.",
+        "hallucination_type": null,
+        "claim_ids": [
+          "claim_1"
+        ]
+      },
+      {
+        "layer": "identifier",
+        "state": "verified_correct",
+        "tier": "tier_4",
+        "weight": 3,
+        "evidence_source": "Pyright structured diagnostics",
+        "evidence_detail": "No identifier, attribute or API-call diagnostics in the configured environment (Pyright standard mode). A clean check does not establish REST contracts or task behavior.",
+        "hallucination_type": null
+      },
+      {
+        "layer": "access_point",
+        "state": "verified_incorrect",
+        "tier": "tier_1",
+        "weight": 4,
+        "evidence_source": "OpenAPI contract",
+        "evidence_detail": "No declared operation matches PUT https://petstore3.swagger.io/api/v3/pet/{new_resource_id}. Closest declared operations (paths relative to the server): /pet/{petId} allows GET, POST, DELETE; PUT is declared on /pet.",
+        "hallucination_type": "contract_violation",
+        "claim_ids": [
+          "claim_8"
+        ]
+      },
+      {
+        "layer": "input_contract",
+        "state": "unverifiable",
+        "tier": "none",
+        "weight": 2,
+        "evidence_source": "verification",
+        "evidence_detail": "No declared operation matches PUT https://petstore3.swagger.io/api/v3/pet/{new_resource_id}. Closest declared operations (paths relative to the server): /pet/{petId} allows GET, POST, DELETE; PUT is declared on /pet.",
+        "hallucination_type": null,
+        "claim_ids": [
+          "claim_3",
+          "claim_4",
+          "claim_5",
+          "claim_6",
+          "claim_7",
+          "claim_8"
+        ]
+      },
+      {
+        "layer": "output_contract",
+        "state": "not_applicable",
+        "tier": "none",
+        "weight": 1,
+        "evidence_source": "extraction / specification",
+        "evidence_detail": "No tracked response-field accesses.",
+        "hallucination_type": null,
+        "claim_ids": []
+      },
+      {
+        "layer": "contextual",
+        "state": "unverifiable",
+        "tier": "none",
+        "weight": 2,
+        "evidence_source": "verification",
+        "evidence_detail": "No declared operation matches PUT https://petstore3.swagger.io/api/v3/pet/{new_resource_id}. Closest declared operations (paths relative to the server): /pet/{petId} allows GET, POST, DELETE; PUT is declared on /pet.",
+        "hallucination_type": null,
+        "claim_ids": [
+          "claim_3",
+          "claim_4",
+          "claim_5",
+          "claim_6",
+          "claim_7",
+          "claim_8"
+        ]
+      }
+    ],
+    "candidate_hash": "db39b5edec1870687a61335e6e2ae27f5502b0183204caee860561dd4b9eaf59"
+  },
+  "layers": [
+    {
+      "layer": "interface",
+      "state": "verified_correct",
+      "tier": "tier_2",
+      "weight": 3,
+      "evidence_source": "PyPI metadata + reviewed import mapping",
+      "evidence_detail": "requests maps to requests (2.34.2). Installation/callables checked separately by Pyright.",
+      "hallucination_type": null,
+      "claim_ids": [
+        "claim_1"
+      ]
+    },
+    {
+      "layer": "identifier",
+      "state": "verified_correct",
+      "tier": "tier_4",
+      "weight": 3,
+      "evidence_source": "Pyright structured diagnostics",
+      "evidence_detail": "No identifier, attribute or API-call diagnostics in the configured environment (Pyright standard mode). A clean check does not establish REST contracts or task behavior.",
+      "hallucination_type": null
+    },
+    {
+      "layer": "access_point",
+      "state": "verified_incorrect",
+      "tier": "tier_1",
+      "weight": 4,
+      "evidence_source": "OpenAPI contract",
+      "evidence_detail": "No declared operation matches PUT https://petstore3.swagger.io/api/v3/pet/{new_resource_id}. Closest declared operations (paths relative to the server): /pet/{petId} allows GET, POST, DELETE; PUT is declared on /pet.",
+      "hallucination_type": "contract_violation",
+      "claim_ids": [
+        "claim_8"
+      ]
+    },
+    {
+      "layer": "input_contract",
+      "state": "unverifiable",
+      "tier": "none",
+      "weight": 2,
+      "evidence_source": "verification",
+      "evidence_detail": "No declared operation matches PUT https://petstore3.swagger.io/api/v3/pet/{new_resource_id}. Closest declared operations (paths relative to the server): /pet/{petId} allows GET, POST, DELETE; PUT is declared on /pet.",
+      "hallucination_type": null,
+      "claim_ids": [
+        "claim_3",
+        "claim_4",
+        "claim_5",
+        "claim_6",
+        "claim_7",
+        "claim_8"
+      ]
+    },
+    {
+      "layer": "output_contract",
+      "state": "not_applicable",
+      "tier": "none",
+      "weight": 1,
+      "evidence_source": "extraction / specification",
+      "evidence_detail": "No tracked response-field accesses.",
+      "hallucination_type": null,
+      "claim_ids": []
+    },
+    {
+      "layer": "contextual",
+      "state": "unverifiable",
+      "tier": "none",
+      "weight": 2,
+      "evidence_source": "verification",
+      "evidence_detail": "No declared operation matches PUT https://petstore3.swagger.io/api/v3/pet/{new_resource_id}. Closest declared operations (paths relative to the server): /pet/{petId} allows GET, POST, DELETE; PUT is declared on /pet.",
+      "hallucination_type": null,
+      "claim_ids": [
+        "claim_3",
+        "claim_4",
+        "claim_5",
+        "claim_6",
+        "claim_7",
+        "claim_8"
+      ]
+    }
+  ],
+  "extraction_issues": []
+}

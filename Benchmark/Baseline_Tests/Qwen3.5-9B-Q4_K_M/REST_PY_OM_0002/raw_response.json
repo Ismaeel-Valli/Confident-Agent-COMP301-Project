@@ -1,0 +1,29 @@
+{
+  "id": "chatcmpl-28q7r2mrfmkr8kuojzqg8",
+  "object": "chat.completion",
+  "created": 1790452102,
+  "model": "qwen/qwen3.5-9b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "```python\nimport requests\n\ndef solve(inputs):\n    \"\"\"\n    Retrieves hourly PM10 forecast data from Open-Meteo public API.\n    \n    Args:\n        inputs (dict): Dictionary containing 'latitude' and 'longitude'.\n        \n    Returns:\n        dict or None: Decoded JSON response if successful, None for empty response.\n        \n    Raises:\n        Exception: If HTTP response is unsuccessful.\n    \"\"\"\n    latitude = inputs['latitude']\n    longitude = inputs['longitude']\n    \n    url = \"https://api.open-meteo.com/v1/forecast\"\n    params = {\n        'latitude': latitude,\n        'longitude': longitude,\n        'hourly': 'pm10',\n        'timezone': 'auto'\n    }\n    \n    response = requests.get(url, params=params)\n    \n    if response.status_code != 200:\n        raise Exception(f\"HTTP error occurred: {response.status_code} - {response.text}\")\n    \n    data = response.json()\n    \n    # Return None for successful empty response (e.g., no hourly PM10 data available)\n    if not data.get('hourly'):\n        return None\n        \n    return data\n```",
+        "reasoning_content": "",
+        "tool_calls": []
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 136,
+    "completion_tokens": 263,
+    "total_tokens": 399,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen/qwen3.5-9b"
+}
