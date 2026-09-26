@@ -2056,6 +2056,45 @@ class Template:\r
     __hash__ = None\r
 \r
 \r
+class Maybe:\r
+    """A dict entry that is present on some control-flow paths only, e.g. an optional\r
+    query parameter added inside an if. The key is known; its presence is not."""\r
+    __slots__ = ('value',)\r
+\r
+    def __init__(self, value):\r
+        self.value = value\r
+\r
+    def __eq__(self, other):\r
+        return isinstance(other, Maybe) and other.value == self.value\r
+\r
+    __hash__ = None\r
+\r
+\r
+def present(value):\r
+    """The value a dict entry holds when it is present."""\r
+    return value.value if isinstance(value, Maybe) else value\r
+\r
+\r
+def join_values(values, name):\r
+    """Join the values one variable has at the end of several branches."""\r
+    first = values[0]\r
+    if all(v == first for v in values[1:]):\r
+        return first\r
+    if all(isinstance(v, dict) for v in values):\r
+        # Key-wise, so an entry added on one branch does not make the whole dict unknown.\r
+        keys = []\r
+        for v in values:\r
+            keys.extend(k for k in v if k not in keys)\r
+        joined = {}\r
+        for k in keys:\r
+            held = [v[k] for v in values if k in v]\r
+            value = join_values([present(h) for h in held], k)\r
+            joined[k] = Maybe(value) if len(held) < len(values) or any(isinstance(h, Maybe) for h in held) else value\r
+        return joined\r
+    types = {type_of(v) for v in values}\r
+    return Opaque(name, types.pop() if len(types) == 1 else None)\r
+\r
+\r
 AMBIGUOUS = object()  # provenance that differs across control-flow paths\r
 MISSING = object()\r
 \r
@@ -2102,7 +2141,7 @@ def add(node, kind, **fields):\r
 \r
 \r
 def known(value):\r
-    if isinstance(value, (Opaque, Template)):\r
+    if isinstance(value, (Opaque, Template, Maybe)):\r
         return False\r
     if isinstance(value, dict):\r
         return all(known(v) for v in value.values())\r
@@ -2119,6 +2158,8 @@ def encode(value):\r
     """JSON form of an abstract value; unknown parts are explicit markers."""\r
     if isinstance(value, Opaque):\r
         return {'$ca': 'unknown', 'label': value.label, 'type': value.type}\r
+    if isinstance(value, Maybe):\r
+        return {'$ca': 'maybe', 'value': encode(value.value)}\r
     if isinstance(value, Template):\r
         return {'$ca': 'template', 'parts': [p if isinstance(p, str) else {'hole': p.label} for p in value.parts]}\r
     if isinstance(value, dict):\r
@@ -2131,6 +2172,8 @@ def encode(value):\r
 \r
 \r
 def type_of(value):\r
+    if isinstance(value, Maybe):\r
+        return type_of(value.value)\r
     if isinstance(value, Opaque):\r
         return value.type\r
     if isinstance(value, Template):\r
@@ -2228,14 +2271,17 @@ class Analyzer:\r
             first = values[0]\r
             if first is not MISSING and all(v is not MISSING and v == first for v in values[1:]):\r
                 env[name] = first\r
+            elif MISSING not in values:\r
+                env[name] = join_values(values, name)\r
             else:\r
                 types = {type_of(v) for v in values if v is not MISSING}\r
                 env[name] = Opaque(name, types.pop() if len(types) == 1 and MISSING not in values else None)\r
         for name in set().union(*(b.prov.keys() for b in live)):\r
             tracked = [b.prov.get(name) for b in live if b.prov.get(name) is not None]\r
             if any(t is AMBIGUOUS for t in tracked) or any(t != tracked[0] for t in tracked[1:]):\r
+                # Reported where a field is read from it (scan, method_call, iteration), not here:\r
+                # data that is never read further does not limit the extraction.\r
                 prov[name] = AMBIGUOUS\r
-                issue(node, 'Response provenance of %s differs across branches; field accesses cannot be linked to one operation.' % name, RESPONSE)\r
             else:\r
                 # May-alias: fields read later are checked against the response they may come from.\r
                 prov[name] = tracked[0]\r
@@ -2293,8 +2339,10 @@ class Analyzer:\r
         child.statements(node.body)\r
         tracked = [r for r in child.returns if r is not None]\r
         if any(r is AMBIGUOUS for r in tracked) or any(r != tracked[0] for r in tracked[1:]):\r
+            # Different returned values (e.g. data['id'] on one branch, data['user']['id'] on\r
+            # another). Only a caller reading fields from the result is limited, and that read\r
+            # reports the ambiguity itself.\r
             info.summary = AMBIGUOUS\r
-            issue(node, 'Function %s returns data from different operations.' % node.name, RESPONSE)\r
         else:\r
             info.summary = tracked[0] if tracked else None\r
         info.running, info.done = False, True\r
@@ -2331,7 +2379,7 @@ class Analyzer:\r
             obj, key = self.value(node.value), self.value(node.slice)\r
             if isinstance(obj, (dict, list, str)) and known(key) and not isinstance(node.slice, ast.Slice):\r
                 try:\r
-                    return obj[key]\r
+                    return present(obj[key])\r
                 except (KeyError, IndexError, TypeError):\r
                     pass\r
             return Opaque(label(node))\r
@@ -2440,7 +2488,10 @@ class Analyzer:\r
             receiver = self.value(node.func.value)\r
             method = node.func.attr\r
             if isinstance(receiver, dict) and method == 'get' and args and isinstance(args[0], str):\r
-                return receiver.get(args[0], args[1] if len(args) > 1 else kwargs.get('default'))\r
+                default = args[1] if len(args) > 1 else kwargs.get('default')\r
+                held = receiver.get(args[0], default)\r
+                # An entry present on some paths only yields its value or the default.\r
+                return held if not isinstance(held, Maybe) else held.value if held.value == default else Opaque(label(node))\r
             if isinstance(receiver, dict) and method == 'copy':\r
                 return dict(receiver)\r
             if isinstance(receiver, str):\r
@@ -2563,8 +2614,7 @@ class Analyzer:\r
         if not tracked:\r
             return None\r
         if any(o is AMBIGUOUS for o in tracked) or any(o != tracked[0] for o in tracked[1:]):\r
-            issue(node, 'Expression may hold data from different operations.', RESPONSE)\r
-            return AMBIGUOUS\r
+            return AMBIGUOUS  # reported if a field is later read from it\r
         return tracked[0]\r
 \r
     # --------------------------------------------------------------- scanning\r
@@ -2895,6 +2945,7 @@ class Analyzer:\r
             if not path:\r
                 return value\r
             key = path[0]\r
+            container = present(container)\r
             if isinstance(container, dict) and isinstance(key, str):\r
                 new = dict(container)\r
                 new[key] = update(container.get(key, {}) if len(path) > 1 else None, path[1:])\r
@@ -3540,7 +3591,7 @@ function finish(layer, c2, spec, success) {
   return result(layer, "verified_correct", tier(spec), "OpenAPI contract", success + notes);
 }
 function concrete(v) {
-  if (isAbstract(v)) return false;
+  if (isAbstract(v) || isMaybe(v)) return false;
   if (Array.isArray(v)) return v.every(concrete);
   if (v && typeof v === "object") return Object.values(v).every(concrete);
   return true;
@@ -3845,6 +3896,7 @@ function schemaProblems(schema, spec) {
   return errors;
 }
 function checkValue(value, raw, spec, label, serialized = false, depth = 0) {
+  if (isMaybe(value)) return checkValue(value.value, raw, spec, label, serialized, depth);
   const c2 = empty();
   if (depth > 30) {
     c2.unknown.push(`${label}: schema depth limit`);
@@ -3912,8 +3964,13 @@ function checkValue(value, raw, spec, label, serialized = false, depth = 0) {
     if (s.uniqueItems && concrete(v) && new Set(v.map((x) => JSON.stringify(x))).size !== v.length) c2.bad.push(`${label}: items are not unique.`);
     v.forEach((x, i) => merge(c2, checkValue(x, s.items, spec, `${label}[${i}]`, false, depth + 1)));
   } else if (v && typeof v === "object") {
-    if (s.minProperties !== void 0 && Object.keys(v).length < s.minProperties || s.maxProperties !== void 0 && Object.keys(v).length > s.maxProperties) c2.bad.push(`${label}: invalid property count.`);
-    for (const required of s.required || []) if (!own(v, required) && !deref(s.properties?.[required], spec).value?.readOnly) c2.bad.push(`${label}: missing required property ${required}.`);
+    const count = Object.keys(v).length, sure = Object.values(v).filter((x) => !isMaybe(x)).length;
+    if (s.minProperties !== void 0 && count < s.minProperties || s.maxProperties !== void 0 && sure > s.maxProperties) c2.bad.push(`${label}: invalid property count.`);
+    else if (s.minProperties !== void 0 && sure < s.minProperties || s.maxProperties !== void 0 && count > s.maxProperties) c2.unknown.push(`${label}: property count depends on which optional entries are sent.`);
+    for (const required of s.required || []) {
+      if (!own(v, required) && !deref(s.properties?.[required], spec).value?.readOnly) c2.bad.push(`${label}: missing required property ${required}.`);
+      else if (isMaybe(v[required])) c2.unknown.push(`${label}: required property ${required} is only sent on some code paths.`);
+    }
     for (const [key, val] of Object.entries(v)) {
       if (own(s.properties, key)) {
         if (deref(s.properties[key], spec).value?.readOnly) c2.bad.push(`${label}.${key}: readOnly property sent in request.`);
@@ -3962,14 +4019,18 @@ function parameters(match, spec) {
   return { values: [...map.values()], errors };
 }
 function fields(ep, via) {
-  const container = ep.request?.[via];
-  if (!container) return { values: {}, complete: ep.request_complete === true };
+  const container = ep.request?.[via], optional = /* @__PURE__ */ new Set();
+  if (!container) return { values: {}, complete: ep.request_complete === true, optional };
   const shape = shapeOf(container, via);
-  if (shape === null) return { values: {}, complete: true };
-  if (!shape || typeof shape !== "object" || Array.isArray(shape) || isAbstract(shape)) return { values: {}, complete: false };
+  if (shape === null) return { values: {}, complete: true, optional };
+  if (!shape || typeof shape !== "object" || Array.isArray(shape) || isAbstract(shape) || isMaybe(shape)) return { values: {}, complete: false, optional };
   const values = /* @__PURE__ */ Object.create(null);
-  for (const [k, v] of Object.entries(shape)) values[via === "headers" ? k.toLowerCase() : k] = v;
-  return { values, complete: true };
+  for (const [k, v] of Object.entries(shape)) {
+    const key = via === "headers" ? k.toLowerCase() : k;
+    values[key] = presentValue(v);
+    if (isMaybe(v)) optional.add(key);
+  }
+  return { values, complete: true, optional };
 }
 function requestFields(ep, match) {
   const query = fields(ep, "params");
@@ -3978,7 +4039,7 @@ function requestFields(ep, match) {
     else query.values[key] = value;
   }
   if (!match.query.complete) query.complete = false;
-  return { query, header: fields(ep, "headers"), cookie: fields(ep, "cookies"), path: { values: match.params, complete: true } };
+  return { query, header: fields(ep, "headers"), cookie: fields(ep, "cookies"), path: { values: match.params, complete: true, optional: /* @__PURE__ */ new Set() } };
 }
 function securityNames(spec, operation) {
   const names = { header: /* @__PURE__ */ new Set(["authorization", "content-type", "accept", "user-agent"]), query: /* @__PURE__ */ new Set(), cookie: /* @__PURE__ */ new Set() };
@@ -4012,6 +4073,8 @@ async function verifyInputContract({ claims, spec }) {
       const val = location.values[key];
       if (val === void 0 || val === null) {
         if (p.required) (location.complete ? c2.bad : c2.unknown).push(`Missing required ${p.in} parameter ${p.name}.`);
+      } else if (p.required && location.optional.has(key)) {
+        c2.unknown.push(`Required ${p.in} parameter ${p.name} is only sent on some code paths.`);
       } else if (isAbstract(val)) {
         merge(c2, checkValue(val, p.schema, spec, `${p.in}.${p.name}`, true));
       } else {
@@ -4255,13 +4318,22 @@ function authCheck(name, scopes, ep, match, spec) {
   if (Array.isArray(scopes) && scopes.length) note(c2, `required scopes (${scopes.join(", ")}) belong to the ${name} token and cannot be checked statically; the credential is assumed to carry them`);
   if (s.type === "apiKey" && ["header", "query", "cookie"].includes(s.in)) {
     const loc = sent[s.in];
-    val = loc.values[s.in === "header" ? String(s.name).toLowerCase() : s.name];
+    const key = s.in === "header" ? String(s.name).toLowerCase() : s.name;
+    val = loc.values[key];
     complete = loc.complete;
+    if (val !== void 0 && loc.optional.has(key)) {
+      c2.unknown.push(`Credential ${name} is only sent on some code paths.`);
+      return c2;
+    }
     if (isAbstract(val)) note(c2, `credential ${name} is placed as documented; its runtime value is not tested`);
   } else if (s.type === "http" && ["bearer", "basic"].includes(s.scheme?.toLowerCase()) || s.type === "oauth2" || s.type === "openIdConnect") {
     const scheme = s.type === "http" ? s.scheme.toLowerCase() : "bearer", label = s.type === "http" ? s.scheme : `${s.type} Bearer token`;
     val = sent.header.values.authorization;
     complete = sent.header.complete;
+    if (val !== void 0 && sent.header.optional.has("authorization")) {
+      c2.unknown.push(`The ${label} credential is only sent on some code paths.`);
+      return c2;
+    }
     if (val === void 0 && ep.request?.auth?.provided) {
       if (scheme === "basic" && basicAuthShape(shapeOf(ep.request.auth, "auth"))) return note(c2, `basic credentials are supplied through requests auth; their validity is not tested`);
       c2.unknown.push("Authentication adapter/value could not be established.");
@@ -4312,7 +4384,7 @@ async function verifyContextual({ claims, spec }) {
   });
   return aggregateExtracted("contextual", claims, rows, "No HTTP calls requiring contextual checks.");
 }
-var empty, note, merge, own, evidenceOf, isMarker, isOpaque, isTemplate, isAbstract, templateText, describe, PY_TO_JSON, isOas31, HOLE, supported, TYPES, INT_FORMATS, JSON_MEDIA, SCHEME_PREFIX;
+var empty, note, merge, own, evidenceOf, isMarker, isOpaque, isTemplate, isAbstract, isMaybe, presentValue, templateText, describe, PY_TO_JSON, isOas31, HOLE, supported, TYPES, INT_FORMATS, JSON_MEDIA, SCHEME_PREFIX;
 var init_openApiVerifier = __esm({
   "src/openApiVerifier.ts"() {
     "use strict";
@@ -4335,6 +4407,8 @@ var init_openApiVerifier = __esm({
     isOpaque = (v) => isMarker(v, "unknown");
     isTemplate = (v) => isMarker(v, "template");
     isAbstract = (v) => isOpaque(v) || isTemplate(v);
+    isMaybe = (v) => isMarker(v, "maybe");
+    presentValue = (v) => isMaybe(v) ? v.value : v;
     templateText = (t2) => (t2.parts || []).map((p) => typeof p === "string" ? p : `{${p.hole}}`).join("");
     describe = (v) => isTemplate(v) ? `template "${templateText(v)}"` : isOpaque(v) ? `runtime value ${v.label || ""}`.trim() : JSON.stringify(v);
     PY_TO_JSON = { str: ["string"], int: ["integer", "number"], float: ["number"], bool: ["boolean"], dict: ["object"], list: ["array"], NoneType: ["null"] };

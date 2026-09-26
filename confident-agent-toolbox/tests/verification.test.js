@@ -356,3 +356,31 @@ test('style-only and general Python diagnostics are not API contradictions',asyn
  const api=pyright([{severity:'error',rule:'reportArgumentType',message:'bad argument',range:{start:{line:1,character:0}}}]);
  assert.equal((await verifyIdentifier('import requests\nrequests.get(1)',async()=>api)).state,'verified_incorrect');
 });
+
+// Entries set inside an if (optional parameters, conditional credentials) and branch-dependent
+// return values were reported as "unresolved keys" / "different operations" (pilot run 2026-09-26).
+const optSpec={openapi:'3.0.3',info:{title:'optional entries',version:'1'},servers:[{url:'https://api.example.test'}],
+ components:{securitySchemes:{key:{type:'apiKey',in:'header',name:'X-Key'}}},
+ paths:{'/items':{get:{security:[{key:[]}],parameters:[{name:'q',in:'query',required:true,schema:{type:'string'}},{name:'limit',in:'query',schema:{type:'integer'}}],
+  responses:{'200':{description:'ok',content:{'application/json':{schema:{type:'object',properties:{id:{type:'integer'},user:{type:'object',properties:{id:{type:'integer'}}}}}}}}}}}}};
+const optCode=(setup,headers='{"X-Key": inputs["key"]}')=>`import requests\ndef solve(inputs):\n    params = {}\n    headers = ${headers}\n${setup}\n    r = requests.get("https://api.example.test/items", params=params, headers=headers)\n    r.raise_for_status()\n    return r.json()\n`;
+test('an optional parameter added inside an if is checked by name, not treated as unresolved',async()=>{
+ const ok=await check(verifyInputContract,optCode('    params["q"] = "x"\n    if "limit" in inputs:\n        params["limit"] = inputs["limit"]'),optSpec);
+ assert.equal(ok.state,'verified_correct',ok.evidence_detail);
+ const invented=await check(verifyInputContract,optCode('    params["q"] = "x"\n    if "fields" in inputs:\n        params["fields"] = inputs["fields"]'),optSpec);
+ assert.equal(invented.state,'unverifiable');assert.match(invented.evidence_detail,/Undeclared query parameter fields/);assert.doesNotMatch(invented.evidence_detail,/unresolved keys/);
+});
+test('a required parameter or credential sent on some paths only is not established',async()=>{
+ const q=await check(verifyInputContract,optCode('    if "q" in inputs:\n        params["q"] = inputs["q"]'),optSpec);
+ assert.equal(q.state,'unverifiable');assert.match(q.evidence_detail,/Required query parameter q is only sent on some code paths/);
+ const key=await check(verifyContextual,optCode('    params["q"] = "x"\n    if "key" in inputs:\n        headers["X-Key"] = inputs["key"]','{}'),optSpec);
+ assert.equal(key.state,'unverifiable');assert.match(key.evidence_detail,/only sent on some code paths/);
+});
+test('different fields returned on different branches do not limit extraction',async()=>{
+ const code='import requests\ndef solve(inputs):\n    r = requests.get("https://api.example.test/items", params={"q": "x"}, headers={"X-Key": inputs["key"]})\n    data = r.json()\n    if "id" in data:\n        return data["id"]\n    elif "user" in data:\n        return data["user"]["id"]\n    return None\n';
+ const r=await extracted(code);assert.equal(r.complete,true,JSON.stringify(r.issues));
+ const out=await check(verifyOutputContract,code,optSpec);assert.equal(out.state,'verified_correct',out.evidence_detail);
+ // A caller that reads fields from such a result still cannot link them to one response path.
+ const caller='import requests\ndef get(inputs):\n    data = requests.get("https://api.example.test/items", params={"q": "x"}).json()\n    if inputs:\n        return data["id"]\n    return data["user"]\ndef solve(inputs):\n    return get(inputs)["id"]\n';
+ const c=await extractClaims({code:caller});assert.equal(c.complete,false);assert.ok(c.issues.some(i=>/ambiguous provenance/.test(i.reason)),JSON.stringify(c.issues));
+});

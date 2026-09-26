@@ -86,6 +86,45 @@ class Template:
     __hash__ = None
 
 
+class Maybe:
+    """A dict entry that is present on some control-flow paths only, e.g. an optional
+    query parameter added inside an if. The key is known; its presence is not."""
+    __slots__ = ('value',)
+
+    def __init__(self, value):
+        self.value = value
+
+    def __eq__(self, other):
+        return isinstance(other, Maybe) and other.value == self.value
+
+    __hash__ = None
+
+
+def present(value):
+    """The value a dict entry holds when it is present."""
+    return value.value if isinstance(value, Maybe) else value
+
+
+def join_values(values, name):
+    """Join the values one variable has at the end of several branches."""
+    first = values[0]
+    if all(v == first for v in values[1:]):
+        return first
+    if all(isinstance(v, dict) for v in values):
+        # Key-wise, so an entry added on one branch does not make the whole dict unknown.
+        keys = []
+        for v in values:
+            keys.extend(k for k in v if k not in keys)
+        joined = {}
+        for k in keys:
+            held = [v[k] for v in values if k in v]
+            value = join_values([present(h) for h in held], k)
+            joined[k] = Maybe(value) if len(held) < len(values) or any(isinstance(h, Maybe) for h in held) else value
+        return joined
+    types = {type_of(v) for v in values}
+    return Opaque(name, types.pop() if len(types) == 1 else None)
+
+
 AMBIGUOUS = object()  # provenance that differs across control-flow paths
 MISSING = object()
 
@@ -132,7 +171,7 @@ def add(node, kind, **fields):
 
 
 def known(value):
-    if isinstance(value, (Opaque, Template)):
+    if isinstance(value, (Opaque, Template, Maybe)):
         return False
     if isinstance(value, dict):
         return all(known(v) for v in value.values())
@@ -149,6 +188,8 @@ def encode(value):
     """JSON form of an abstract value; unknown parts are explicit markers."""
     if isinstance(value, Opaque):
         return {'$ca': 'unknown', 'label': value.label, 'type': value.type}
+    if isinstance(value, Maybe):
+        return {'$ca': 'maybe', 'value': encode(value.value)}
     if isinstance(value, Template):
         return {'$ca': 'template', 'parts': [p if isinstance(p, str) else {'hole': p.label} for p in value.parts]}
     if isinstance(value, dict):
@@ -161,6 +202,8 @@ def encode(value):
 
 
 def type_of(value):
+    if isinstance(value, Maybe):
+        return type_of(value.value)
     if isinstance(value, Opaque):
         return value.type
     if isinstance(value, Template):
@@ -258,14 +301,17 @@ class Analyzer:
             first = values[0]
             if first is not MISSING and all(v is not MISSING and v == first for v in values[1:]):
                 env[name] = first
+            elif MISSING not in values:
+                env[name] = join_values(values, name)
             else:
                 types = {type_of(v) for v in values if v is not MISSING}
                 env[name] = Opaque(name, types.pop() if len(types) == 1 and MISSING not in values else None)
         for name in set().union(*(b.prov.keys() for b in live)):
             tracked = [b.prov.get(name) for b in live if b.prov.get(name) is not None]
             if any(t is AMBIGUOUS for t in tracked) or any(t != tracked[0] for t in tracked[1:]):
+                # Reported where a field is read from it (scan, method_call, iteration), not here:
+                # data that is never read further does not limit the extraction.
                 prov[name] = AMBIGUOUS
-                issue(node, 'Response provenance of %s differs across branches; field accesses cannot be linked to one operation.' % name, RESPONSE)
             else:
                 # May-alias: fields read later are checked against the response they may come from.
                 prov[name] = tracked[0]
@@ -323,8 +369,10 @@ class Analyzer:
         child.statements(node.body)
         tracked = [r for r in child.returns if r is not None]
         if any(r is AMBIGUOUS for r in tracked) or any(r != tracked[0] for r in tracked[1:]):
+            # Different returned values (e.g. data['id'] on one branch, data['user']['id'] on
+            # another). Only a caller reading fields from the result is limited, and that read
+            # reports the ambiguity itself.
             info.summary = AMBIGUOUS
-            issue(node, 'Function %s returns data from different operations.' % node.name, RESPONSE)
         else:
             info.summary = tracked[0] if tracked else None
         info.running, info.done = False, True
@@ -361,7 +409,7 @@ class Analyzer:
             obj, key = self.value(node.value), self.value(node.slice)
             if isinstance(obj, (dict, list, str)) and known(key) and not isinstance(node.slice, ast.Slice):
                 try:
-                    return obj[key]
+                    return present(obj[key])
                 except (KeyError, IndexError, TypeError):
                     pass
             return Opaque(label(node))
@@ -470,7 +518,10 @@ class Analyzer:
             receiver = self.value(node.func.value)
             method = node.func.attr
             if isinstance(receiver, dict) and method == 'get' and args and isinstance(args[0], str):
-                return receiver.get(args[0], args[1] if len(args) > 1 else kwargs.get('default'))
+                default = args[1] if len(args) > 1 else kwargs.get('default')
+                held = receiver.get(args[0], default)
+                # An entry present on some paths only yields its value or the default.
+                return held if not isinstance(held, Maybe) else held.value if held.value == default else Opaque(label(node))
             if isinstance(receiver, dict) and method == 'copy':
                 return dict(receiver)
             if isinstance(receiver, str):
@@ -593,8 +644,7 @@ class Analyzer:
         if not tracked:
             return None
         if any(o is AMBIGUOUS for o in tracked) or any(o != tracked[0] for o in tracked[1:]):
-            issue(node, 'Expression may hold data from different operations.', RESPONSE)
-            return AMBIGUOUS
+            return AMBIGUOUS  # reported if a field is later read from it
         return tracked[0]
 
     # --------------------------------------------------------------- scanning
@@ -925,6 +975,7 @@ class Analyzer:
             if not path:
                 return value
             key = path[0]
+            container = present(container)
             if isinstance(container, dict) and isinstance(key, str):
                 new = dict(container)
                 new[key] = update(container.get(key, {}) if len(path) > 1 else None, path[1:])

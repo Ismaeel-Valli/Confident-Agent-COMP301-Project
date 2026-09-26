@@ -62,6 +62,8 @@ async function chat(messages) {
   if (typeof text !== 'string' || !text.trim()) throw new Error('Model returned no text.');
   text = text.replace(/^\s*<think>[\s\S]*?<\/think>\s*/, '').trim();
   const fenced = /```(?:python|py)?\s*\n([\s\S]*?)\n```/.exec(text);
+  // A small model sometimes echoes the JSON request instead of answering; that is not code.
+  if (!fenced && /^[{[]/.test(text)) throw new Error('Model returned JSON instead of Python code.');
   return { code: fenced ? fenced[1] : text, seconds: (Date.now() - t0) / 1000, usage: data.usage ?? null, raw: text };
 }
 

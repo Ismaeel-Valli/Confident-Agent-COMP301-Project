@@ -21,13 +21,16 @@ function finish(layer:LayerName,c:Check,spec:any,success:string): LayerResult {
 
 // ---------------------------------------------------------------- abstract values
 // The extractor encodes runtime values as {$ca:'unknown'} and partially known strings
-// as {$ca:'template', parts:[string | {hole}]}. Everything else is a concrete JSON value.
+// as {$ca:'template', parts:[string | {hole}]}. A dict entry set on some control-flow paths
+// only is {$ca:'maybe', value}. Everything else is a concrete JSON value.
 const isMarker = (v:any, kind:string) => v != null && typeof v === 'object' && !Array.isArray(v) && v.$ca === kind;
 const isOpaque = (v:any) => isMarker(v,'unknown');
 const isTemplate = (v:any) => isMarker(v,'template');
 const isAbstract = (v:any) => isOpaque(v) || isTemplate(v);
+const isMaybe = (v:any) => isMarker(v,'maybe');
+const presentValue = (v:any) => isMaybe(v) ? v.value : v;
 function concrete(v:any):boolean {
-  if (isAbstract(v)) return false;
+  if (isAbstract(v) || isMaybe(v)) return false;
   if (Array.isArray(v)) return v.every(concrete);
   if (v && typeof v === 'object') return Object.values(v).every(concrete);
   return true;
@@ -275,6 +278,8 @@ function schemaProblems(schema:any, spec?:any):string[] {
 }
 const INT_FORMATS: Record<string,[number,number]> = {int32:[-(2**31), 2**31-1], int64:[Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER]};
 export function checkValue(value:any,raw:any,spec:any,label:string,serialized=false,depth=0):Check {
+  // Presence of an optional entry is judged by its container; its value is checked here.
+  if (isMaybe(value)) return checkValue(value.value,raw,spec,label,serialized,depth);
   const c=empty();
   if (depth>30) {c.unknown.push(`${label}: schema depth limit`);return c;}
   const resolved=deref(raw,spec);
@@ -326,8 +331,13 @@ export function checkValue(value:any,raw:any,spec:any,label:string,serialized=fa
     if (s.uniqueItems && concrete(v) && new Set(v.map(x=>JSON.stringify(x))).size!==v.length) c.bad.push(`${label}: items are not unique.`);
     v.forEach((x,i)=>merge(c,checkValue(x,s.items,spec,`${label}[${i}]`,false,depth+1)));
   } else if (v && typeof v==='object') {
-    if (s.minProperties!==undefined && Object.keys(v).length<s.minProperties || s.maxProperties!==undefined && Object.keys(v).length>s.maxProperties) c.bad.push(`${label}: invalid property count.`);
-    for (const required of s.required || []) if (!own(v,required) && !deref(s.properties?.[required],spec).value?.readOnly) c.bad.push(`${label}: missing required property ${required}.`);
+    const count=Object.keys(v).length, sure=Object.values(v).filter(x=>!isMaybe(x)).length;
+    if (s.minProperties!==undefined && count<s.minProperties || s.maxProperties!==undefined && sure>s.maxProperties) c.bad.push(`${label}: invalid property count.`);
+    else if (s.minProperties!==undefined && sure<s.minProperties || s.maxProperties!==undefined && count>s.maxProperties) c.unknown.push(`${label}: property count depends on which optional entries are sent.`);
+    for (const required of s.required || []) {
+      if (!own(v,required) && !deref(s.properties?.[required],spec).value?.readOnly) c.bad.push(`${label}: missing required property ${required}.`);
+      else if (isMaybe(v[required])) c.unknown.push(`${label}: required property ${required} is only sent on some code paths.`);
+    }
     for (const [key,val] of Object.entries(v)) {
       if (own(s.properties,key)) {
         if (deref(s.properties[key],spec).value?.readOnly) c.bad.push(`${label}.${key}: readOnly property sent in request.`);
@@ -367,16 +377,21 @@ function parameters(match:Operation,spec:any):{values:any[];errors:string[]} {
   }
   return {values:[...map.values()],errors};
 }
-type Sent = {values:Record<string,any>;complete:boolean};
+// optional: keys set on some control-flow paths only (their values are unwrapped).
+type Sent = {values:Record<string,any>;complete:boolean;optional:Set<string>};
 function fields(ep:Claim,via:string):Sent {
-  const container=ep.request?.[via];
-  if (!container) return {values:{},complete:ep.request_complete===true};
+  const container=ep.request?.[via], optional=new Set<string>();
+  if (!container) return {values:{},complete:ep.request_complete===true,optional};
   const shape=shapeOf(container,via);
-  if (shape===null) return {values:{},complete:true};
-  if (!shape || typeof shape!=='object' || Array.isArray(shape) || isAbstract(shape)) return {values:{},complete:false};
+  if (shape===null) return {values:{},complete:true,optional};
+  if (!shape || typeof shape!=='object' || Array.isArray(shape) || isAbstract(shape) || isMaybe(shape)) return {values:{},complete:false,optional};
   const values:Record<string,any>=Object.create(null);
-  for (const [k,v] of Object.entries(shape)) values[via==='headers'?k.toLowerCase():k]=v;
-  return {values,complete:true};
+  for (const [k,v] of Object.entries(shape)) {
+    const key=via==='headers'?k.toLowerCase():k;
+    values[key]=presentValue(v);
+    if (isMaybe(v)) optional.add(key);
+  }
+  return {values,complete:true,optional};
 }
 function requestFields(ep:Claim,match:Operation) {
   const query=fields(ep,'params');
@@ -385,7 +400,7 @@ function requestFields(ep:Claim,match:Operation) {
     else query.values[key]=value;
   }
   if (!match.query.complete) query.complete=false;
-  return {query,header:fields(ep,'headers'),cookie:fields(ep,'cookies'),path:{values:match.params,complete:true}};
+  return {query,header:fields(ep,'headers'),cookie:fields(ep,'cookies'),path:{values:match.params,complete:true,optional:new Set<string>()}};
 }
 function securityNames(spec:any,operation:any):Record<string,Set<string>> {
   const names:Record<string,Set<string>>={header:new Set(['authorization','content-type','accept','user-agent']),query:new Set(),cookie:new Set()};
@@ -419,6 +434,8 @@ export async function verifyInputContract({claims,spec}:{claims:Claim[];spec:any
       const val=location.values[key];
       if (val===undefined || val===null) {
         if (p.required) (location.complete ? c.bad : c.unknown).push(`Missing required ${p.in} parameter ${p.name}.`);
+      } else if (p.required && location.optional.has(key)) {
+        c.unknown.push(`Required ${p.in} parameter ${p.name} is only sent on some code paths.`);
       } else if (isAbstract(val)) {
         merge(c,checkValue(val,p.schema,spec,`${p.in}.${p.name}`,true));
       } else {
@@ -623,12 +640,15 @@ function authCheck(name:string,scopes:any,ep:Claim,match:Operation,spec:any):Che
   if (Array.isArray(scopes) && scopes.length) note(c,`required scopes (${scopes.join(', ')}) belong to the ${name} token and cannot be checked statically; the credential is assumed to carry them`);
   if (s.type==='apiKey' && ['header','query','cookie'].includes(s.in)) {
     const loc=sent[s.in as 'header'|'query'|'cookie'];
-    val=loc.values[s.in==='header'?String(s.name).toLowerCase():s.name]; complete=loc.complete;
+    const key=s.in==='header'?String(s.name).toLowerCase():s.name;
+    val=loc.values[key]; complete=loc.complete;
+    if (val!==undefined && loc.optional.has(key)) {c.unknown.push(`Credential ${name} is only sent on some code paths.`);return c;}
     if (isAbstract(val)) note(c,`credential ${name} is placed as documented; its runtime value is not tested`);
   } else if (s.type==='http' && ['bearer','basic'].includes(s.scheme?.toLowerCase()) || s.type==='oauth2' || s.type==='openIdConnect') {
     // OAuth2 and OpenID Connect access tokens are sent as Bearer tokens (RFC 6750).
     const scheme=s.type==='http' ? s.scheme.toLowerCase() : 'bearer', label=s.type==='http' ? s.scheme : `${s.type} Bearer token`;
     val=sent.header.values.authorization;complete=sent.header.complete;
+    if (val!==undefined && sent.header.optional.has('authorization')) {c.unknown.push(`The ${label} credential is only sent on some code paths.`);return c;}
     if (val===undefined && ep.request?.auth?.provided) {
       if (scheme==='basic' && basicAuthShape(shapeOf(ep.request.auth,'auth'))) return note(c,`basic credentials are supplied through requests auth; their validity is not tested`);
       c.unknown.push('Authentication adapter/value could not be established.');return c;
