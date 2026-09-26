@@ -1,0 +1,453 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "REST Countries - curated subset",
+    "version": "v5-curated-2026-09-21",
+    "description": "Researcher-authored, documentation-derived subset; independent human review pending."
+  },
+  "servers": [
+    {
+      "url": "https://api.restcountries.com"
+    }
+  ],
+  "paths": {
+    "/countries/v5": {
+      "get": {
+        "summary": "Retrieve one page of countries",
+        "operationId": "get_countries_v5",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of results",
+            "schema": {
+              "type": "integer",
+              "example": 10,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of results to skip",
+            "schema": {
+              "type": "integer",
+              "example": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "response_fields",
+            "in": "query",
+            "required": false,
+            "description": "Return only these country attributes",
+            "schema": {
+              "type": "string",
+              "example": "names.common,codes.alpha_2"
+            }
+          },
+          {
+            "name": "response_fields_omit",
+            "in": "query",
+            "required": false,
+            "description": "Exclude these country attributes",
+            "schema": {
+              "type": "string",
+              "example": "names.translations"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "Search term",
+            "schema": {
+              "type": "string",
+              "example": "can",
+              "minLength": 1
+            }
+          }
+        ],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "meta": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://restcountries.com/docs/countries",
+        "x-auth-source": "https://restcountries.com/docs#authentication"
+      }
+    },
+    "/countries/v5/name": {
+      "get": {
+        "summary": "Search country names",
+        "operationId": "get_countries_v5_name",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of results",
+            "schema": {
+              "type": "integer",
+              "example": 10,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of results to skip",
+            "schema": {
+              "type": "integer",
+              "example": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "response_fields",
+            "in": "query",
+            "required": false,
+            "description": "Return only these country attributes",
+            "schema": {
+              "type": "string",
+              "example": "names.common,codes.alpha_2"
+            }
+          },
+          {
+            "name": "response_fields_omit",
+            "in": "query",
+            "required": false,
+            "description": "Exclude these country attributes",
+            "schema": {
+              "type": "string",
+              "example": "names.translations"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "description": "Search term",
+            "schema": {
+              "type": "string",
+              "example": "can",
+              "minLength": 1
+            }
+          }
+        ],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "meta": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://restcountries.com/docs/countries",
+        "x-auth-source": "https://restcountries.com/docs#authentication"
+      }
+    },
+    "/countries/v5/code": {
+      "get": {
+        "summary": "Search country codes",
+        "operationId": "get_countries_v5_code",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of results",
+            "schema": {
+              "type": "integer",
+              "example": 10,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of results to skip",
+            "schema": {
+              "type": "integer",
+              "example": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "response_fields",
+            "in": "query",
+            "required": false,
+            "description": "Return only these country attributes",
+            "schema": {
+              "type": "string",
+              "example": "names.common,codes.alpha_2"
+            }
+          },
+          {
+            "name": "response_fields_omit",
+            "in": "query",
+            "required": false,
+            "description": "Exclude these country attributes",
+            "schema": {
+              "type": "string",
+              "example": "names.translations"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "description": "Search term",
+            "schema": {
+              "type": "string",
+              "example": "can",
+              "minLength": 1
+            }
+          }
+        ],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "meta": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://restcountries.com/docs/countries",
+        "x-auth-source": "https://restcountries.com/docs#authentication"
+      }
+    },
+    "/countries/v5/{property}/{value}": {
+      "get": {
+        "summary": "Look up countries by an exact property value",
+        "operationId": "get_countries_v5_{property}_{value}",
+        "parameters": [
+          {
+            "name": "property",
+            "in": "path",
+            "required": true,
+            "description": "Country attribute used for matching",
+            "schema": {
+              "type": "string",
+              "example": "names.common",
+              "enum": [
+                "codes.alpha_2",
+                "codes.alpha_3",
+                "names.common",
+                "region",
+                "subregion",
+                "borders",
+                "currencies",
+                "calling_codes",
+                "capitals",
+                "landlocked",
+                "memberships.eu"
+              ]
+            }
+          },
+          {
+            "name": "value",
+            "in": "path",
+            "required": true,
+            "description": "Value to match exactly",
+            "schema": {
+              "type": "string",
+              "example": "Canada"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of results",
+            "schema": {
+              "type": "integer",
+              "example": 10,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of results to skip",
+            "schema": {
+              "type": "integer",
+              "example": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "response_fields",
+            "in": "query",
+            "required": false,
+            "description": "Return only these country attributes",
+            "schema": {
+              "type": "string",
+              "example": "names.common,codes.alpha_2"
+            }
+          },
+          {
+            "name": "response_fields_omit",
+            "in": "query",
+            "required": false,
+            "description": "Exclude these country attributes",
+            "schema": {
+              "type": "string",
+              "example": "names.translations"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "Search term",
+            "schema": {
+              "type": "string",
+              "example": "can",
+              "minLength": 1
+            }
+          }
+        ],
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "description": "Successful JSON response; exact status may vary by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "meta": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-task-core-fields": [],
+        "x-source-docs": "https://restcountries.com/docs/countries",
+        "x-auth-source": "https://restcountries.com/docs#authentication"
+      }
+    }
+  },
+  "x-source-docs": "https://restcountries.com/docs/countries",
+  "x-source-kind": "documentation_derived",
+  "x-coverage": "Partial. Unlisted operations/fields are not automatically invalid. Example fields are not asserted to be universally required.",
+  "components": {
+    "securitySchemes": {
+      "api_key": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "API key sent using the documented bearer-header form."
+      }
+    }
+  },
+  "x-version-note": "Targets the documented v5 API at api.restcountries.com; do not mix with historical v3.1 endpoints."
+}
