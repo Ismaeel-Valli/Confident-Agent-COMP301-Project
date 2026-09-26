@@ -4233,13 +4233,14 @@ function authCheck(name, scopes, ep, match, spec) {
   }
   const s = resolved.value, sent = requestFields(ep, match);
   let val, complete = false;
+  if (Array.isArray(scopes) && scopes.length) note(c2, `required scopes (${scopes.join(", ")}) belong to the ${name} token and cannot be checked statically; the credential is assumed to carry them`);
   if (s.type === "apiKey" && ["header", "query", "cookie"].includes(s.in)) {
     const loc = sent[s.in];
     val = loc.values[s.in === "header" ? String(s.name).toLowerCase() : s.name];
     complete = loc.complete;
     if (isAbstract(val)) note(c2, `credential ${name} is placed as documented; its runtime value is not tested`);
-  } else if (s.type === "http" && ["bearer", "basic"].includes(s.scheme?.toLowerCase())) {
-    const scheme = s.scheme.toLowerCase();
+  } else if (s.type === "http" && ["bearer", "basic"].includes(s.scheme?.toLowerCase()) || s.type === "oauth2" || s.type === "openIdConnect") {
+    const scheme = s.type === "http" ? s.scheme.toLowerCase() : "bearer", label = s.type === "http" ? s.scheme : `${s.type} Bearer token`;
     val = sent.header.values.authorization;
     complete = sent.header.complete;
     if (val === void 0 && ep.request?.auth?.provided) {
@@ -4248,22 +4249,21 @@ function authCheck(name, scopes, ep, match, spec) {
       return c2;
     }
     if (typeof val === "string") {
-      if (!SCHEME_PREFIX[scheme].test(val.trim() ? val : "")) c2.bad.push(`Authorization header does not match ${s.scheme}.`);
+      if (!SCHEME_PREFIX[scheme].test(val.trim() ? val : "")) c2.bad.push(`Authorization header does not match ${label}.`);
     } else if (isTemplate(val)) {
       const first = val.parts[0];
-      if (typeof first !== "string") c2.unknown.push(`The Authorization scheme is a runtime value; ${s.scheme} placement cannot be established.`);
-      else if (scheme === "bearer" ? !/^Bearer\s+$/i.test(first) && !/^Bearer\s+\S/i.test(first) : !/^Basic\s+/i.test(first)) c2.bad.push(`Authorization header does not match ${s.scheme}.`);
-      else note(c2, `the ${s.scheme} credential is a runtime value; its validity is not tested`);
+      if (typeof first !== "string") c2.unknown.push(`The Authorization scheme is a runtime value; ${label} placement cannot be established.`);
+      else if (scheme === "bearer" ? !/^Bearer\s+$/i.test(first) && !/^Bearer\s+\S/i.test(first) : !/^Basic\s+/i.test(first)) c2.bad.push(`Authorization header does not match ${label}.`);
+      else note(c2, `the ${label} credential is a runtime value; its validity is not tested`);
       return c2;
     } else if (isOpaque(val)) {
-      c2.unknown.push(`Credential ${name} has an unresolved runtime value; the ${s.scheme} scheme cannot be established.`);
+      c2.unknown.push(`Credential ${name} has an unresolved runtime value; the ${label} scheme cannot be established.`);
       return c2;
     }
   } else {
     c2.unknown.push(`Unsupported authentication scheme/scopes: ${name} (${s.type}).`);
     return c2;
   }
-  if (Array.isArray(scopes) && scopes.length) c2.unknown.push("Required OAuth scopes cannot be established statically.");
   if (val === void 0 || val === null) (complete ? c2.bad : c2.unknown).push(`Required credential ${name} is absent from the request.`);
   else if (typeof val === "string" && !val.trim()) c2.bad.push(`Credential ${name} is empty or invalid.`);
   else if (!isAbstract(val) && typeof val !== "string") c2.bad.push(`Credential ${name} is empty or invalid.`);

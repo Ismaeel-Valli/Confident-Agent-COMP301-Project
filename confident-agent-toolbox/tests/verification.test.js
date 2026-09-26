@@ -269,6 +269,17 @@ test('present_report explains when a report is not bound to the code',()=>{
  r.candidate_hash=hashCode('other');
  assert.match(presentReport({code:'x',ewcs_report:r,decision:'deliver'}).report,/different code/);
 });
+// OAuth2 scopes belong to the token, not the code: placement and scheme are checked,
+// scopes are reported as a noncritical note (decision 6 in SCORING_FIXES.md).
+test('OAuth2 bearer placement is verified; scopes are noted, not gated',async()=>{
+ const s=clone(fixture);s.components.securitySchemes.oauth={type:'oauth2',flows:{implicit:{authorizationUrl:'https://api.example.test/oauth',scopes:{'read:users':'read'}}}};
+ s.paths['/users/{id}'].get.security=[{oauth:['read:users']}];
+ const call=h=>`import requests\ndef f(inputs):\n    return requests.get("https://api.example.test/v1/users/1", params={"limit": 2}, headers=${h})`;
+ const ok=await check(verifyContextual,call('{"Authorization": f"Bearer {inputs[\'credential\']}"}'),s);
+ assert.equal(ok.state,'verified_correct',ok.evidence_detail);assert.match(ok.evidence_detail,/scopes \(read:users\)/);
+ assert.equal((await check(verifyContextual,call('{"Authorization": f"token {inputs[\'credential\']}"}'),s)).state,'verified_incorrect');
+ assert.equal((await check(verifyContextual,call('{"Accept": "application/json"}'),s)).state,'verified_incorrect');
+});
 test('comma-separated array query parameters are checked item by item',async()=>{
  const s=clone(fixture);s.paths['/posts'].get.parameters=[{name:'fields',in:'query',explode:false,schema:{type:'array',items:{type:'string',enum:['title','body']}}}];
  const call=q=>`import requests\nrequests.get("https://api.example.test/v1/posts", params={"fields": "${q}"})`;

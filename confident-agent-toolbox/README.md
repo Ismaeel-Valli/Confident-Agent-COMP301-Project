@@ -144,8 +144,8 @@ SCORING_FIXES.md         why layer scores were 0 and what changed
   researcher-authored and tier 2, so those tasks can reach "deliver with flag"
   but not "deliver".
 - GitHub and Open-Meteo specifications do not model authentication, so layer 6
-  is reported as not applicable there. Petstore OAuth2 scopes cannot be checked
-  statically, so Petstore operations requiring them abstain.
+  is reported as not applicable there. OAuth2 scopes cannot be checked
+  statically; they are reported as a note and only the Bearer placement is checked.
 - Open schemas: an undocumented response field is unverifiable, not a contradiction.
 - A clean result is evidence about API claims only. It does not establish task
   behaviour or runtime success.

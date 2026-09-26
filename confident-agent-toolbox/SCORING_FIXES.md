@@ -61,6 +61,12 @@ Every item below is written into code and tests and can be reverted in one place
    an extra query parameter is a common hallucinated filter.
 4. **Standard-library imports are tier 2.**
 5. **Policy rule 2 is enforced again.**
+6. **OAuth2 scopes are noncritical** (`authCheck`, 2026-09-26). OAuth2 and OpenID
+   Connect tokens are checked as `Authorization: Bearer` credentials (a wrong
+   scheme or a missing token is still a contradiction). Required scopes are granted
+   to the token, not expressed by the code, so they are reported as a note, like
+   credential validity. Before this, every Petstore operation requiring
+   `petstore_auth` abstained (94 of the 107 reference abstentions).
 
 ## Remaining low scores that are legitimate evidence gaps (not bugs)
 
@@ -74,8 +80,8 @@ Every item below is written into code and tests and can be reverted in one place
   should be unverifiable. Deciding this needs either a cited, reviewed security overlay
   for GitHub or accepting L6 as unverifiable (which, with rule 2, withholds GitHub tasks).
   The code keeps the previous behaviour; this is flagged, not silently changed.
-- **Petstore OAuth2 scopes** cannot be established statically, so the Petstore
-  operations that require `petstore_auth` stay unverifiable in L6.
+- **Petstore OAuth2 scopes** cannot be established statically. Since decision 6 they
+  are reported as a note; the Bearer placement is still checked.
 - **Open schemas**: a field not listed in an extensible schema remains unverifiable.
 - **Evidence is chosen by the candidate's host**: an invented host has no evidence and is
   withheld (abstain) rather than contradicted.
