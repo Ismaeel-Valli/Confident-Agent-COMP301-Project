@@ -3717,6 +3717,7 @@ function findOperation(spec, endpoint) {
   if (target.problem || !target.segments) return { unknown: target.problem || "Endpoint unresolved." };
   let serverKnown = false, serverMatches = false, uncertainServer = false, prefixUnresolved = false;
   const matches = [];
+  let unmatchedRest;
   for (const pathKey of Object.keys(spec.paths)) {
     const item = deref(spec.paths[pathKey], spec);
     if (item.error) {
@@ -3751,6 +3752,7 @@ function findOperation(spec, endpoint) {
       serverMatches = true;
       let rest = segs.slice(prefix.length);
       if (rest.length === 1 && "lit" in rest[0] && rest[0].lit === "") rest = [];
+      unmatchedRest ??= rest;
       const keys = pathKey.split("/").slice(1);
       if (pathKey === "/") keys.length = 0;
       if (keys.length !== rest.length || !operation || typeof operation !== "object") continue;
@@ -3804,7 +3806,24 @@ function findOperation(spec, endpoint) {
   if (!serverKnown || uncertainServer) return { unknown: "Server identity or operation could not be resolved from the specification." };
   if (!serverMatches) return { bad: `Endpoint origin/base path does not match the declared API servers: ${target.display}` };
   if (evidenceOf(spec).partial) return { unknown: "Operation is outside the curated reference subset." };
-  return { bad: `No declared operation matches ${endpoint.http_method} ${target.display}.` };
+  return { bad: `No declared operation matches ${endpoint.http_method} ${target.display}.${closestOperations(spec, unmatchedRest ?? [], endpoint.http_method)}` };
+}
+function closestOperations(spec, rest, method) {
+  const wanted = method.toLowerCase(), METHODS = ["get", "put", "post", "delete", "patch", "head", "options", "trace"];
+  const shape = [], withMethod = [];
+  for (const key of Object.keys(spec.paths || {})) {
+    const item = deref(spec.paths[key], spec);
+    if (item.error || !item.value || typeof item.value !== "object") continue;
+    const methods = METHODS.filter((m) => item.value[m]);
+    const keys = key === "/" ? [] : key.split("/").slice(1);
+    let n = 0;
+    while (n < Math.min(keys.length, rest.length) && (/^\{[^}]+\}$/.test(keys[n]) || "lit" in rest[n] && rest[n].lit === keys[n])) n++;
+    if (n === keys.length && n === rest.length && methods.length) shape.push(`${key} allows ${methods.map((m) => m.toUpperCase()).join(", ")}`);
+    else if (n >= 1 && methods.includes(wanted)) withMethod.push({ key, n, gap: Math.abs(keys.length - rest.length) });
+  }
+  withMethod.sort((a, b) => b.n - a.n || a.gap - b.gap);
+  const parts = [...shape.slice(0, 4), ...withMethod.slice(0, 3).map((w) => `${method.toUpperCase()} is declared on ${w.key}`)];
+  return parts.length ? ` Closest declared operations (paths relative to the server): ${parts.join("; ")}.` : "";
 }
 function typesOf(s, spec) {
   if (s.type === void 0) return void 0;

@@ -88,6 +88,18 @@ on delivery, `delivered.py` in a new folder under `verification-runs/`.
 `--policy threshold-only` disables the uncertainty gate for labelled exploratory
 sensitivity runs only.
 
+Pipeline over benchmark tasks with a model served by LM Studio (the model sees the
+task instruction only; the controller verifies, allows one correction and decides):
+
+```bat
+node scripts/run-pipeline.cjs --per-api 2 --model qwen/qwen3.5-9b
+node scripts/run-pipeline.cjs --api Petstore --per-api 2 --context base-url
+```
+
+`--thinking off` (the default) sends `reasoning_effort: "none"`; `--context base-url`
+adds the task's documented base URL to the instruction. Both change what is measured,
+so report them. Runs are resumable, and a saved `candidate.py` is reused.
+
 Verifier regression over the benchmark reference solutions and mutants (needs
 the dataset from `COMP301-Dataset-Builder`):
 
