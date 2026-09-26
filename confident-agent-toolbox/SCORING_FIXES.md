@@ -17,6 +17,7 @@ selected from the host in the candidate (`evidence/registry.json`).
 |---|---|---|
 | Before: committed code, 150-task stratified sample | 0.007 | 138 abstain, 12 false `correct` (valid REST Countries code "contradicted") |
 | After: all 1,000 reference solutions | 0.771 | 888 `deliver_with_flag`, 5 `deliver`, 107 `abstain`, 0 contradictions |
+| After OAuth2 scope change (decision 6, 2026-09-26): all 1,000 reference solutions | 0.784 | 888 `deliver_with_flag`, 99 `deliver`, 13 `abstain`, 0 contradictions |
 | After: 1,000 invented-path mutants | - | 1,000 `correct` (contradiction detected) |
 | After: 1,000 undeclared-method mutants | - | 1,000 `correct` |
 | After: 1,000 wrong-host mutants | - | 1,000 `abstain` (no evidence for an unknown host) |
@@ -25,6 +26,8 @@ Before the fix, L1 was established in 0 of 150 cases, L2 in 10 and L3 in 0. Afte
 L1 and L2 are established for all 1,000 references and L3 for 999. The 107 abstentions
 are evidence limits: Petstore OAuth2 scopes (94), GitHub request bodies declared with
 `oneOf` (12, unsupported for input values) and one ambiguous GitHub path template (1).
+Since decision 6 the Petstore scope abstentions are gone; 13 remain (the GitHub `oneOf`
+bodies and the ambiguous template).
 
 ## Root causes
 
