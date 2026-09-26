@@ -100,6 +100,13 @@ node scripts/run-pipeline.cjs --api Petstore --per-api 2 --context base-url
 adds the task's documented base URL to the instruction. Both change what is measured,
 so report them. Runs are resumable, and a saved `candidate.py` is reused.
 
+Score a run against the dataset's expected requests (correct/false abstentions and
+deliveries; static comparison with the task's test inputs bound, nothing executed):
+
+```bat
+node scripts/score-pipeline.cjs verification-runs\pipeline-NAME --out verification-runs\pipeline-NAME\outcomes.md
+```
+
 Verifier regression over the benchmark reference solutions and mutants (needs
 the dataset from `COMP301-Dataset-Builder`):
 
