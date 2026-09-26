@@ -13,7 +13,7 @@
  *
  * Usage (after `npm run build`, with the LM Studio server running):
  *   node scripts/run-pipeline.cjs [--per-api 2] [--model qwen/qwen3.5-9b] [--thinking off|on]
- *     [--context none|base-url] [--api Petstore]
+ *     [--context none|base-url] [--api Petstore] [--tasks REST_PY_PS_0002,REST_PY_PS_0009]
  *     [--out verification-runs/pipeline-NAME] [--dataset PATH] [--endpoint http://127.0.0.1:1234/v1]
  */
 const fs = require('node:fs');
@@ -37,6 +37,7 @@ const { values } = parseArgs({ options: {
   // (api_specification.base_url), which removes host/version guessing from the task.
   context: { type: 'string', default: 'none' },
   api: { type: 'string' },
+  tasks: { type: 'string' },
   'package-evidence': { type: 'string', default: path.join(root, 'examples/evidence/requests-pypi-pilot.json') },
   out: { type: 'string', default: path.join(root, 'verification-runs', `pipeline-${new Date().toISOString().slice(0, 10)}`) },
 } });
@@ -95,8 +96,9 @@ async function main() {
   const perApi = Number(values['per-api']), byApi = new Map();
   for (const t of tasks) { if (values.api && t.api_specification.api_name !== values.api) continue; const k = t.api_specification.api_name; if (!byApi.has(k)) byApi.set(k, []); byApi.get(k).push(t); }
   // Same deterministic, evenly spaced selection as verify-reference-solutions.cjs.
-  const selected = [];
-  for (const list of byApi.values()) {
+  const ids = values.tasks ? values.tasks.split(',').map(s => s.trim()) : null;
+  const selected = ids ? ids.map(id => tasks.find(t => t.task_id === id) ?? (() => { throw new Error(`Unknown task ${id}`); })()) : [];
+  if (!ids) for (const list of byApi.values()) {
     const stride = Math.max(1, Math.floor(list.length / perApi));
     for (let i = 0, n = 0; i < list.length && n < perApi; i += stride, n++) selected.push(list[i]);
   }
