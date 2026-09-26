@@ -67,13 +67,22 @@ request under it; it also records the quantization and context in
 
 ## Running
 
-From the `Benchmark` folder:
+From the `Benchmark` folder, a full run of the pilot set in both modes:
 
 ```bat
 python run_benchmark.py --mode both --model qwen/qwen3.5-9b --model-label "Qwen3.5-9B-Q4_K_M"
-python run_benchmark.py --mode baseline --model qwen/qwen3.5-9b --model-label "Qwen3.5-9B-Q4_K_M" --limit 2
-python run_benchmark.py --mode intervention --model qwen/qwen3.5-9b --model-label "Qwen3.5-9B-Q4_K_M" --tasks REST_PY_PS_0001
-python run_benchmark.py --mode both --model qwen/qwen3.5-9b --model-label "Qwen3.5-9B-Q4_K_M" --dataset ..\COMP301-Dataset-Builder\comp301-dataset-builder\output\rest_api_prompts_v1_DRAFT.jsonl
+```
+
+The following are **alternatives, not further steps**. Use a separate `--model-label`
+for smoke tests and for each dataset, so results that belong together stay together:
+
+```bat
+REM smoke test: first 2 tasks, baseline only
+python run_benchmark.py --mode baseline --model qwen/qwen3.5-9b --model-label "smoke" --limit 2
+REM one task
+python run_benchmark.py --mode intervention --model qwen/qwen3.5-9b --model-label "smoke" --tasks REST_PY_PS_0001
+REM the full 1,000-task dataset
+python run_benchmark.py --mode both --model qwen/qwen3.5-9b --model-label "Qwen3.5-9B-Q4_K_M-full" --dataset ..\COMP301-Dataset-Builder\comp301-dataset-builder\output\rest_api_prompts_v1_DRAFT.jsonl
 ```
 
 | Option | Default | Notes |
@@ -81,14 +90,15 @@ python run_benchmark.py --mode both --model qwen/qwen3.5-9b --model-label "Qwen3
 | `--thinking off\|on` | off | `off` sends `reasoning_effort: "none"` (about 9x faster on CPU for Qwen3.5). Keep it the same across compared runs |
 | `--temperature`, `--seed` | 0.2, none | recorded |
 | `--max-tokens` | 4096 | ceiling per reply, reduced to fit the context |
-| `--max-turns` | 4 | model turns per intervention task before it is stopped (the prompt's workflow needs at most 3) |
+| `--max-turns` | 4 | model turns per intervention task (the prompt's workflow needs at most 3); then the final reply is requested |
 | `--request-timeout`, `--tool-timeout` | 900 s, 300 s | per model request, per verification |
 | `--overwrite` | off | redo tasks that already have results |
 
 **Resuming.** A task with `result.json` is skipped, so an interrupted run continues
 where it stopped. A model label's folder belongs to one set of settings (model,
-prompt, temperature, thinking, seed, max tokens, max turns): running again with
-different settings is refused; use a new `--model-label`.
+prompt, temperature, thinking, seed, max tokens, max turns, benchmark version):
+running again with different settings is refused; use a new `--model-label`. Each
+`result.json` also records the dataset file it came from.
 
 ## Output
 
@@ -120,6 +130,7 @@ different settings is refused; use a new `--model-label`.
 {"prompt_id": "REST_PY_PS_0001", "model": "qwen/qwen3.5-9b", "model_label": "Qwen3.5-9B-Q4_K_M",
  "decision": "abstain", "ewcs": 0.2786, "code_output": null,
  "first_candidate": "...", "final_candidate": "...", "reply_code": null,
+ "final_reply_present": true, "final_reply_prompted": false,
  "verification_calls": 2, "correction_attempted": true, "correction_allowed": true, "correction_count": 1,
  "first_decision": "abstain", "first_has_contradiction": true, "protocol_notes": [], "error": null}
 ```
@@ -129,10 +140,12 @@ different settings is refused; use a new `--model-label`.
 | `decision`, `ewcs` | the tool's result for the **last** candidate the model verified (null if it never verified) |
 | `code_output` | that candidate when the decision is deliver or deliver_with_flag, else null |
 | `reply_code` | a code block in the model's final reply, if any (what a user would actually see) |
+| `final_reply_present` | the model ended with a text reply |
+| `final_reply_prompted` | the model reached `--max-turns` without replying and the benchmark asked for the reply (see Design notes) |
 | `correction_attempted` | the model submitted different code after its first verification |
 | `correction_allowed` | the first verification had a `verified_incorrect` layer, the only case the prompt allows a correction |
 | `correction_count` | number of times the submitted code changed |
-| `protocol_notes` | deviations from the prompt: never verified, corrected without a contradiction, more than one correction, did not correct after a contradiction, verified the same code twice, called another tool, reply differs from the report, reply shows code the tool did not approve, passed arguments other than code |
+| `protocol_notes` | deviations from the prompt: never verified, corrected without a contradiction, more than one correction, replied without correcting after a contradiction, verified the same code twice, called another tool, reply differs from the report, reply shows code the tool did not approve, passed arguments other than code |
 
 ## Design notes
 
@@ -142,8 +155,22 @@ different settings is refused; use a new `--model-label`.
   plain model against the Confident Agent package, not the verifier on identical
   code. For that, use `confident-agent-toolbox/scripts/run-pipeline.cjs`, where an
   external controller verifies and corrects one candidate.
-- **No hints.** Task instructions are passed unchanged; they name the API but no
-  URL, so wrong-host and outdated-version hallucinations remain measurable.
+- **Task text unchanged.** Both modes pass the task instruction as is; it names the
+  API but no URL.
+- **The intervention supplies current context by design.** The Confidence Agent
+  prompt lists the hosts the toolbox holds frozen evidence for (for example
+  `petstore3.swagger.io`, `api.restcountries.com`); the baseline prompt does not.
+  This is intended: the model's training data predates the current API versions
+  (it defaults to `petstore.swagger.io/v2`), and giving the agent current context
+  is part of how the intervention reduces hallucinations. Report the intervention
+  as prompt plus tool, not as verification alone.
+- **Every intervention task ends with a reply.** The model may use all
+  `--max-turns` turns (re-verifying, correcting more than allowed); all of it is
+  recorded. If it has not replied by then, the benchmark sends one fixed message
+  with tool calls disabled (`tool_choice: "none"`): verification is finished, reply
+  with the report from the last `verify_candidate` result. The reply is flagged
+  `final_reply_prompted`, and whether it matches the report is recorded. The
+  tool's decision on the last candidate is what counts, whatever the reply says.
 - **Only `verify_candidate` is offered.** The prompt names the debugging tools as
   not part of the workflow; a call to any other tool is answered with an error and
   recorded as a protocol note.

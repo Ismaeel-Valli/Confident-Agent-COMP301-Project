@@ -63,6 +63,13 @@ CODE_FENCE_RE = re.compile(r"```(?:python|py)?[ \t]*\n(.*?)```", re.DOTALL)
 THINK_RE = re.compile(r"^\s*<think>.*?</think>\s*", re.DOTALL)
 LABEL_SAFE_RE = re.compile(r"[^A-Za-z0-9._-]+")
 DELIVERED = ("deliver", "deliver_with_flag")
+# Part of every run's settings: results produced by a different harness behaviour are
+# never mixed under one model label.
+BENCHMARK_VERSION = "2026-09-26.2"
+# Sent once, with tool calls disabled, when the model reaches --max-turns without replying.
+FINAL_REPLY_REQUEST = ("Verification for this task is finished; no more tool calls are available. Reply now with "
+                       "the report field of your last verify_candidate result, exactly as returned.")
+FINAL_REPLY_REQUEST_UNVERIFIED = "No more tool calls are available for this task. Reply now with your final answer."
 
 
 # --------------------------------------------------------------------------
@@ -143,7 +150,7 @@ def http_json(url: str, payload: dict | None, timeout: int) -> dict:
         raise LMStudioError(f"Cannot reach {url}: {e.reason}") from e
 
 
-def chat(args, messages: list, max_tokens: int, tools: list | None = None) -> dict:
+def chat(args, messages: list, max_tokens: int, tools: list | None = None, tool_choice: str | None = None) -> dict:
     payload = {"model": args.model, "messages": messages, "temperature": args.temperature,
                "max_tokens": max_tokens, "stream": False}
     if args.seed is not None:
@@ -152,6 +159,8 @@ def chat(args, messages: list, max_tokens: int, tools: list | None = None) -> di
         payload["reasoning_effort"] = "none"  # the switch LM Studio honours for Qwen3.5 thinking
     if tools:
         payload["tools"] = tools
+        if tool_choice:
+            payload["tool_choice"] = tool_choice
     return http_json(args.api_base.rstrip("/") + "/chat/completions", payload, args.request_timeout)
 
 
@@ -237,7 +246,7 @@ def verify_tool_schema(args) -> list:
 # Runs
 # --------------------------------------------------------------------------
 def settings_fingerprint(mode: str, args, prompt: str) -> dict:
-    fp = {"mode": mode, "model": args.model, "system_prompt_sha256": sha256(prompt), "temperature": args.temperature,
+    fp = {"benchmark_version": BENCHMARK_VERSION, "mode": mode, "model": args.model, "system_prompt_sha256": sha256(prompt), "temperature": args.temperature,
           "max_tokens": args.max_tokens, "thinking": args.thinking, "seed": args.seed}
     if mode == "intervention":
         fp["max_turns"] = args.max_turns
@@ -294,6 +303,7 @@ def run_mode(mode: str, tasks: list, args, info: dict) -> None:
         started = time.time()
         record = (run_baseline_task if mode == "baseline" else run_intervention_task)(task, prompt, tools, task_dir, args)
         record["meta"].update({"task_id": task["task_id"], "mode": mode, "model": args.model, "model_label": run_dir.name,
+                               "dataset": str(args.dataset),
                                "instruction": task["natural_language_instruction"], "finished": now(),
                                "duration_seconds": round(time.time() - started, 3)})
         record["jsonl"] = {"prompt_id": task["task_id"], "model": args.model, "model_label": run_dir.name, **record["jsonl"]}
@@ -326,7 +336,7 @@ def run_baseline_task(task: dict, prompt: str, tools, task_dir: Path, args) -> d
 
 def run_intervention_task(task: dict, prompt: str, tools, task_dir: Path, args) -> dict:
     messages = [{"role": "system", "content": prompt}, {"role": "user", "content": task["natural_language_instruction"]}]
-    turns, verifications, other_tools, error, reply, finish = [], [], [], None, None, None
+    turns, verifications, other_tools, error, reply, finish, prompted = [], [], [], None, None, None, False
     turns_dir = task_dir / "turns"
     turns_dir.mkdir()
     for turn in range(1, args.max_turns + 1):
@@ -374,13 +384,36 @@ def run_intervention_task(task: dict, prompt: str, tools, task_dir: Path, args) 
                     "error": result.get("error"), "extra_arguments": sorted(k for k in arguments if k != "code")})
             messages.append({"role": "tool", "tool_call_id": call.get("id", ""), "content": json.dumps(result, ensure_ascii=False)})
     else:
-        error = f"stopped after {args.max_turns} model turns without a final reply"
+        # The model used every turn without replying (typically re-verifying after a final
+        # abstain). Its attempts stay on record; it is then asked once, with tool calls
+        # disabled, for the report, so every task ends with a reply the evaluation can read.
+        prompted = True
+        messages.append({"role": "user", "content": FINAL_REPLY_REQUEST if verifications else FINAL_REPLY_REQUEST_UNVERIFIED})
+        max_tokens = budget(messages, args)
+        if max_tokens <= 0:
+            error = f"turn limit reached and no room left in the {args.context_limit}-token context for a final reply"
+        else:
+            try:
+                response = chat(args, messages, max_tokens, tools, tool_choice="none")
+                message = response["choices"][0]["message"]
+                finish = response["choices"][0].get("finish_reason")
+                write_json(turns_dir / f"turn_{args.max_turns + 1:02d}_response.json", response)
+                ignored = bool(message.get("tool_calls"))
+                messages.append({"role": "assistant", "content": message.get("content") or "", **({"tool_calls": message["tool_calls"]} if ignored else {})})
+                turns.append({"turn": args.max_turns + 1, "finish_reason": finish, "usage": response.get("usage"),
+                              "tool_calls": [c.get("function", {}).get("name") for c in message.get("tool_calls") or []], "final_reply_request": True})
+                if ignored:
+                    error = "turn limit reached; the model answered the final-reply request with another tool call"
+                else:
+                    reply = strip_think(message.get("content") or "")
+            except (LMStudioError, KeyError, IndexError, TypeError) as e:
+                error = f"final-reply request failed: {e}"
     write_json(task_dir / "conversation.json", messages)
     (task_dir / "response.md").write_text(reply or "", encoding="utf-8")
-    return intervention_record(verifications, other_tools, turns, reply, finish, error)
+    return intervention_record(verifications, other_tools, turns, reply, finish, error, prompted)
 
 
-def intervention_record(verifications, other_tools, turns, reply, finish, error) -> dict:
+def intervention_record(verifications, other_tools, turns, reply, finish, error, prompted=False) -> dict:
     """What the model did, and what the tool decided. Only the tool's decisions count as
     decisions; the model's compliance with the prompt is recorded, not enforced."""
     first = verifications[0] if verifications else None
@@ -394,14 +427,16 @@ def intervention_record(verifications, other_tools, turns, reply, finish, error)
     delivered = final["code"] if final and decision in DELIVERED else None
     reply_code = extract_code(reply) if reply else None
     notes = []
+    if prompted:
+        notes.append("reached the turn limit; the benchmark asked for the final reply")
     if not verifications:
         notes.append("never called verify_candidate")
     if attempted and not allowed:
         notes.append("corrected without a verified_incorrect layer")
     if changes > 1:
         notes.append("more than one correction")
-    if allowed and not attempted:
-        notes.append("did not correct after a verified_incorrect layer")
+    if allowed and not attempted and not prompted:
+        notes.append("replied without correcting after a verified_incorrect layer")
     if len(codes) - 1 > changes:
         notes.append("verified the same code more than once")
     if other_tools:
@@ -417,13 +452,19 @@ def intervention_record(verifications, other_tools, turns, reply, finish, error)
                   "first_layers": first["layers"] if first else None,
                   "final_decision_after_correction": decision if attempted else None}
     summary = (error or f"{decision or 'no verification'}; {len(verifications)} verification(s)"
-               + ("; correction attempted" if attempted else "") + (f"; {len(notes)} protocol note(s)" if notes else ""))
+               + ("; correction attempted" if attempted else "") + ("; final reply requested" if prompted else "")
+               + (f"; {len(notes)} protocol note(s)" if notes else ""))
     return {
         "meta": {"turns": turns, "verifications": [{k: v for k, v in x.items() if k != "code"} for x in verifications],
-                 "correction": correction, "protocol_notes": notes, "final_finish_reason": finish, "error": error},
+                 "correction": correction, "protocol_notes": notes, "final_finish_reason": finish,
+                 "final_reply": {"present": reply is not None, "prompted_by_benchmark": prompted,
+                                 "matches_report": bool(reply is not None and final and final.get("report")
+                                                        and reply.strip() == final["report"].strip())},
+                 "error": error},
         "jsonl": {"decision": decision, "ewcs": final["ewcs"] if final else None, "code_output": delivered,
                   "first_candidate": first["code"] if first else None, "final_candidate": final["code"] if final else None,
-                  "reply_code": reply_code, "verification_calls": len(verifications),
+                  "reply_code": reply_code, "final_reply_present": reply is not None, "final_reply_prompted": prompted,
+                  "verification_calls": len(verifications),
                   "correction_attempted": attempted, "correction_allowed": allowed, "correction_count": changes,
                   "first_decision": correction["first_decision"], "first_has_contradiction": allowed,
                   "protocol_notes": notes, "error": error},
