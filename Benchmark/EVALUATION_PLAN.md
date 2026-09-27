@@ -21,10 +21,26 @@ dataset; it never runs generated code.
 
 ## 2. Answer key and error classes
 
+The answer key is the dataset's task file,
+`COMP301-Dataset-Builder/comp301-dataset-builder/output/rest_api_tasks_v1_DRAFT.jsonl`
+(SHA-256 with LF line endings `7a09f2bb…a12`), together with the provider specifications
+it pins in `sources/` (file name and SHA-256 per task). Its prompts are exactly those the
+benchmark sent (`rest_api_prompts_v1_DRAFT.jsonl`, `c4c68a64…278` with LF endings; run 1
+recorded `a8eeb5e4…` for the same content with CRLF endings). See §8 for the checks made
+on it.
+
 Each candidate is compared with the task's `test_case.expected_request` (method, URL,
 query, JSON body, credential placement) and `api_specification` (declared parameters,
 body fields, acceptable methods, `response_schema`), with the task's test inputs bound to
-`inputs`. Code is read statically.
+`inputs`. `$ref`s in `api_specification` (most GitHub and Petstore response schemas) are
+resolved in the pinned source file.
+
+**Partial specifications.** JSONPlaceholder, DummyJSON and REST Countries use
+documentation-derived partial specifications (450 tasks). A missing entry in a partial
+specification is not proof that a name does not exist (dataset audit). For these APIs an
+undeclared parameter, body field or response field is class A only when the provider's
+public documentation confirms it does not exist; otherwise the candidate is
+**undetermined** and goes to the manual review of §4.
 
 | Class | Meaning | Examples | Counts as |
 |---|---|---|---|
@@ -76,18 +92,34 @@ When the request depends on a condition or a value the static reading cannot res
    counted as class A, and with every one counted as correct. A conclusion is only drawn
    if it holds in all three versions.
 
-## 5. Answer-key audit
+## 5. Evaluator independence and audit
 
-The answer key reads code with the toolbox's own claim extractor, a component the
-verifier also uses (evaluator bias). A random sample of 50 decided candidates per mode,
-stratified by API, is classified by hand as in §4; the answer key's error rate on the
-sample is reported.
+The evaluator must not reuse the toolbox's claim extractor or verifier: a component shared
+with the intervention would share its blind spots (evaluator bias, §4.8; the dataset audit
+asks for an independent evaluator). `evaluate_benchmark` reconstructs each candidate's
+request with its own code. It must at least handle what the dataset's reference solutions
+use; the shared extractor, for example, leaves all 150 Open-Meteo references undetermined
+(`",".join(str(v) for v in [...])`).
+
+**Self-check.** Before scoring, the evaluator scores the dataset's 1,000 reference
+solutions: all must be correct. Any that are not point to an evaluator or answer-key error
+and are resolved before scoring model output.
+
+**Audit.** A random sample of 50 decided candidates per mode, stratified by API, is
+classified by hand as in §4; the evaluator's error rate on the sample is reported.
 
 ## 6. Statistics (§4.7)
 
 - **Test:** exact McNemar test on the paired primary outcome; two-sided, α = 0.05.
 - **Effect size:** the difference in proportions with a 95% confidence interval, and the
   ratio of discordant pairs.
+- **Related tasks.** The 1,000 tasks come from 142 operation families (Open-Meteo 3,
+  REST Countries 4), so tasks are not independent. A cluster bootstrap over operation
+  families (10,000 resamples) gives a second 95% interval for the difference; a
+  conclusion is drawn only if it holds under both.
+- **Pilot tasks.** The 10 pilot tasks (`dataset/rest_api_prompts_pilot.jsonl`) were used
+  to develop the agent and are excluded from the primary analysis; results including them
+  are reported as a sensitivity check.
 - **Several runs** (quantizations, models): one test per run, with Holm's correction
   across runs. Differences between runs are described, not tested, unless the same tasks
   are repeated with several seeds.
@@ -103,6 +135,38 @@ sample is reported.
   both runs are reported so its effect is visible.
 - The benchmark prompts and the dataset are not changed between runs (§4.6).
 
+## 8. Dataset readiness
+
+**Checked on 2026-09-27 (before run 2):**
+
+| Check | Result |
+|---|---|
+| Task and prompt files agree (ids, instructions) | ✔ 1,000 tasks, identical instructions, no duplicates |
+| Prompts are those run 1 sent | ✔ same content (only line endings differ) |
+| Pinned sources present and unchanged | ✔ all 8 files match their SHA-256 |
+| Reference solutions satisfy the answer key | ✔ none judged wrong (850 correct; 150 Open-Meteo undetermined by the shared extractor, see §5) |
+| Tasks that return one field: the reference reads it | ✔ 251 of 251 |
+| Expected values follow from the instruction or the test inputs | ✔ apart from natural-language mappings the model is meant to know (e.g. "temperature at two metres" → `temperature_2m`) |
+| Method rules consistent | ✔ PATCH for partial updates, PUT for replacement; DummyJSON documents both |
+| Verifier on the reference solutions | ✔ no contradictions (see the toolbox's reference regression) |
+
+**Still required, by the team, before the final scoring:**
+
+1. **Human review** of the stratified 100-task sample in
+   `COMP301-Dataset-Builder/comp301-dataset-builder/review/review_100.csv` (still empty):
+   is each task's expected request correct and the only acceptable one, against the
+   provider's documentation? Two reviewers, as in §4. Systematic errors widen the review.
+   Every answer-key correction is logged below and applied to all runs alike.
+2. **Report** the differences from Progress Report 2 in operation, difficulty and
+   authentication mix (`DATASET_AUDIT.md`). The prompts cannot be changed after the
+   baseline (§4.6), so they are described, not fixed.
+3. **State the design choice** that departs from the dataset audit's recommendation 5
+   (reuse one initial answer for both conditions): each mode generates its own answer
+   because the intervention is the agent package (prompt plus tool), not the verifier alone.
+
 ## Changes after 2026-09-27
 
-None yet.
+- 2026-09-27 (before run 2): §2 answer-key identity, `$ref` resolution and the rule for
+  partial specifications; §5 evaluator independence and self-check; §6 operation-family
+  clustering and exclusion of the pilot tasks; §8 dataset readiness. Prompted by the
+  dataset audit and the dataset checks in §8, not by run 1's outcomes.

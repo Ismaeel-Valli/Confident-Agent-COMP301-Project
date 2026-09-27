@@ -53,3 +53,12 @@ Difficulty currently uses an explicit heuristic: easy has at most two selected p
 4. Keep development/pilot examples and their related operation families out of a held-out final test. The included pilot deliberately overlaps this draft; it is for development only. The draft has no final train/test split.
 5. Generate each initial model answer once and reuse it for the paired baseline/intervention comparison. Give the model the prompt-only record; keep task-specific reference answers out of its context.
 6. Report operation-family correlation and consider grouped analysis rather than treating every related variant as independent evidence.
+
+## Pre-evaluation check (2026-09-27)
+
+Before benchmark run 2 the task file was checked as the evaluation's answer key: the
+task and prompt files agree, the prompts are those the benchmark sent, all pinned sources
+match their hashes, no reference solution fails the answer key, and expected values
+follow from the instructions and test inputs. The open items above (human review,
+distribution differences, pilot overlap, independent evaluator) remain; how the
+evaluation handles each is set out in `Benchmark/EVALUATION_PLAN.md` §2, §5, §6 and §8.

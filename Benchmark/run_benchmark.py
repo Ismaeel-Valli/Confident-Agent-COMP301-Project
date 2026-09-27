@@ -95,6 +95,12 @@ def sha256(data: str | bytes) -> str:
     return hashlib.sha256(data.encode("utf-8") if isinstance(data, str) else data).hexdigest()
 
 
+def content_sha256(path: Path) -> str:
+    """Hash of a text file with line endings normalized, so the same dataset or evidence
+    file gets the same fingerprint on a Windows (CRLF) and a Linux (LF) checkout."""
+    return sha256(path.read_bytes().replace(b"\r\n", b"\n"))
+
+
 def sanitize_label(label: str) -> str:
     return LABEL_SAFE_RE.sub("_", label.strip()).strip("_") or "model"
 
@@ -372,7 +378,7 @@ def settings_fingerprint(mode: str, args, prompt: str) -> dict:
           "temperature": args.temperature, "max_tokens": args.max_tokens, "thinking": args.thinking, "seed": args.seed}
     if mode == "intervention":
         fp["max_turns"] = args.max_turns
-        fp["package_evidence_sha256"] = sha256(args.package_evidence.read_bytes()) if args.package_evidence else None
+        fp["package_evidence_sha256"] = content_sha256(args.package_evidence) if args.package_evidence else None
     return fp
 
 
@@ -398,7 +404,7 @@ def open_run(mode: str, args, prompt: str, info: dict, power: PowerMonitor) -> P
                          "package_evidence": str(args.package_evidence) if args.package_evidence else None,
                          "tool_retries": args.tool_retries})
     manifest["invocations"].append({"started": now(), "git_commit": git_commit(), "dataset": str(args.dataset),
-                                    "dataset_sha256": sha256(args.dataset.read_bytes()), "argv": sys.argv[1:],
+                                    "dataset_sha256": content_sha256(args.dataset), "argv": sys.argv[1:],
                                     "environment": environment(args, power), "power": power.describe()})
     write_json(manifest_path, manifest)
     return run_dir
