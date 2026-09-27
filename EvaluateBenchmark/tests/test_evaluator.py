@@ -147,3 +147,24 @@ class HallucinationTypes(unittest.TestCase):
                  "uses requests API that does not exist: requests.fetch": "non-existent requests API"}
         for reason, kind in cases.items():
             self.assertEqual(e.hallucination_types([reason]), {kind}, reason)
+
+
+class ErrorKinds(unittest.TestCase):
+    def test_task_error_kinds(self):
+        import evaluate_benchmark as e
+        cases = {"request 1 (GET x): query hourly=a, the task needs b": "different parameter value",
+                 "makes 2 requests; the task needs one": "extra requests",
+                 "request 1 (POST x): body {} differs from the task's {}": "request body differs (fields or values)",
+                 "request 1 (GET x): a different declared endpoint than the task's (GET /a)": "different declared endpoint",
+                 "request 1 (PUT x): method PUT is not acceptable for this task (PATCH)": "method not acceptable for the task",
+                 "request 1 (GET x): omits query parameter sha=a that the task specifies": "omitted parameter the task specifies"}
+        for reason, kind in cases.items():
+            self.assertEqual(e.task_error_types([reason, "no request matches the expected method and endpoint"]), {kind}, reason)
+
+    def test_runtime_failure_kinds(self):
+        import evaluate_benchmark as e
+        cases = {"AttributeError: 'str' object has no attribute 'get'": "input used as the wrong type (e.g. credential string as a dict)",
+                 "KeyError: 'page'": "reads an input the task does not provide", "SyntaxError: invalid syntax": "syntax error",
+                 "never calls the API": "makes no request", "Timeout: did not finish within 10 s": "does not finish (timeout)"}
+        for reason, kind in cases.items():
+            self.assertEqual(e.runtime_failure_type([reason]), kind, reason)

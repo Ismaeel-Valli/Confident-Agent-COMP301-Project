@@ -58,7 +58,7 @@ HALLUCINATION_TYPES = [
     ("undocumented response field", ("reads response field",)),
     ("wrong host, version or base path", ("not the task's API",)),
     ("invented endpoint or method", ("no declared path", "is not declared for")),
-    ("missing required part or credential", ("is missing", "credential")),
+    ("missing required part or credential", ("is missing", "credential", "Authorization is", "expected the form")),
     ("invented parameter or body field", ("is not declared", "is not allowed", "the operation does not declare")),
     ("invalid value or structure", (": expected ", "not one of the documented values", "the operation accepts")),
 ]
@@ -149,11 +149,13 @@ def task_record(task: dict, base: dict, inter: dict, evaluator: Evaluator, revie
         "task_id": tid, "api": task["api_specification"]["api_name"], "family": task["metadata"]["operation_family_id"],
         "category": task["metadata"]["category"], "pilot": tid in pilot,
         "baseline_class": b["class"], "baseline_reasons": b["reasons"], "baseline_a_reasons": b.get("a_reasons") or [],
+        "baseline_b_reasons": b.get("b_reasons") or [],
         "baseline_behaviour": b.get("behaviour"),
         "decision": inter.get("decision"), "delivered": inter.get("decision") in DELIVERED,
         "code_shown": shown is not None, "shown_is_unapproved_reply": inter.get("code_output") is None and shown is not None,
         "shown_class": s["class"] if shown else "nothing_shown", "shown_reasons": s["reasons"] if shown else [],
         "shown_a_reasons": (s.get("a_reasons") or []) if shown else [],
+        "shown_b_reasons": (s.get("b_reasons") or []) if shown else [],
         "shown_behaviour": s.get("behaviour") if shown else None,
         "final_class": f["class"], "final_reasons": f["reasons"], "first_class": first["class"],
         "ewcs": inter.get("ewcs"), "correction_attempted": inter.get("correction_attempted"),
@@ -164,6 +166,48 @@ def task_record(task: dict, base: dict, inter: dict, evaluator: Evaluator, revie
                                                             "completion_tokens", "gpu_energy_j", "cpu_energy_j", "measured_energy_j")}},
         "codes": {"baseline": base.get("code"), "shown": shown, "final": inter.get("final_candidate")},
     }
+
+
+# Kinds of task-fidelity error (class B): a valid API call that is not the task's.
+TASK_ERROR_TYPES = [
+    ("different declared endpoint", ("a different declared endpoint",)),
+    ("method not acceptable for the task", ("is not acceptable for this task",)),
+    ("omitted parameter the task specifies", ("omits query parameter",)),
+    ("different parameter value", (", the task needs ",)),
+    ("omitted request body", ("omits the request body",)),
+    ("unrequested request body", ("sends a body the task does not ask for",)),
+    ("request body differs (fields or values)", ("differs from the task's",)),
+    ("extra requests", ("requests; the task needs one",)),
+    ("credential missing or malformed (API requirement unknown)", ("credential", "Authorization is")),
+    ("JSON body sent as form data", ("sends the JSON body as data=",)),
+    ("insecure scheme (http)", ("instead of https",)),
+]
+# Kinds of runtime failure: the code makes no request.
+RUNTIME_FAILURE_TYPES = [
+    ("input used as the wrong type (e.g. credential string as a dict)", ("'str' object has no attribute", "string indices must be integers",
+                                                                          "'NoneType' object is not a mapping")),
+    ("reads an input the task does not provide", ("KeyError",)),
+    ("syntax error", ("SyntaxError", "IndentationError")),
+    ("makes no request", ("never calls the API",)),
+    ("does not finish (timeout)", ("Timeout",)),
+    ("blocked operation (file, network or process)", ("PermissionError",)),
+    ("undefined name", ("NameError", "UnboundLocalError")),
+    ("raises its own error before the request", ("ValueError", "Exception:", "RuntimeError")),
+    ("wrong call or argument types", ("TypeError", "AttributeError")),
+]
+
+
+def kinds_of(reasons: list, table: list) -> set:
+    """Kinds named by a list of reasons, per table (first match per reason)."""
+    return {next((name for name, needles in table if any(n in reason for n in needles)), "other") for reason in reasons}
+
+
+def task_error_types(reasons: list) -> set:
+    return kinds_of([r for r in reasons if not r.startswith("no request matches")], TASK_ERROR_TYPES)
+
+
+def runtime_failure_type(reasons: list) -> str:
+    return next(iter(kinds_of(reasons[:1], RUNTIME_FAILURE_TYPES)), "other") if reasons else "other"
 
 
 def hallucination_types(reasons: list) -> set:

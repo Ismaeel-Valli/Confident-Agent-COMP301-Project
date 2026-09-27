@@ -137,7 +137,7 @@ def classify(ctx: TaskContext, code: str | None, timeout: float = 10.0) -> dict:
         finding.add("B", "no request matches the expected method and endpoint")
     if len(requests_made) > 1:
         finding.add("B", f"makes {len(requests_made)} requests; the task needs one")
-    result = {"class": finding.verdict(), "reasons": finding.reasons(), "a_reasons": finding.reasons("A"),
+    result = {"class": finding.verdict(), "reasons": finding.reasons(), "a_reasons": finding.reasons("A"), "b_reasons": finding.reasons("B"),
               "requests": len(requests_made), "run": summarize(run)}
     result["behaviour"] = behaviour(ctx, code, run, timeout)
     return result

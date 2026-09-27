@@ -131,9 +131,8 @@
       "invented endpoint or method": 31,
       "invalid value or structure": 10,
       "invented parameter or body field": 14,
-      "missing required part or credential": 7,
-      "non-existent requests API": 2,
-      "other": 1
+      "missing required part or credential": 8,
+      "non-existent requests API": 2
     },
     "intervention_shown": {
       "invented parameter or body field": 4,

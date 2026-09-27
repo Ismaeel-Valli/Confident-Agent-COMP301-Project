@@ -56,6 +56,16 @@ status code) for an empty success, and an exception for a server error.
 | `<label>/review_queue.csv` | undetermined candidates for the manual review (plan §4), with their code in `review_code/` |
 | `<label>/audit_sample.csv` | a stratified random sample of 50 decided candidates per mode to check by hand (plan §5) |
 
+## All project statistics as CSV
+
+After evaluating, `python compile_stats.py` writes `stats/`: one row per prompt and run
+with every label and measure (classes, hallucination kinds, repairs and regressions,
+verifier outcome, time, tokens, energy, agent behaviour), summaries per API, operation
+category, HTTP method, difficulty, authentication and specification source, a comparison
+of runs (models, quantizations), the verifier's precision, recall and F1 as a
+hallucination detector, and the kinds of error (hallucination, task fidelity, runtime failure) per category. Columns are described in
+[`stats/STATS_README.md`](stats/STATS_README.md).
+
 ## Manual review
 
 Copy rows of `review_queue.csv` (and `audit_sample.csv`) into `reviews/reviews.csv`,

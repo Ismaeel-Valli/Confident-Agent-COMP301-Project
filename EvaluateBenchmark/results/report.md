@@ -1,6 +1,6 @@
 # Evaluation report
 
-Evaluator 2026-09-27.1, 2026-09-27T20:04:19+00:00. Rules: `Benchmark/EVALUATION_PLAN.md`.
+Evaluator 2026-09-27.1, 2026-09-27T20:46:23+00:00. Rules: `Benchmark/EVALUATION_PLAN.md`.
 
 - Answer key: task file SHA-256 `7a09f2bb566dbabb…` (matches the plan).
 - Self-check: 1000/1000 reference solutions scored correct; behaviour requirements met by 1000.
@@ -43,9 +43,8 @@ Holm-adjusted McNemar p across runs: < 0.0001. Undetermined pairs excluded from 
 | invented endpoint or method | 31 | 0 |
 | invented parameter or body field | 14 | 4 |
 | invalid value or structure | 10 | 18 |
-| missing required part or credential | 7 | 5 |
+| missing required part or credential | 8 | 5 |
 | non-existent requests API | 2 | 0 |
-| other | 1 | 0 |
 | undocumented response field | 0 | 2 |
 
 Tasks with a hallucination other than a wrong host, version or base path: baseline 56, intervention 29. The intervention prompt names the current hosts (by design, Benchmark README), so this row separates that context from what verification catches.
