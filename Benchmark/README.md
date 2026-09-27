@@ -3,7 +3,7 @@
 Runs the REST API code-generation dataset against a model served by LM Studio,
 once as a **baseline** and once as the **Confident Agent intervention**, and logs
 everything. This benchmark only **produces** results; `evaluate_benchmark`
-(separate) scores them against the dataset's expected requests.
+(separate) scores them as set out in [EVALUATION_PLAN.md](EVALUATION_PLAN.md).
 
 | Mode | System prompt | Tools | Who decides |
 |---|---|---|---|
@@ -27,9 +27,10 @@ Benchmark/
   tool_bridge.cjs                   runs one verify_candidate call with the toolbox
   instructions/Baseline/BASELINE_SYSTEM_PROMPT.md
   dataset/rest_api_prompts_pilot.jsonl   task_id, language, natural_language_instruction
-  Baseline_Tests/<model-label>/     one folder per task, plus run_manifest.json and system_prompt.md
+  EVALUATION_PLAN.md                how evaluate_benchmark scores the results (fixed before run 2)
+  Baseline_Tests/<model-label>/     one folder per task, plus results.jsonl, run_manifest.json, run_summary.json, system_prompt.md
   Intervention_Tests/<model-label>/ the same for the intervention
-  complete_test_baseline.jsonl      one line per task and model label (rebuilt after every task)
+  complete_test_baseline.jsonl      one line per task and model label, all runs
   complete_test_intervention.jsonl
 ```
 
@@ -92,13 +93,61 @@ python run_benchmark.py --mode both --model qwen/qwen3.5-9b --model-label "Qwen3
 | `--max-tokens` | 4096 | ceiling per reply, reduced to fit the context |
 | `--max-turns` | 4 | model turns per intervention task (the prompt's workflow needs at most 3); then the final reply is requested |
 | `--request-timeout`, `--tool-timeout` | 900 s, 300 s | per model request, per verification |
+| `--tool-retries` | 2 | retries when the tool process crashes (a timeout is not retried) |
+| `--package-evidence` | toolbox `examples/evidence/requests-pypi-pilot.json` | frozen PyPI data for the interface layer; imports it lacks are looked up live |
+| `--power auto\|nvidia\|none` | auto | GPU energy per task via `nvidia-smi` (see Measurements) |
+| `--power-interval-ms`, `--idle-seconds` | 200, 10 | power sampling interval; idle power measured before the run |
 | `--overwrite` | off | redo tasks that already have results |
+
+**Archiving runs.** Each label folder has its own `results.jsonl`, so a run can be
+zipped and its folder removed. The shared `complete_test_*.jsonl` files keep the rows
+of labels whose folder is no longer on disk, and rebuild the rows of labels that are.
+
+**Run 2.** Use a new label, for example `"Qwen3.5-9B-Q4_K_M-full-run2"`, so run 1's
+rows stay alongside it for comparison (see EVALUATION_PLAN.md §7).
 
 **Resuming.** A task with `result.json` is skipped, so an interrupted run continues
 where it stopped. A model label's folder belongs to one set of settings (model,
-prompt, temperature, thinking, seed, max tokens, max turns, benchmark version):
+prompt, temperature, thinking, seed, max tokens, max turns, package evidence, benchmark version):
 running again with different settings is refused; use a new `--model-label`. Each
 `result.json` also records the dataset file it came from.
+
+## Different quantizations and models
+
+Run the same command once per quantization (or model), each with its own label:
+
+1. In LM Studio, download the variant (for example Qwen3.5-9B `Q4_K_M`, `Q6_K`, `Q8_0`).
+2. Load it with its own identifier and the same context and offload settings each time:
+   `lms load <model-key> --context-length 30208 --gpu max --parallel 1 --identifier qwen3.5-9b-q8`
+3. Run with that identifier and a matching label:
+   `python run_benchmark.py --mode both --model qwen3.5-9b-q8 --model-label "Qwen3.5-9B-Q8_0-full" --dataset ...`
+
+Keep every other option the same across the runs you compare. Each run's
+`run_manifest.json` records the quantization LM Studio reports, so a mislabelled run
+can be spotted; `run_summary.json` gives the per-run figures to compare.
+
+## Measurements
+
+Every task's `result.json` (and the JSONL) records:
+
+| Measure | Fields | Notes |
+|---|---|---|
+| Time | `duration_seconds`; `timing.model_seconds`, `timing.tool_seconds`, `timing.other_seconds` | wall clock; model time is the LM Studio requests, tool time the verifications |
+| Tokens | `tokens.prompt_tokens`, `completion_tokens`, `reasoning_tokens`, `requests`, `completion_tokens_per_second` | as reported by LM Studio, summed over the task's requests |
+| GPU energy | `power.gpu_energy_j`, `gpu_energy_wh`, `gpu_mean_w`, `gpu_peak_w`, `gpu_energy_above_idle_j` | integral of `nvidia-smi power.draw` over the task; above-idle subtracts the idle power measured before the run |
+| Timestamps | `started`, `finished` | UTC |
+
+**What the energy covers.** Only GPU board power, and only on NVIDIA GPUs
+(`nvidia-smi`). CPU, memory, disk and the verifier (which runs on the CPU) are not
+included, so the intervention's true energy cost is higher than measured. On machines
+without `nvidia-smi` the energy fields are null with the reason recorded. For
+whole-system energy, use a wall power meter and the task timestamps.
+
+Each run folder also gets `run_summary.json` (rebuilt after every run): per-task
+distributions (mean, median, 95th percentile, total) of time, tokens and energy,
+plus decisions, corrections, protocol notes and tool failures for the intervention.
+`run_manifest.json` records the machine: OS, CPU, RAM, GPU (name, driver, memory,
+power limit), Python and Node versions, idle GPU power.
 
 ## Output
 
@@ -120,7 +169,8 @@ running again with different settings is refused; use a new `--model-label`. Eac
 |---|---|
 | `conversation.json` | every message: system, task, model turns, tool calls and tool results |
 | `turns/turn_NN_response.json` | raw LM Studio response per model turn |
-| `verified_candidate_N.py`, `verification_N.json` | each candidate the model submitted, and the tool's full result |
+| `verified_candidate_N.py`, `verification_N.json` | each candidate the tool verified, byte for byte, and its full result |
+| `failed_candidate_N.py`, `tool_failure_N.json` | a submission the tool could not run (crash or timeout after retries); not a verification |
 | `response.md` | the model's final reply (the report, if it followed the prompt) |
 | `result.json` | everything below, plus per-turn usage and the correction details |
 
@@ -131,13 +181,17 @@ running again with different settings is refused; use a new `--model-label`. Eac
  "decision": "abstain", "ewcs": 0.2786, "code_output": null,
  "first_candidate": "...", "final_candidate": "...", "reply_code": null,
  "final_reply_present": true, "final_reply_prompted": false,
- "verification_calls": 2, "correction_attempted": true, "correction_allowed": true, "correction_count": 1,
- "first_decision": "abstain", "first_has_contradiction": true, "protocol_notes": [], "error": null}
+ "verification_calls": 2, "tool_failures": 0, "model_turns": 3,
+ "correction_attempted": true, "correction_allowed": true, "correction_count": 1,
+ "first_decision": "abstain", "first_has_contradiction": true, "first_ewcs": 0.2786, "protocol_notes": [], "error": null,
+ "duration_seconds": 41.2, "model_seconds": 35.9, "tool_seconds": 4.8, "prompt_tokens": 9876, "completion_tokens": 1234,
+ "gpu_energy_j": 5210.4, "gpu_energy_above_idle_j": 4102.7}
 ```
 
 | Field | Meaning |
 |---|---|
-| `decision`, `ewcs` | the tool's result for the **last** candidate the model verified (null if it never verified) |
+| `decision`, `ewcs` | the tool's result for the **last** candidate it verified successfully (null if none) |
+| `tool_failures` | submissions the tool could not run after retries; they never change the decision |
 | `code_output` | that candidate when the decision is deliver or deliver_with_flag, else null |
 | `reply_code` | a code block in the model's final reply, if any (what a user would actually see) |
 | `final_reply_present` | the model ended with a text reply |
@@ -177,7 +231,8 @@ running again with different settings is refused; use a new `--model-label`. Eac
 - **The operator note is not sent.** The toolbox prompt starts with a note for
   people setting up LM Studio (blockquote lines). It is removed before sending;
   the exact text sent is saved as `system_prompt.md`.
-- **Live PyPI.** The interface layer looks the imports up on PyPI during the run;
-  the result is in each `verification_N.json`.
+- **Frozen package evidence.** In run 1, six live PyPI lookups timed out and gave
+  the same code different scores. The interface layer now answers `requests` from
+  the toolbox's frozen PyPI record; other imports are looked up live with retries.
 - **Single sample per task.** Run again with another `--seed` and `--model-label`
   to measure run-to-run variation.

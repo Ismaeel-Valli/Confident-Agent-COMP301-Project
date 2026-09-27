@@ -20,15 +20,16 @@ OpenAI-compatible API, in two configurations:
                 (tool_bridge.cjs), feeds the result back, and records every turn,
                 every verified candidate and whether a correction was attempted.
 
+Every task also records its timing (model time, tool time), token counts and, where
+the machine allows it, the GPU energy used. Each run folder gets a run_summary.json.
+
 The benchmark never interprets the task for the model and never executes generated
 code: the tool analyses candidates statically. Every file, folder and JSONL line is
 written by this script, not by the model.
 
 Usage
 -----
-    python run_benchmark.py --mode baseline     --model qwen/qwen3.5-9b --model-label "Qwen3.5-9B"
-    python run_benchmark.py --mode intervention --model qwen/qwen3.5-9b --model-label "Qwen3.5-9B"
-    python run_benchmark.py --mode both         --model qwen/qwen3.5-9b --model-label "Qwen3.5-9B"
+    python run_benchmark.py --mode both --model qwen/qwen3.5-9b --model-label "Qwen3.5-9B-Q4_K_M"
 
 Runs resume: a task whose folder already has result.json is skipped (use
 --overwrite to redo it). See README.md and --help.
@@ -38,11 +39,15 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
+import platform
 import re
 import shutil
+import statistics
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -55,6 +60,7 @@ TOOLBOX_DEFAULT = REPO / "confident-agent-toolbox"
 DATASET_DEFAULT = ROOT / "dataset" / "rest_api_prompts_pilot.jsonl"
 BASELINE_PROMPT_DEFAULT = ROOT / "instructions" / "Baseline" / "BASELINE_SYSTEM_PROMPT.md"
 INTERVENTION_PROMPT_DEFAULT = TOOLBOX_DEFAULT / "instructions" / "CONFIDENCE_AGENT_PROMPT.md"
+PACKAGE_EVIDENCE_DEFAULT = TOOLBOX_DEFAULT / "examples" / "evidence" / "requests-pypi-pilot.json"
 BRIDGE = ROOT / "tool_bridge.cjs"
 MODE_DIRS = {"baseline": ROOT / "Baseline_Tests", "intervention": ROOT / "Intervention_Tests"}
 MODE_JSONL = {"baseline": ROOT / "complete_test_baseline.jsonl", "intervention": ROOT / "complete_test_intervention.jsonl"}
@@ -65,7 +71,10 @@ LABEL_SAFE_RE = re.compile(r"[^A-Za-z0-9._-]+")
 DELIVERED = ("deliver", "deliver_with_flag")
 # Part of every run's settings: results produced by a different harness behaviour are
 # never mixed under one model label.
-BENCHMARK_VERSION = "2026-09-26.2"
+#   2026-09-26.2  run 1
+#   2026-09-27.1  tool-bridge retries and failures kept apart from verifications, exact
+#                 (LF) candidate files, frozen package evidence, timing, tokens, GPU energy
+BENCHMARK_VERSION = "2026-09-27.1"
 # Sent once, with tool calls disabled, when the model reaches --max-turns without replying.
 FINAL_REPLY_REQUEST = ("Verification for this task is finished; no more tool calls are available. Reply now with "
                        "the report field of your last verify_candidate result, exactly as returned.")
@@ -106,8 +115,19 @@ def extract_code(text: str) -> str | None:
     return match.group(1).strip() if match else None
 
 
+def save_text(path: Path, text: str) -> None:
+    """Written byte for byte (no newline translation), so a saved candidate hashes to the
+    candidate_hash the tool reported."""
+    with path.open("w", encoding="utf-8", newline="") as f:
+        f.write(text)
+
+
 def write_json(path: Path, data) -> None:
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    save_text(path, json.dumps(data, indent=2, ensure_ascii=False))
+
+
+def rounded(x, digits=3):
+    return round(x, digits) if isinstance(x, (int, float)) else x
 
 
 def git_commit() -> str | None:
@@ -131,6 +151,165 @@ def load_intervention_prompt(path: Path) -> str:
     return "\n".join(l for l in lines if not l.startswith(">")).replace("\n\n\n", "\n\n").strip() + "\n"
 
 
+def usage_totals(usages: list) -> dict:
+    """Token counts summed over the model requests of one task."""
+    total = {"requests": 0, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "reasoning_tokens": 0}
+    for u in usages:
+        if not u:
+            continue
+        total["requests"] += 1
+        for k in ("prompt_tokens", "completion_tokens", "total_tokens"):
+            total[k] += u.get(k) or 0
+        total["reasoning_tokens"] += (u.get("completion_tokens_details") or {}).get("reasoning_tokens") or 0
+    return total
+
+
+# --------------------------------------------------------------------------
+# Machine description and GPU power
+# --------------------------------------------------------------------------
+def cpu_name() -> str:
+    try:
+        if sys.platform == "win32":
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"HARDWARE\DESCRIPTION\System\CentralProcessor\0") as key:
+                return winreg.QueryValueEx(key, "ProcessorNameString")[0].strip()
+        if Path("/proc/cpuinfo").exists():
+            for line in Path("/proc/cpuinfo").read_text().splitlines():
+                if line.startswith("model name"):
+                    return line.split(":", 1)[1].strip()
+        if sys.platform == "darwin":
+            return subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return platform.processor() or "unknown"
+
+
+def ram_gb() -> float | None:
+    try:
+        if sys.platform == "win32":
+            import ctypes
+
+            class MemoryStatus(ctypes.Structure):
+                _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong),
+                            ("ullTotalPhys", ctypes.c_ulonglong), ("ullAvailPhys", ctypes.c_ulonglong),
+                            ("ullTotalPageFile", ctypes.c_ulonglong), ("ullAvailPageFile", ctypes.c_ulonglong),
+                            ("ullTotalVirtual", ctypes.c_ulonglong), ("ullAvailVirtual", ctypes.c_ulonglong),
+                            ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+            status = MemoryStatus()
+            status.dwLength = ctypes.sizeof(MemoryStatus)
+            ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status))
+            return round(status.ullTotalPhys / 1024 ** 3, 1)
+        if Path("/proc/meminfo").exists():
+            kb = int(Path("/proc/meminfo").read_text().split("MemTotal:")[1].split()[0])
+            return round(kb / 1024 ** 2, 1)
+    except (OSError, ValueError, AttributeError, IndexError):
+        pass
+    return None
+
+
+def tool_version(cmd: list) -> str | None:
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=10).stdout.strip() or None
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+class PowerMonitor:
+    """GPU board power, sampled with nvidia-smi for the whole run. The energy of a task is
+    the integral of the samples over that task's time window. Only the GPU is measured:
+    CPU and memory (including the verifier, which runs on the CPU) are not included."""
+
+    def __init__(self, mode: str, interval_ms: int):
+        self.samples: list = []  # (monotonic time, gpu index, watts)
+        self.lock = threading.Lock()
+        self.proc = None
+        self.gpus: list = []
+        self.idle_w: float | None = None
+        self.interval_ms = interval_ms
+        exe = shutil.which("nvidia-smi") if mode in ("auto", "nvidia") else None
+        if mode == "none":
+            self.reason = "disabled with --power none"
+        elif not exe:
+            self.reason = "nvidia-smi not found: GPU power is not measured on this machine"
+            if mode == "nvidia":
+                sys.exit("--power nvidia was requested but nvidia-smi is not available.")
+        else:
+            self.reason = None
+            fields = "index,name,driver_version,memory.total,power.limit"
+            out = subprocess.run([exe, f"--query-gpu={fields}", "--format=csv,noheader,nounits"],
+                                 capture_output=True, text=True, timeout=20).stdout
+            for line in out.strip().splitlines():
+                idx, name, driver, mem, limit = [x.strip() for x in line.split(",")]
+                self.gpus.append({"index": idx, "name": name, "driver": driver, "memory_mib": mem, "power_limit_w": limit})
+            self.proc = subprocess.Popen([exe, "--query-gpu=index,power.draw", "--format=csv,noheader,nounits",
+                                          f"-lms={interval_ms}"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                         text=True, bufsize=1)
+            threading.Thread(target=self._read, daemon=True).start()
+
+    @property
+    def active(self) -> bool:
+        return self.proc is not None
+
+    def _read(self) -> None:
+        for line in self.proc.stdout:
+            try:
+                idx, watts = [x.strip() for x in line.split(",")]
+                sample = (time.monotonic(), idx, float(watts))
+            except ValueError:
+                continue  # "[N/A]" or a partial line
+            with self.lock:
+                self.samples.append(sample)
+
+    def energy(self, t0: float, t1: float) -> dict:
+        """Joules per GPU over [t0, t1], each sample held until the next one."""
+        if not self.active:
+            return {"measured": False, "reason": self.reason}
+        with self.lock:
+            # Samples ending before the window are no longer needed (tasks run in sequence).
+            self.samples = [s for s in self.samples if s[0] >= t0 - 60]
+            samples = list(self.samples)
+        joules, peak, count = 0.0, None, 0
+        for idx in {s[1] for s in samples}:
+            series = [s for s in samples if s[1] == idx]
+            for (ta, _, wa), (tb, _, _) in zip(series, series[1:] + [(t1, idx, 0.0)]):
+                overlap = min(tb, t1) - max(ta, t0)
+                if overlap > 0:
+                    joules += wa * overlap
+                    count += 1
+                    peak = wa if peak is None else max(peak, wa)
+        seconds = max(t1 - t0, 1e-9)
+        result = {"measured": count > 0, "source": "nvidia-smi power.draw", "gpu_energy_j": round(joules, 1),
+                  "gpu_energy_wh": round(joules / 3600, 4), "gpu_mean_w": round(joules / seconds, 1),
+                  "gpu_peak_w": peak, "samples": count}
+        if self.idle_w is not None:
+            result["gpu_energy_above_idle_j"] = round(joules - self.idle_w * seconds, 1)
+        return result
+
+    def measure_idle(self, seconds: float) -> None:
+        if not self.active or seconds <= 0:
+            return
+        print(f"[setup] Measuring idle GPU power for {seconds:.0f} s ...", flush=True)
+        t0 = time.monotonic()
+        time.sleep(seconds)
+        measured = self.energy(t0, time.monotonic())
+        self.idle_w = measured["gpu_mean_w"] if measured["measured"] else None
+
+    def describe(self) -> dict:
+        return {"backend": "nvidia-smi" if self.active else None, "reason": self.reason, "gpus": self.gpus,
+                "sample_interval_ms": self.interval_ms if self.active else None, "idle_gpu_w": self.idle_w,
+                "scope": "GPU board power only; CPU, memory and the CPU-bound verifier are not included"}
+
+    def stop(self) -> None:
+        if self.proc:
+            self.proc.terminate()
+
+
+def environment(args, power: PowerMonitor) -> dict:
+    return {"os": platform.platform(), "machine": platform.machine(), "cpu": cpu_name(), "logical_cpus": os.cpu_count(),
+            "ram_gb": ram_gb(), "python": platform.python_version(), "node": tool_version(["node", "--version"]),
+            "gpus": power.gpus}
+
+
 # --------------------------------------------------------------------------
 # LM Studio client
 # --------------------------------------------------------------------------
@@ -148,9 +327,15 @@ def http_json(url: str, payload: dict | None, timeout: int) -> dict:
         raise LMStudioError(f"HTTP {e.code} from {url}: {e.read().decode('utf-8', 'replace')[:500]}") from e
     except urllib.error.URLError as e:
         raise LMStudioError(f"Cannot reach {url}: {e.reason}") from e
+    except TimeoutError as e:
+        # A read timeout surfaces as TimeoutError, not URLError (it stopped a smoke test).
+        raise LMStudioError(f"No response from {url} within {timeout} s") from e
+    except (OSError, ValueError) as e:  # dropped connection, malformed JSON
+        raise LMStudioError(f"Request to {url} failed: {e}") from e
 
 
-def chat(args, messages: list, max_tokens: int, tools: list | None = None, tool_choice: str | None = None) -> dict:
+def chat(args, messages: list, max_tokens: int, tools: list | None = None, tool_choice: str | None = None) -> tuple:
+    """One model request. Returns the response and the wall-clock seconds it took."""
     payload = {"model": args.model, "messages": messages, "temperature": args.temperature,
                "max_tokens": max_tokens, "stream": False}
     if args.seed is not None:
@@ -161,7 +346,9 @@ def chat(args, messages: list, max_tokens: int, tools: list | None = None, tool_
         payload["tools"] = tools
         if tool_choice:
             payload["tool_choice"] = tool_choice
-    return http_json(args.api_base.rstrip("/") + "/chat/completions", payload, args.request_timeout)
+    started = time.monotonic()
+    response = http_json(args.api_base.rstrip("/") + "/chat/completions", payload, args.request_timeout)
+    return response, time.monotonic() - started
 
 
 def model_info(args) -> dict:
@@ -185,6 +372,8 @@ def preflight(args) -> dict:
         print(f"[setup] The model is loaded with a {loaded}-token context; using that instead of "
               f"--context-limit {args.context_limit}.", flush=True)
         args.context_limit = loaded
+    print(f"[setup] Model {args.model}: quantization {info.get('quantization', '?')}, "
+          f"architecture {info.get('arch', '?')}, context {args.context_limit}.", flush=True)
     return info
 
 
@@ -206,33 +395,53 @@ def toolbox_python(toolbox: Path) -> str:
 
 
 def ensure_toolbox_built(toolbox: Path) -> None:
-    if (toolbox / "dist" / "confidenceAgentTools.js").exists():
+    """Build the toolbox when dist/ is missing or older than its sources. dist/ is not in
+    git, so after a pull the old build would otherwise verify with the old verifier."""
+    built = toolbox / "dist" / "confidenceAgentTools.js"
+    sources = [p for p in (toolbox / "src").rglob("*") if p.suffix in (".ts", ".py")]
+    if built.exists() and all(p.stat().st_mtime <= built.stat().st_mtime for p in sources):
         return
     npm = shutil.which("npm")  # resolves npm.cmd on Windows
     if not npm:
-        sys.exit("The toolbox is not built and npm was not found. Run `npm ci && npm run build` in " + str(toolbox))
-    print("[setup] Building the toolbox (npm ci && npm run build) ...", flush=True)
+        sys.exit("The toolbox build is missing or out of date and npm was not found. Run `npm ci && npm run build` in "
+                 + str(toolbox))
+    print("[setup] The toolbox build is missing or older than its sources: running npm run build ...", flush=True)
     if not (toolbox / "node_modules").exists():
         subprocess.run([npm, "ci", "--no-audit", "--no-fund"], cwd=str(toolbox), check=True)
     subprocess.run([npm, "run", "build"], cwd=str(toolbox), check=True)
 
 
-def bridge(args, request: dict | None = None, describe: bool = False) -> dict:
-    cmd = ["node", str(BRIDGE), str(args.toolbox)] + (["--describe"] if describe else [])
+def bridge(args, request: dict | None = None, describe: bool = False) -> tuple:
+    """One tool call through tool_bridge.cjs. A crashed bridge process (for example exit
+    0xC0000409 on Windows, seen three times in run 1) is retried; a timeout is not.
+    Returns the tool result and how the call went."""
+    cmd = ["node", str(BRIDGE), str(args.toolbox)]
+    if args.package_evidence:
+        cmd += ["--package-evidence", str(args.package_evidence)]
+    if describe:
+        cmd.append("--describe")
     env = {**os.environ, "CONFIDENCE_PYTHON": args.python}
-    try:
-        out = subprocess.run(cmd, input=json.dumps(request or {}), capture_output=True, text=True,
-                             encoding="utf-8", timeout=args.tool_timeout, env=env)
-    except subprocess.TimeoutExpired:
-        return {"error": f"verify_candidate timed out after {args.tool_timeout} s."}
-    try:
-        return json.loads(out.stdout)
-    except json.JSONDecodeError:
-        return {"error": f"Tool bridge failed (exit {out.returncode}): {(out.stderr or out.stdout)[-500:]}"}
+    started, failures, result, attempts = time.monotonic(), [], None, 0
+    for _ in range(args.tool_retries + 1):
+        attempts += 1
+        try:
+            out = subprocess.run(cmd, input=json.dumps(request or {}), capture_output=True, text=True,
+                                 encoding="utf-8", timeout=args.tool_timeout, env=env)
+        except subprocess.TimeoutExpired:
+            result = {"error": f"verify_candidate timed out after {args.tool_timeout} s."}
+            failures.append("timeout")
+            break
+        try:
+            result = json.loads(out.stdout)
+            break
+        except json.JSONDecodeError:
+            result = {"error": f"Tool bridge failed (exit {out.returncode}): {(out.stderr or out.stdout)[-500:]}"}
+            failures.append(f"exit {out.returncode}")
+    return result, {"seconds": round(time.monotonic() - started, 3), "attempts": attempts, "failures": failures}
 
 
 def verify_tool_schema(args) -> list:
-    described = bridge(args, describe=True)
+    described, _ = bridge(args, describe=True)
     if "error" in described:
         sys.exit(described["error"])
     return [{"type": "function", "function": {
@@ -246,14 +455,15 @@ def verify_tool_schema(args) -> list:
 # Runs
 # --------------------------------------------------------------------------
 def settings_fingerprint(mode: str, args, prompt: str) -> dict:
-    fp = {"benchmark_version": BENCHMARK_VERSION, "mode": mode, "model": args.model, "system_prompt_sha256": sha256(prompt), "temperature": args.temperature,
-          "max_tokens": args.max_tokens, "thinking": args.thinking, "seed": args.seed}
+    fp = {"benchmark_version": BENCHMARK_VERSION, "mode": mode, "model": args.model, "system_prompt_sha256": sha256(prompt),
+          "temperature": args.temperature, "max_tokens": args.max_tokens, "thinking": args.thinking, "seed": args.seed}
     if mode == "intervention":
         fp["max_turns"] = args.max_turns
+        fp["package_evidence_sha256"] = sha256(args.package_evidence.read_bytes()) if args.package_evidence else None
     return fp
 
 
-def open_run(mode: str, args, prompt: str, info: dict) -> Path:
+def open_run(mode: str, args, prompt: str, info: dict, power: PowerMonitor) -> Path:
     """Folder for this model label and mode, with the settings every result in it shares."""
     run_dir = MODE_DIRS[mode] / sanitize_label(args.model_label or args.model)
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -264,34 +474,99 @@ def open_run(mode: str, args, prompt: str, info: dict) -> Path:
         if previous != fingerprint:
             sys.exit(f"{run_dir} holds results produced with different settings:\n  before: {previous}\n  now:    "
                      f"{fingerprint}\nUse a new --model-label, or --overwrite to redo every task.")
-    (run_dir / "system_prompt.md").write_text(prompt, encoding="utf-8")
+    save_text(run_dir / "system_prompt.md", prompt)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {"invocations": []}
     manifest.update({"settings": fingerprint, "model_label": run_dir.name, "api_base": args.api_base,
                      "lmstudio_model_info": info, "context_limit": args.context_limit,
                      "request_timeout_seconds": args.request_timeout})
     if mode == "intervention":
         manifest.update({"toolbox": str(args.toolbox), "verification_python": args.python,
-                         "toolbox_prompt_source": str(args.intervention_prompt)})
+                         "toolbox_prompt_source": str(args.intervention_prompt),
+                         "package_evidence": str(args.package_evidence) if args.package_evidence else None,
+                         "tool_retries": args.tool_retries})
     manifest["invocations"].append({"started": now(), "git_commit": git_commit(), "dataset": str(args.dataset),
-                                    "dataset_sha256": sha256(args.dataset.read_bytes()), "argv": sys.argv[1:]})
+                                    "dataset_sha256": sha256(args.dataset.read_bytes()), "argv": sys.argv[1:],
+                                    "environment": environment(args, power), "power": power.describe()})
     write_json(manifest_path, manifest)
     return run_dir
 
 
 def rebuild_jsonl(mode: str) -> None:
-    """The JSONL file is an index of every result.json of this mode (all model labels),
-    so an interrupted or resumed run never leaves duplicate or missing lines."""
-    rows = []
+    """Rebuild the JSONL indexes from the result.json files on disk, so an interrupted or
+    resumed run never leaves duplicate or missing lines.
+
+    Each model label's folder gets its own results.jsonl (it travels with the folder when
+    a run is archived). The shared file at the Benchmark root holds every label: labels
+    with a folder on disk are rebuilt from it, and rows of labels whose folder is no
+    longer on disk (for example a run archived as a zip) are kept as they were."""
+    on_disk: dict = {}
     for result in sorted(MODE_DIRS[mode].glob("*/*/result.json")):
-        rows.append(json.loads(result.read_text(encoding="utf-8"))["jsonl"])
-    MODE_JSONL[mode].write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
+        on_disk.setdefault(result.parent.parent.name, []).append(json.loads(result.read_text(encoding="utf-8"))["jsonl"])
+    lines = lambda rows: "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows)
+    for label, rows in on_disk.items():
+        save_text(MODE_DIRS[mode] / label / "results.jsonl", lines(rows))
+    kept = []
+    if MODE_JSONL[mode].exists():
+        for line in MODE_JSONL[mode].read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                row = json.loads(line)
+                if sanitize_label(row.get("model_label") or "") not in on_disk:
+                    kept.append(row)
+    save_text(MODE_JSONL[mode], lines(kept + [r for label in sorted(on_disk) for r in on_disk[label]]))
 
 
-def run_mode(mode: str, tasks: list, args, info: dict) -> None:
+def distribution(values) -> dict | None:
+    v = sorted(x for x in values if isinstance(x, (int, float)))
+    if not v:
+        return None
+    return {"n": len(v), "total": round(sum(v), 3), "mean": round(statistics.mean(v), 3),
+            "median": round(statistics.median(v), 3), "p95": round(v[max(0, math.ceil(0.95 * len(v)) - 1)], 3),  # nearest rank
+            "min": round(v[0], 3), "max": round(v[-1], 3)}
+
+
+def write_run_summary(mode: str, run_dir: Path) -> dict:
+    """Run-level statistics, rebuilt from every result.json in the folder."""
+    records = [json.loads(p.read_text(encoding="utf-8")) for p in sorted(run_dir.glob("*/result.json"))]
+    metas, rows = [r["meta"] for r in records], [r["jsonl"] for r in records]
+    count = lambda values: dict(sorted(((str(k), values.count(k)) for k in set(values)), key=lambda kv: -kv[1]))
+    summary = {
+        "benchmark_version": BENCHMARK_VERSION, "mode": mode, "model_label": run_dir.name, "tasks": len(records),
+        "errors": count([m.get("error") for m in metas if m.get("error")]),
+        "seconds_per_task": distribution(m.get("duration_seconds") for m in metas),
+        "model_seconds_per_task": distribution((m.get("timing") or {}).get("model_seconds") for m in metas),
+        "prompt_tokens_per_task": distribution((m.get("tokens") or {}).get("prompt_tokens") for m in metas),
+        "completion_tokens_per_task": distribution((m.get("tokens") or {}).get("completion_tokens") for m in metas),
+        "model_requests_per_task": distribution((m.get("tokens") or {}).get("requests") for m in metas),
+        "gpu_energy_j_per_task": distribution((m.get("power") or {}).get("gpu_energy_j") for m in metas),
+        "gpu_energy_above_idle_j_per_task": distribution((m.get("power") or {}).get("gpu_energy_above_idle_j") for m in metas),
+        "gpu_mean_w_per_task": distribution((m.get("power") or {}).get("gpu_mean_w") for m in metas),
+    }
+    if mode == "baseline":
+        summary["with_code_block"] = sum(1 for r in rows if r.get("has_code_block"))
+        summary["finish_reasons"] = count([r.get("finish_reason") for r in rows])
+    else:
+        summary.update({
+            "decisions": count([r.get("decision") for r in rows]),
+            "tool_seconds_per_task": distribution((m.get("timing") or {}).get("tool_seconds") for m in metas),
+            "verification_calls": count([r.get("verification_calls") for r in rows]),
+            "tool_failures": sum(r.get("tool_failures") or 0 for r in rows),
+            "first_had_contradiction": sum(1 for r in rows if r.get("first_has_contradiction")),
+            "correction_attempted": sum(1 for r in rows if r.get("correction_attempted")),
+            "correction_attempted_when_allowed": sum(1 for r in rows if r.get("correction_attempted") and r.get("correction_allowed")),
+            "final_reply_prompted": sum(1 for r in rows if r.get("final_reply_prompted")),
+            "reply_matches_report": sum(1 for m in metas if (m.get("final_reply") or {}).get("matches_report")),
+            "protocol_notes": count([n for r in rows for n in r.get("protocol_notes") or []]),
+        })
+    write_json(run_dir / "run_summary.json", summary)
+    return summary
+
+
+def run_mode(mode: str, tasks: list, args, info: dict, power: PowerMonitor) -> None:
     prompt = (args.baseline_prompt.read_text(encoding="utf-8") if mode == "baseline"
               else load_intervention_prompt(args.intervention_prompt))
     tools = verify_tool_schema(args) if mode == "intervention" else None
-    run_dir = open_run(mode, args, prompt, info)
+    run_dir = open_run(mode, args, prompt, info, power)
+    harness_errors = []
     for n, task in enumerate(tasks, 1):
         task_dir = run_dir / task["task_id"]
         if (task_dir / "result.json").exists() and not args.overwrite:
@@ -300,43 +575,71 @@ def run_mode(mode: str, tasks: list, args, info: dict) -> None:
         if task_dir.exists():
             shutil.rmtree(task_dir)  # a partial folder from an interrupted task
         task_dir.mkdir(parents=True)
-        started = time.time()
-        record = (run_baseline_task if mode == "baseline" else run_intervention_task)(task, prompt, tools, task_dir, args)
+        started_at, t0 = now(), time.monotonic()
+        try:
+            record = (run_baseline_task if mode == "baseline" else run_intervention_task)(task, prompt, tools, task_dir, args)
+        except Exception as e:  # noqa: BLE001 - one broken task must not end a long run
+            # No result.json is written, so the task is retried when the run is resumed.
+            harness_errors.append(task["task_id"])
+            save_text(task_dir / "harness_error.txt", f"{now()} {type(e).__name__}: {e}\n")
+            print(f"[{mode}] {n}/{len(tasks)} {task['task_id']}: HARNESS ERROR {type(e).__name__}: {e} "
+                  "(no result written; rerun the same command to retry)", flush=True)
+            continue
+        t1 = time.monotonic()
+        duration = t1 - t0
+        timing = record["meta"].setdefault("timing", {})
+        timing["other_seconds"] = rounded(duration - (timing.get("model_seconds") or 0) - (timing.get("tool_seconds") or 0))
+        energy = power.energy(t0, t1)
         record["meta"].update({"task_id": task["task_id"], "mode": mode, "model": args.model, "model_label": run_dir.name,
-                               "dataset": str(args.dataset),
-                               "instruction": task["natural_language_instruction"], "finished": now(),
-                               "duration_seconds": round(time.time() - started, 3)})
-        record["jsonl"] = {"prompt_id": task["task_id"], "model": args.model, "model_label": run_dir.name, **record["jsonl"]}
+                               "dataset": str(args.dataset), "instruction": task["natural_language_instruction"],
+                               "started": started_at, "finished": now(), "duration_seconds": round(duration, 3),
+                               "power": energy})
+        tokens = record["meta"].get("tokens") or {}
+        record["jsonl"] = {"prompt_id": task["task_id"], "model": args.model, "model_label": run_dir.name, **record["jsonl"],
+                           "duration_seconds": round(duration, 3), "model_seconds": timing.get("model_seconds"),
+                           "tool_seconds": timing.get("tool_seconds"), "prompt_tokens": tokens.get("prompt_tokens"),
+                           "completion_tokens": tokens.get("completion_tokens"),
+                           "gpu_energy_j": energy.get("gpu_energy_j"), "gpu_energy_above_idle_j": energy.get("gpu_energy_above_idle_j")}
         write_json(task_dir / "result.json", record)
         rebuild_jsonl(mode)
-        print(f"[{mode}] {n}/{len(tasks)} {task['task_id']}: {record['summary']} ({record['meta']['duration_seconds']} s)", flush=True)
+        watts = f", {energy['gpu_energy_j']} J" if energy.get("measured") else ""
+        print(f"[{mode}] {n}/{len(tasks)} {task['task_id']}: {record['summary']} ({round(duration, 3)} s{watts})", flush=True)
+    summary = write_run_summary(mode, run_dir)
+    print(f"[{mode}] summary: {run_dir / 'run_summary.json'} ({summary['tasks']} tasks)", flush=True)
+    if harness_errors:
+        print(f"[{mode}] {len(harness_errors)} task(s) have no result because of a harness error: "
+              f"{', '.join(harness_errors)}. Run the same command again to retry them.", flush=True)
 
 
 def run_baseline_task(task: dict, prompt: str, tools, task_dir: Path, args) -> dict:
     messages = [{"role": "system", "content": prompt}, {"role": "user", "content": task["natural_language_instruction"]}]
-    error, text, code, response = None, "", None, None
+    error, text, code, response, seconds = None, "", None, None, None
     max_tokens = budget(messages, args)
     if max_tokens <= 0:
         error = f"prompt exceeds the {args.context_limit}-token context"
     else:
         try:
-            response = chat(args, messages, max_tokens)
+            response, seconds = chat(args, messages, max_tokens)
             text = response["choices"][0]["message"].get("content") or ""
             code = extract_code(text)
             write_json(task_dir / "raw_response.json", response)
         except (LMStudioError, KeyError, IndexError, TypeError) as e:
             error = str(e)
     finish = response["choices"][0].get("finish_reason") if response else None
-    (task_dir / "response.md").write_text(text, encoding="utf-8")
-    (task_dir / "solution.py").write_text(code or "", encoding="utf-8")
-    return {"meta": {"finish_reason": finish, "usage": response.get("usage") if response else None, "error": error},
+    save_text(task_dir / "response.md", text)
+    save_text(task_dir / "solution.py", code or "")
+    tokens = usage_totals([response.get("usage")] if response else [])
+    tokens["completion_tokens_per_second"] = rounded(tokens["completion_tokens"] / seconds) if seconds else None
+    return {"meta": {"finish_reason": finish, "usage": response.get("usage") if response else None, "tokens": tokens,
+                     "timing": {"model_seconds": rounded(seconds)}, "error": error},
             "jsonl": {"code": code, "has_code_block": code is not None, "finish_reason": finish, "error": error},
             "summary": error or ("code" if code is not None else "no code block") + (f", {finish}" if finish != "stop" else "")}
 
 
 def run_intervention_task(task: dict, prompt: str, tools, task_dir: Path, args) -> dict:
     messages = [{"role": "system", "content": prompt}, {"role": "user", "content": task["natural_language_instruction"]}]
-    turns, verifications, other_tools, error, reply, finish, prompted = [], [], [], None, None, None, False
+    turns, verifications, failures, other_tools = [], [], [], []
+    error, reply, finish, prompted, model_seconds, tool_seconds = None, None, None, False, 0.0, 0.0
     turns_dir = task_dir / "turns"
     turns_dir.mkdir()
     for turn in range(1, args.max_turns + 1):
@@ -345,16 +648,18 @@ def run_intervention_task(task: dict, prompt: str, tools, task_dir: Path, args) 
             error = f"conversation exceeds the {args.context_limit}-token context"
             break
         try:
-            response = chat(args, messages, max_tokens, tools)
+            response, seconds = chat(args, messages, max_tokens, tools)
             message = response["choices"][0]["message"]
             finish = response["choices"][0].get("finish_reason")
         except (LMStudioError, KeyError, IndexError, TypeError) as e:
             error = f"model request failed: {e}"
             break
+        model_seconds += seconds
         write_json(turns_dir / f"turn_{turn:02d}_response.json", response)
         calls = message.get("tool_calls") or []
         messages.append({"role": "assistant", "content": message.get("content") or "", **({"tool_calls": calls} if calls else {})})
-        turns.append({"turn": turn, "finish_reason": finish, "usage": response.get("usage"), "tool_calls": [c.get("function", {}).get("name") for c in calls]})
+        turns.append({"turn": turn, "finish_reason": finish, "usage": response.get("usage"), "model_seconds": round(seconds, 3),
+                      "tool_calls": [c.get("function", {}).get("name") for c in calls]})
         if not calls:
             reply = strip_think(message.get("content") or "")
             break
@@ -370,18 +675,31 @@ def run_intervention_task(task: dict, prompt: str, tools, task_dir: Path, args) 
             elif not isinstance(arguments, dict) or not isinstance(arguments.get("code"), str):
                 result = {"error": "verify_candidate needs a code string."}
             else:
-                result = bridge(args, {"name": "verify_candidate", "arguments": arguments})
-                index = len(verifications) + 1
-                (task_dir / f"verified_candidate_{index}.py").write_text(arguments["code"], encoding="utf-8")
-                write_json(task_dir / f"verification_{index}.json", result)
-                layers = result.get("layers") or []
-                verifications.append({
-                    "index": index, "turn": turn, "code": arguments["code"], "code_sha256": sha256(arguments["code"]),
-                    "decision": result.get("decision"), "ewcs": (result.get("ewcs_report") or {}).get("ewcs"),
-                    "layers": {l.get("layer"): l.get("state") for l in layers},
-                    "has_contradiction": any(l.get("state") == "verified_incorrect" for l in layers),
-                    "evidence_selection": result.get("evidence_selection"), "report": result.get("report"),
-                    "error": result.get("error"), "extra_arguments": sorted(k for k in arguments if k != "code")})
+                result, call_info = bridge(args, {"name": "verify_candidate", "arguments": arguments})
+                tool_seconds += call_info["seconds"]
+                code = arguments["code"]
+                if "decision" not in result:
+                    # The tool did not run (bridge crash or timeout after retries). This is not a
+                    # verification: the decision stays with the last successful one.
+                    index = len(failures) + 1
+                    save_text(task_dir / f"failed_candidate_{index}.py", code)
+                    write_json(task_dir / f"tool_failure_{index}.json", {**result, "call": call_info})
+                    failures.append({"index": index, "turn": turn, "code_sha256": sha256(code), "error": result.get("error"), **call_info})
+                else:
+                    index = len(verifications) + 1
+                    save_text(task_dir / f"verified_candidate_{index}.py", code)
+                    write_json(task_dir / f"verification_{index}.json", result)
+                    layers = result.get("layers") or []
+                    verifications.append({
+                        "index": index, "turn": turn, "code": code, "code_sha256": sha256(code),
+                        "candidate_hash_matches": result.get("candidate_hash") == sha256(code),
+                        "decision": result.get("decision"), "ewcs": (result.get("ewcs_report") or {}).get("ewcs"),
+                        "layers": {l.get("layer"): l.get("state") for l in layers},
+                        "has_contradiction": any(l.get("state") == "verified_incorrect" for l in layers),
+                        "evidence_selection": result.get("evidence_selection"), "report": result.get("report"),
+                        "extra_arguments": sorted(k for k in arguments if k != "code"),
+                        "tool_seconds": call_info["seconds"], "bridge_attempts": call_info["attempts"],
+                        "bridge_failures": call_info["failures"]})
             messages.append({"role": "tool", "tool_call_id": call.get("id", ""), "content": json.dumps(result, ensure_ascii=False)})
     else:
         # The model used every turn without replying (typically re-verifying after a final
@@ -394,14 +712,16 @@ def run_intervention_task(task: dict, prompt: str, tools, task_dir: Path, args) 
             error = f"turn limit reached and no room left in the {args.context_limit}-token context for a final reply"
         else:
             try:
-                response = chat(args, messages, max_tokens, tools, tool_choice="none")
+                response, seconds = chat(args, messages, max_tokens, tools, tool_choice="none")
+                model_seconds += seconds
                 message = response["choices"][0]["message"]
                 finish = response["choices"][0].get("finish_reason")
                 write_json(turns_dir / f"turn_{args.max_turns + 1:02d}_response.json", response)
                 ignored = bool(message.get("tool_calls"))
                 messages.append({"role": "assistant", "content": message.get("content") or "", **({"tool_calls": message["tool_calls"]} if ignored else {})})
                 turns.append({"turn": args.max_turns + 1, "finish_reason": finish, "usage": response.get("usage"),
-                              "tool_calls": [c.get("function", {}).get("name") for c in message.get("tool_calls") or []], "final_reply_request": True})
+                              "model_seconds": round(seconds, 3), "final_reply_request": True,
+                              "tool_calls": [c.get("function", {}).get("name") for c in message.get("tool_calls") or []]})
                 if ignored:
                     error = "turn limit reached; the model answered the final-reply request with another tool call"
                 else:
@@ -409,13 +729,19 @@ def run_intervention_task(task: dict, prompt: str, tools, task_dir: Path, args) 
             except (LMStudioError, KeyError, IndexError, TypeError) as e:
                 error = f"final-reply request failed: {e}"
     write_json(task_dir / "conversation.json", messages)
-    (task_dir / "response.md").write_text(reply or "", encoding="utf-8")
-    return intervention_record(verifications, other_tools, turns, reply, finish, error, prompted)
+    save_text(task_dir / "response.md", reply or "")
+    record = intervention_record(verifications, failures, other_tools, turns, reply, finish, error, prompted)
+    tokens = usage_totals([t.get("usage") for t in turns])
+    tokens["completion_tokens_per_second"] = rounded(tokens["completion_tokens"] / model_seconds) if model_seconds else None
+    record["meta"].update({"tokens": tokens, "timing": {"model_seconds": rounded(model_seconds), "tool_seconds": rounded(tool_seconds)}})
+    return record
 
 
-def intervention_record(verifications, other_tools, turns, reply, finish, error, prompted=False) -> dict:
+def intervention_record(verifications, failures, other_tools, turns, reply, finish, error, prompted=False) -> dict:
     """What the model did, and what the tool decided. Only the tool's decisions count as
-    decisions; the model's compliance with the prompt is recorded, not enforced."""
+    decisions; the model's compliance with the prompt is recorded, not enforced.
+    `verifications` holds successful tool runs only; `failures` holds tool calls that
+    could not be run."""
     first = verifications[0] if verifications else None
     final = verifications[-1] if verifications else None
     # A correction is a resubmission of different code after the first verification.
@@ -430,7 +756,9 @@ def intervention_record(verifications, other_tools, turns, reply, finish, error,
     if prompted:
         notes.append("reached the turn limit; the benchmark asked for the final reply")
     if not verifications:
-        notes.append("never called verify_candidate")
+        notes.append("never called verify_candidate" if not failures else "no successful verification (tool failures)")
+    if failures:
+        notes.append(f"tool failed {len(failures)} time(s) after retries")
     if attempted and not allowed:
         notes.append("corrected without a verified_incorrect layer")
     if changes > 1:
@@ -451,12 +779,13 @@ def intervention_record(verifications, other_tools, turns, reply, finish, error,
                   "first_decision": first["decision"] if first else None,
                   "first_layers": first["layers"] if first else None,
                   "final_decision_after_correction": decision if attempted else None}
-    summary = (error or f"{decision or 'no verification'}; {len(verifications)} verification(s)"
+    summary = (error or f"{decision or 'no successful verification'}; {len(verifications)} verification(s)"
+               + (f"; {len(failures)} tool failure(s)" if failures else "")
                + ("; correction attempted" if attempted else "") + ("; final reply requested" if prompted else "")
                + (f"; {len(notes)} protocol note(s)" if notes else ""))
     return {
         "meta": {"turns": turns, "verifications": [{k: v for k, v in x.items() if k != "code"} for x in verifications],
-                 "correction": correction, "protocol_notes": notes, "final_finish_reason": finish,
+                 "tool_failures": failures, "correction": correction, "protocol_notes": notes, "final_finish_reason": finish,
                  "final_reply": {"present": reply is not None, "prompted_by_benchmark": prompted,
                                  "matches_report": bool(reply is not None and final and final.get("report")
                                                         and reply.strip() == final["report"].strip())},
@@ -464,9 +793,11 @@ def intervention_record(verifications, other_tools, turns, reply, finish, error,
         "jsonl": {"decision": decision, "ewcs": final["ewcs"] if final else None, "code_output": delivered,
                   "first_candidate": first["code"] if first else None, "final_candidate": final["code"] if final else None,
                   "reply_code": reply_code, "final_reply_present": reply is not None, "final_reply_prompted": prompted,
-                  "verification_calls": len(verifications),
+                  "verification_calls": len(verifications), "tool_failures": len(failures),
+                  "model_turns": len(turns),
                   "correction_attempted": attempted, "correction_allowed": allowed, "correction_count": changes,
                   "first_decision": correction["first_decision"], "first_has_contradiction": allowed,
+                  "first_ewcs": first["ewcs"] if first else None,
                   "protocol_notes": notes, "error": error},
         "summary": summary}
 
@@ -478,7 +809,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Confident Agent Benchmark Runner (produces results only)")
     p.add_argument("--mode", choices=["baseline", "intervention", "both"], required=True)
     p.add_argument("--model", required=True, help="Model identifier exactly as LM Studio serves it (lms ps)")
-    p.add_argument("--model-label", default=None, help="Results folder name for this model/quantization, e.g. 'Qwen3.5-9B-Q4'")
+    p.add_argument("--model-label", default=None, help="Results folder name for this model/quantization, e.g. 'Qwen3.5-9B-Q4_K_M'")
     p.add_argument("--api-base", default="http://127.0.0.1:1234/v1")
     p.add_argument("--dataset", type=Path, default=DATASET_DEFAULT)
     p.add_argument("--tasks", default=None, help="Comma-separated task ids to run (default: all)")
@@ -486,6 +817,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--toolbox", type=Path, default=TOOLBOX_DEFAULT, help="confident-agent-toolbox folder (default: the repo's)")
     p.add_argument("--baseline-prompt", type=Path, default=BASELINE_PROMPT_DEFAULT)
     p.add_argument("--intervention-prompt", type=Path, default=INTERVENTION_PROMPT_DEFAULT)
+    p.add_argument("--package-evidence", type=Path, default=PACKAGE_EVIDENCE_DEFAULT,
+                   help="Frozen PyPI metadata for the interface layer (imports not in it are looked up live)")
     p.add_argument("--temperature", type=float, default=0.2)
     p.add_argument("--seed", type=int, default=None, help="Sampling seed sent to LM Studio (recorded)")
     p.add_argument("--thinking", choices=["off", "on"], default="off",
@@ -498,6 +831,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--max-turns", type=int, default=4, help="Model turns per intervention task before it is stopped")
     p.add_argument("--request-timeout", type=int, default=900, help="Seconds per model request")
     p.add_argument("--tool-timeout", type=int, default=300, help="Seconds per verify_candidate call")
+    p.add_argument("--tool-retries", type=int, default=2, help="Retries when the tool bridge process crashes")
+    p.add_argument("--power", choices=["auto", "nvidia", "none"], default="auto",
+                   help="GPU energy per task via nvidia-smi (auto: when available)")
+    p.add_argument("--power-interval-ms", type=int, default=200, help="GPU power sampling interval")
+    p.add_argument("--idle-seconds", type=float, default=10, help="Idle GPU power measured before the run (0 to skip)")
     p.add_argument("--overwrite", action="store_true", help="Redo tasks that already have results")
     return p
 
@@ -510,6 +848,8 @@ def main() -> None:
     args = build_arg_parser().parse_args()
     args.toolbox = args.toolbox.resolve()
     args.python = toolbox_python(args.toolbox)
+    if args.package_evidence and not args.package_evidence.exists():
+        sys.exit(f"Package evidence file not found: {args.package_evidence}")
     tasks = load_dataset(args.dataset)
     if args.tasks:
         wanted = [t.strip() for t in args.tasks.split(",") if t.strip()]
@@ -527,8 +867,14 @@ def main() -> None:
         if args.context_limit < 16000:
             print(f"[setup] Warning: a {args.context_limit}-token context is tight for the intervention (system prompt "
                   "~2.6K tokens, each verify_candidate result ~2.5K). Load the model with 16K or more.", flush=True)
-    for mode in modes:
-        run_mode(mode, tasks, args, info)
+    power = PowerMonitor(args.power, args.power_interval_ms)
+    print(f"[setup] GPU power: {'nvidia-smi, ' + ', '.join(g['name'] for g in power.gpus) if power.active else power.reason}.", flush=True)
+    try:
+        power.measure_idle(args.idle_seconds)
+        for mode in modes:
+            run_mode(mode, tasks, args, info, power)
+    finally:
+        power.stop()
     print("Done.")
 
 
