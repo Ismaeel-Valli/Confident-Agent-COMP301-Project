@@ -25,6 +25,7 @@ Generated code is never executed. `verify_candidate` analyses it statically
 Benchmark/
   run_benchmark.py                  the runner (Python 3.9+, standard library only)
   tool_bridge.cjs                   runs one verify_candidate call with the toolbox
+  power_monitor.py                  power sampling (nvidia-smi or LibreHardwareMonitor)
   instructions/Baseline/BASELINE_SYSTEM_PROMPT.md
   dataset/rest_api_prompts_pilot.jsonl   task_id, language, natural_language_instruction
   EVALUATION_PLAN.md                how evaluate_benchmark scores the results (fixed before run 2)
@@ -95,8 +96,10 @@ python run_benchmark.py --mode both --model qwen/qwen3.5-9b --model-label "Qwen3
 | `--request-timeout`, `--tool-timeout` | 900 s, 300 s | per model request, per verification |
 | `--tool-retries` | 2 | retries when the tool process crashes (a timeout is not retried) |
 | `--package-evidence` | toolbox `examples/evidence/requests-pypi-pilot.json` | frozen PyPI data for the interface layer; imports it lacks are looked up live |
-| `--power auto\|nvidia\|none` | auto | GPU energy per task via `nvidia-smi` (see Measurements) |
-| `--power-interval-ms`, `--idle-seconds` | 200, 10 | power sampling interval; idle power measured before the run |
+| `--power auto\|nvidia\|lhm\|none` | auto | energy per task via `nvidia-smi` or LibreHardwareMonitor (see Measurements); auto uses whichever is available |
+| `--power-interval-ms`, `--idle-seconds` | 500, 10 | power sampling interval; idle power measured before the run |
+| `--lhm-url`, `--lhm-gpu`, `--lhm-gpu-sensor` | `http://localhost:8085/data.json`, GPU drawing most power, best sensor | LibreHardwareMonitor web server, and which GPU and sensor to use (e.g. `--lhm-gpu 9070`) |
+| `--power-check` | | show which power sensors would be used, then exit (no model needed) |
 | `--overwrite` | off | redo tasks that already have results |
 
 **Archiving runs.** Each label folder has its own `results.jsonl`, so a run can be
@@ -134,20 +137,48 @@ Every task's `result.json` (and the JSONL) records:
 |---|---|---|
 | Time | `duration_seconds`; `timing.model_seconds`, `timing.tool_seconds`, `timing.other_seconds` | wall clock; model time is the LM Studio requests, tool time the verifications |
 | Tokens | `tokens.prompt_tokens`, `completion_tokens`, `reasoning_tokens`, `requests`, `completion_tokens_per_second` | as reported by LM Studio, summed over the task's requests |
-| GPU energy | `power.gpu_energy_j`, `gpu_energy_wh`, `gpu_mean_w`, `gpu_peak_w`, `gpu_energy_above_idle_j` | integral of `nvidia-smi power.draw` over the task; above-idle subtracts the idle power measured before the run |
+| Energy | `power.gpu_energy_j`, `cpu_energy_j`, `measured_energy_j` (their sum), `..._mean_w`, `..._peak_w`, `..._energy_above_idle_j`, `channels` | integral of the power samples over the task; above-idle subtracts the idle power measured before the run |
 | Timestamps | `started`, `finished` | UTC |
 
-**What the energy covers.** Only GPU board power, and only on NVIDIA GPUs
-(`nvidia-smi`). CPU, memory, disk and the verifier (which runs on the CPU) are not
-included, so the intervention's true energy cost is higher than measured. On machines
-without `nvidia-smi` the energy fields are null with the reason recorded. For
-whole-system energy, use a wall power meter and the task timestamps.
+**Measuring power on an AMD GPU (for example the RX 9070 XT).** Windows and the AMD
+driver offer no command-line power reading, so the benchmark reads
+[LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)
+(free, open source) through its built-in web server:
+
+1. Download a current LibreHardwareMonitor release (recent GPUs need a recent
+   version) and unzip it.
+2. Run `LibreHardwareMonitor.exe` **as administrator**; CPU package power needs it.
+3. *Options → Remote Web Server → Run* (port 8085). The benchmark only needs it on
+   this machine; if Windows asks, allow private networks only.
+4. Optionally set *Options → Update Interval* to 500 ms (the default 1 s also works).
+5. Check the setup, with LM Studio idle:
+
+   ```bat
+   python run_benchmark.py --power-check
+   ```
+
+   It should report `LibreHardwareMonitor: gpu = AMD Radeon RX 9070 XT / GPU Package;
+   cpu = <your CPU> / Package` and list every power sensor found. If the wrong GPU is
+   chosen (for example the processor's integrated graphics), add `--lhm-gpu 9070`; to
+   use another sensor, `--lhm-gpu-sensor "<name as listed>"`. Use the same options
+   for the benchmark runs.
+
+Keep LibreHardwareMonitor running for the whole benchmark run. With NVIDIA GPUs no
+setup is needed: `nvidia-smi` is used automatically.
+
+**What the energy covers.** Only the measured channels: the GPU's reported power,
+and with LibreHardwareMonitor also CPU package power, which includes the verifier.
+Memory, storage, motherboard and power-supply losses are not included, so wall-socket
+energy is higher. The GPU value is what the driver reports, not a measurement at the
+card's power connectors. Without a power source the energy fields are null and the
+reason is recorded. For whole-system energy, use a wall power meter and the task
+timestamps.
 
 Each run folder also gets `run_summary.json` (rebuilt after every run): per-task
 distributions (mean, median, 95th percentile, total) of time, tokens and energy,
 plus decisions, corrections, protocol notes and tool failures for the intervention.
-`run_manifest.json` records the machine: OS, CPU, RAM, GPU (name, driver, memory,
-power limit), Python and Node versions, idle GPU power.
+`run_manifest.json` records the machine: OS, CPU, RAM, GPU, Python and Node
+versions, the power source and sensors used, and idle power.
 
 ## Output
 
@@ -185,7 +216,7 @@ power limit), Python and Node versions, idle GPU power.
  "correction_attempted": true, "correction_allowed": true, "correction_count": 1,
  "first_decision": "abstain", "first_has_contradiction": true, "first_ewcs": 0.2786, "protocol_notes": [], "error": null,
  "duration_seconds": 41.2, "model_seconds": 35.9, "tool_seconds": 4.8, "prompt_tokens": 9876, "completion_tokens": 1234,
- "gpu_energy_j": 5210.4, "gpu_energy_above_idle_j": 4102.7}
+ "gpu_energy_j": 5210.4, "cpu_energy_j": 1880.2, "measured_energy_j": 7090.6, "measured_energy_above_idle_j": 4102.7}
 ```
 
 | Field | Meaning |

@@ -21,7 +21,8 @@ OpenAI-compatible API, in two configurations:
                 every verified candidate and whether a correction was attempted.
 
 Every task also records its timing (model time, tool time), token counts and, where
-the machine allows it, the GPU energy used. Each run folder gets a run_summary.json.
+the machine allows it, the energy used (GPU; CPU with LibreHardwareMonitor; see
+power_monitor.py). Each run folder gets a run_summary.json.
 
 The benchmark never interprets the task for the model and never executes generated
 code: the tool analyses candidates statically. Every file, folder and JSONL line is
@@ -47,12 +48,13 @@ import shutil
 import statistics
 import subprocess
 import sys
-import threading
 import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+
+from power_monitor import LHM_URL_DEFAULT, PowerMonitor, power_check
 
 ROOT = Path(__file__).resolve().parent
 REPO = ROOT.parent
@@ -74,7 +76,8 @@ DELIVERED = ("deliver", "deliver_with_flag")
 #   2026-09-26.2  run 1
 #   2026-09-27.1  tool-bridge retries and failures kept apart from verifications, exact
 #                 (LF) candidate files, frozen package evidence, timing, tokens, GPU energy
-BENCHMARK_VERSION = "2026-09-27.1"
+#   2026-09-27.2  energy via LibreHardwareMonitor (AMD GPUs, CPU package) as well as nvidia-smi
+BENCHMARK_VERSION = "2026-09-27.2"
 # Sent once, with tool calls disabled, when the model reaches --max-turns without replying.
 FINAL_REPLY_REQUEST = ("Verification for this task is finished; no more tool calls are available. Reply now with "
                        "the report field of your last verify_candidate result, exactly as returned.")
@@ -212,96 +215,6 @@ def tool_version(cmd: list) -> str | None:
         return subprocess.run(cmd, capture_output=True, text=True, timeout=10).stdout.strip() or None
     except (OSError, subprocess.SubprocessError):
         return None
-
-
-class PowerMonitor:
-    """GPU board power, sampled with nvidia-smi for the whole run. The energy of a task is
-    the integral of the samples over that task's time window. Only the GPU is measured:
-    CPU and memory (including the verifier, which runs on the CPU) are not included."""
-
-    def __init__(self, mode: str, interval_ms: int):
-        self.samples: list = []  # (monotonic time, gpu index, watts)
-        self.lock = threading.Lock()
-        self.proc = None
-        self.gpus: list = []
-        self.idle_w: float | None = None
-        self.interval_ms = interval_ms
-        exe = shutil.which("nvidia-smi") if mode in ("auto", "nvidia") else None
-        if mode == "none":
-            self.reason = "disabled with --power none"
-        elif not exe:
-            self.reason = "nvidia-smi not found: GPU power is not measured on this machine"
-            if mode == "nvidia":
-                sys.exit("--power nvidia was requested but nvidia-smi is not available.")
-        else:
-            self.reason = None
-            fields = "index,name,driver_version,memory.total,power.limit"
-            out = subprocess.run([exe, f"--query-gpu={fields}", "--format=csv,noheader,nounits"],
-                                 capture_output=True, text=True, timeout=20).stdout
-            for line in out.strip().splitlines():
-                idx, name, driver, mem, limit = [x.strip() for x in line.split(",")]
-                self.gpus.append({"index": idx, "name": name, "driver": driver, "memory_mib": mem, "power_limit_w": limit})
-            self.proc = subprocess.Popen([exe, "--query-gpu=index,power.draw", "--format=csv,noheader,nounits",
-                                          f"-lms={interval_ms}"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                                         text=True, bufsize=1)
-            threading.Thread(target=self._read, daemon=True).start()
-
-    @property
-    def active(self) -> bool:
-        return self.proc is not None
-
-    def _read(self) -> None:
-        for line in self.proc.stdout:
-            try:
-                idx, watts = [x.strip() for x in line.split(",")]
-                sample = (time.monotonic(), idx, float(watts))
-            except ValueError:
-                continue  # "[N/A]" or a partial line
-            with self.lock:
-                self.samples.append(sample)
-
-    def energy(self, t0: float, t1: float) -> dict:
-        """Joules per GPU over [t0, t1], each sample held until the next one."""
-        if not self.active:
-            return {"measured": False, "reason": self.reason}
-        with self.lock:
-            # Samples ending before the window are no longer needed (tasks run in sequence).
-            self.samples = [s for s in self.samples if s[0] >= t0 - 60]
-            samples = list(self.samples)
-        joules, peak, count = 0.0, None, 0
-        for idx in {s[1] for s in samples}:
-            series = [s for s in samples if s[1] == idx]
-            for (ta, _, wa), (tb, _, _) in zip(series, series[1:] + [(t1, idx, 0.0)]):
-                overlap = min(tb, t1) - max(ta, t0)
-                if overlap > 0:
-                    joules += wa * overlap
-                    count += 1
-                    peak = wa if peak is None else max(peak, wa)
-        seconds = max(t1 - t0, 1e-9)
-        result = {"measured": count > 0, "source": "nvidia-smi power.draw", "gpu_energy_j": round(joules, 1),
-                  "gpu_energy_wh": round(joules / 3600, 4), "gpu_mean_w": round(joules / seconds, 1),
-                  "gpu_peak_w": peak, "samples": count}
-        if self.idle_w is not None:
-            result["gpu_energy_above_idle_j"] = round(joules - self.idle_w * seconds, 1)
-        return result
-
-    def measure_idle(self, seconds: float) -> None:
-        if not self.active or seconds <= 0:
-            return
-        print(f"[setup] Measuring idle GPU power for {seconds:.0f} s ...", flush=True)
-        t0 = time.monotonic()
-        time.sleep(seconds)
-        measured = self.energy(t0, time.monotonic())
-        self.idle_w = measured["gpu_mean_w"] if measured["measured"] else None
-
-    def describe(self) -> dict:
-        return {"backend": "nvidia-smi" if self.active else None, "reason": self.reason, "gpus": self.gpus,
-                "sample_interval_ms": self.interval_ms if self.active else None, "idle_gpu_w": self.idle_w,
-                "scope": "GPU board power only; CPU, memory and the CPU-bound verifier are not included"}
-
-    def stop(self) -> None:
-        if self.proc:
-            self.proc.terminate()
 
 
 def environment(args, power: PowerMonitor) -> dict:
@@ -538,8 +451,11 @@ def write_run_summary(mode: str, run_dir: Path) -> dict:
         "completion_tokens_per_task": distribution((m.get("tokens") or {}).get("completion_tokens") for m in metas),
         "model_requests_per_task": distribution((m.get("tokens") or {}).get("requests") for m in metas),
         "gpu_energy_j_per_task": distribution((m.get("power") or {}).get("gpu_energy_j") for m in metas),
-        "gpu_energy_above_idle_j_per_task": distribution((m.get("power") or {}).get("gpu_energy_above_idle_j") for m in metas),
+        "cpu_energy_j_per_task": distribution((m.get("power") or {}).get("cpu_energy_j") for m in metas),
+        "measured_energy_j_per_task": distribution((m.get("power") or {}).get("measured_energy_j") for m in metas),
+        "measured_energy_above_idle_j_per_task": distribution((m.get("power") or {}).get("measured_energy_above_idle_j") for m in metas),
         "gpu_mean_w_per_task": distribution((m.get("power") or {}).get("gpu_mean_w") for m in metas),
+        "cpu_mean_w_per_task": distribution((m.get("power") or {}).get("cpu_mean_w") for m in metas),
     }
     if mode == "baseline":
         summary["with_code_block"] = sum(1 for r in rows if r.get("has_code_block"))
@@ -599,10 +515,12 @@ def run_mode(mode: str, tasks: list, args, info: dict, power: PowerMonitor) -> N
                            "duration_seconds": round(duration, 3), "model_seconds": timing.get("model_seconds"),
                            "tool_seconds": timing.get("tool_seconds"), "prompt_tokens": tokens.get("prompt_tokens"),
                            "completion_tokens": tokens.get("completion_tokens"),
-                           "gpu_energy_j": energy.get("gpu_energy_j"), "gpu_energy_above_idle_j": energy.get("gpu_energy_above_idle_j")}
+                           "gpu_energy_j": energy.get("gpu_energy_j"), "cpu_energy_j": energy.get("cpu_energy_j"),
+                           "measured_energy_j": energy.get("measured_energy_j"),
+                           "measured_energy_above_idle_j": energy.get("measured_energy_above_idle_j")}
         write_json(task_dir / "result.json", record)
         rebuild_jsonl(mode)
-        watts = f", {energy['gpu_energy_j']} J" if energy.get("measured") else ""
+        watts = f", {energy['measured_energy_j']} J" if energy.get("measured") else ""
         print(f"[{mode}] {n}/{len(tasks)} {task['task_id']}: {record['summary']} ({round(duration, 3)} s{watts})", flush=True)
     summary = write_run_summary(mode, run_dir)
     print(f"[{mode}] summary: {run_dir / 'run_summary.json'} ({summary['tasks']} tasks)", flush=True)
@@ -807,8 +725,8 @@ def intervention_record(verifications, failures, other_tools, turns, reply, fini
 # --------------------------------------------------------------------------
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Confident Agent Benchmark Runner (produces results only)")
-    p.add_argument("--mode", choices=["baseline", "intervention", "both"], required=True)
-    p.add_argument("--model", required=True, help="Model identifier exactly as LM Studio serves it (lms ps)")
+    p.add_argument("--mode", choices=["baseline", "intervention", "both"])
+    p.add_argument("--model", help="Model identifier exactly as LM Studio serves it (lms ps)")
     p.add_argument("--model-label", default=None, help="Results folder name for this model/quantization, e.g. 'Qwen3.5-9B-Q4_K_M'")
     p.add_argument("--api-base", default="http://127.0.0.1:1234/v1")
     p.add_argument("--dataset", type=Path, default=DATASET_DEFAULT)
@@ -832,9 +750,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--request-timeout", type=int, default=900, help="Seconds per model request")
     p.add_argument("--tool-timeout", type=int, default=300, help="Seconds per verify_candidate call")
     p.add_argument("--tool-retries", type=int, default=2, help="Retries when the tool bridge process crashes")
-    p.add_argument("--power", choices=["auto", "nvidia", "none"], default="auto",
-                   help="GPU energy per task via nvidia-smi (auto: when available)")
-    p.add_argument("--power-interval-ms", type=int, default=200, help="GPU power sampling interval")
+    p.add_argument("--power", choices=["auto", "nvidia", "lhm", "none"], default="auto",
+                   help="energy per task: nvidia-smi, or LibreHardwareMonitor's web server (AMD GPUs, CPU package); "
+                        "auto uses whichever is available")
+    p.add_argument("--power-interval-ms", type=int, default=500, help="power sampling interval")
+    p.add_argument("--lhm-url", default=LHM_URL_DEFAULT, help="LibreHardwareMonitor Remote Web Server data.json URL")
+    p.add_argument("--lhm-gpu", default=None, help="part of the GPU's name to measure, e.g. '9070' (default: the GPU drawing most power)")
+    p.add_argument("--lhm-gpu-sensor", default=None, help="exact LHM GPU power sensor name (default: best available)")
+    p.add_argument("--power-check", action="store_true", help="show the power sensors that would be used, then exit")
     p.add_argument("--idle-seconds", type=float, default=10, help="Idle GPU power measured before the run (0 to skip)")
     p.add_argument("--overwrite", action="store_true", help="Redo tasks that already have results")
     return p
@@ -845,7 +768,17 @@ def main() -> None:
     for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(errors="replace")
-    args = build_arg_parser().parse_args()
+    parser = build_arg_parser()
+    args = parser.parse_args()
+    if args.power_check:
+        monitor = PowerMonitor(args.power, args.power_interval_ms, args.lhm_url, args.lhm_gpu, args.lhm_gpu_sensor)
+        try:
+            power_check(monitor)
+        finally:
+            monitor.stop()
+        return
+    if not args.mode or not args.model:
+        parser.error("--mode and --model are required (except with --power-check)")
     args.toolbox = args.toolbox.resolve()
     args.python = toolbox_python(args.toolbox)
     if args.package_evidence and not args.package_evidence.exists():
@@ -867,8 +800,8 @@ def main() -> None:
         if args.context_limit < 16000:
             print(f"[setup] Warning: a {args.context_limit}-token context is tight for the intervention (system prompt "
                   "~2.6K tokens, each verify_candidate result ~2.5K). Load the model with 16K or more.", flush=True)
-    power = PowerMonitor(args.power, args.power_interval_ms)
-    print(f"[setup] GPU power: {'nvidia-smi, ' + ', '.join(g['name'] for g in power.gpus) if power.active else power.reason}.", flush=True)
+    power = PowerMonitor(args.power, args.power_interval_ms, args.lhm_url, args.lhm_gpu, args.lhm_gpu_sensor)
+    print(f"[setup] Power: {power.summary_line()}.", flush=True)
     try:
         power.measure_idle(args.idle_seconds)
         for mode in modes:
