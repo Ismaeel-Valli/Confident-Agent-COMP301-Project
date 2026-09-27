@@ -62,7 +62,7 @@ Every item below is written into code and tests and can be reverted in one place
    rule the benchmark design (`solve(inputs)`) forces L4 to zero on almost every task.
 2. **Optional documented response fields verify** (`stepInto`). The 1.5.0 behaviour
    (direct subscript on a non-required field is unverifiable) was stricter than the report.
-3. **Undeclared headers are noncritical; undeclared query parameters stay unverifiable**:
+3. **Undeclared headers are noncritical; undeclared query parameters stay unverifiable** (and, since decision 7, undeclared body fields):
    an extra query parameter is a common hallucinated filter.
 4. **Standard-library imports are tier 2.**
 5. **Policy rule 2 is enforced again.**
@@ -72,6 +72,14 @@ Every item below is written into code and tests and can be reverted in one place
    to the token, not expressed by the code, so they are reported as a note, like
    credential validity. Before this, every Petstore operation requiring
    `petstore_auth` abstained (94 of the 107 reference abstentions).
+7. **Undeclared request-body fields are unresolved** (`checkValue`, 2026-09-27). A
+   body field the schema does not declare is treated like an undeclared query
+   parameter: unverifiable, unless the schema explicitly allows extra properties
+   (`additionalProperties: true`, then a note) or forbids them (`false`, then a
+   contradiction). Found in benchmark run 1: 8 deliveries sent hallucinated fields
+   (for example `name` where the GitHub label API declares `new_name`), and no
+   correct delivery depended on an undeclared field. This change was made after
+   inspecting run 1 and is disclosed as such in `Benchmark/EVALUATION_PLAN.md`.
 
 ## Remaining low scores that are legitimate evidence gaps (not bugs)
 

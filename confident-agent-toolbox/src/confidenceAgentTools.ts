@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'fs/promises';
 import { dirname, isAbsolute, relative, resolve } from 'path';
 import { z } from 'zod';
 import { extractClaims } from './claimExtractor';
-import { queryPypi, verifyInterface } from './packageEvidence';
+import { queryPypi, verifyInterface, PackageEvidence } from './packageEvidence';
 import { resolveApiSpec } from './specDiscovery';
 import { verifyIdentifier, RunPyright } from './pyrightRunner';
 import { verifyAccessPoint, verifyInputContract, verifyOutputContract, verifyContextual } from './openApiVerifier';
@@ -16,7 +16,8 @@ import { evidenceFor, hostsFromClaims, hostsFromCode } from './evidenceRegistry'
 export * from './verificationTypes';
 export { EWCSAccumulator } from './verificationPolicy';
 export type { EWCSReport, LayerContribution } from './verificationPolicy';
-export interface ConfidenceAgentToolsDeps {isEnabled:boolean;allowPyright:boolean;getWorkingDirectory:()=>string;runPyright:RunPyright;}
+// lookupPackage: optional frozen package evidence (the benchmark uses it for reproducible runs); default is live PyPI.
+export interface ConfidenceAgentToolsDeps {isEnabled:boolean;allowPyright:boolean;getWorkingDirectory:()=>string;runPyright:RunPyright;lookupPackage?:(name:string)=>Promise<PackageEvidence>;}
 export function createConfidenceAgentTools(deps:ConfidenceAgentToolsDeps):Tool[] {
   const claims=z.array(z.record(z.any())), spec=z.record(z.any()).nullable().optional();
   const out:Tool[]=[];
@@ -37,7 +38,7 @@ export function createConfidenceAgentTools(deps:ConfidenceAgentToolsDeps):Tool[]
       if (p.reference_id && p.spec != null) throw new Error('Supply reference_id or spec, not both.');
       const selected = p.reference_id ? {spec:structuredClone(BUNDLED_REFERENCES[p.reference_id]),source:`Bundled reference ${p.reference_id}.`} : evidenceFor(hostsFromCode(p.code),p.spec);
       const reference = selected.spec;
-      const r=await runIntervention({...p,spec:reference},{runPyright:deps.runPyright,allowPyright:deps.allowPyright});
+      const r=await runIntervention({...p,spec:reference},{runPyright:deps.runPyright,allowPyright:deps.allowPyright,lookupPackage:deps.lookupPackage});
       const v=r.attempts[r.attempts.length-1].verification;
       return {toolbox_version:TOOLBOX_VERSION,decision:r.decision,report:r.report,candidate_hash:v.candidate_hash,
         reference_id:p.reference_id ?? null,evidence_selection:selected.source,spec_hash:v.spec_hash,reference_evidence:reference?.['x-confidence-evidence'] ?? null,

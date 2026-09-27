@@ -384,3 +384,19 @@ test('different fields returned on different branches do not limit extraction',a
  const caller='import requests\ndef get(inputs):\n    data = requests.get("https://api.example.test/items", params={"q": "x"}).json()\n    if inputs:\n        return data["id"]\n    return data["user"]\ndef solve(inputs):\n    return get(inputs)["id"]\n';
  const c=await extractClaims({code:caller});assert.equal(c.complete,false);assert.ok(c.issues.some(i=>/ambiguous provenance/.test(i.reason)),JSON.stringify(c.issues));
 });
+
+// Benchmark run 1 (2026-09-27): "name" sent where the label API declares "new_name" was delivered,
+// because an undeclared body field in a silent (open) schema was only a note.
+const bodySpec=extra=>({openapi:'3.0.3',info:{title:'body fields',version:'1'},servers:[{url:'https://api.example.test'}],
+ paths:{'/labels/{name}':{patch:{parameters:[{name:'name',in:'path',required:true,schema:{type:'string'}}],
+  requestBody:{content:{'application/json':{schema:{type:'object',properties:{new_name:{type:'string'},color:{type:'string'}},...extra}}}},
+  responses:{'200':{description:'ok'}}}}}});
+const bodyCode='import requests\ndef solve(inputs):\n    r = requests.patch("https://api.example.test/labels/bug", json={"name": inputs["new"]})\n    r.raise_for_status()\n    return r.json()\n';
+test('an undeclared request-body field is unresolved unless the schema explicitly allows extras',async()=>{
+ const silent=await check(verifyInputContract,bodyCode,bodySpec({}));
+ assert.equal(silent.state,'unverifiable');assert.match(silent.evidence_detail,/body: property name is not declared; acceptance is undocumented/);
+ const allowed=await check(verifyInputContract,bodyCode,bodySpec({additionalProperties:true}));
+ assert.equal(allowed.state,'verified_correct',allowed.evidence_detail);assert.match(allowed.evidence_detail,/explicitly allows additional properties/);
+ const closed=await check(verifyInputContract,bodyCode,bodySpec({additionalProperties:false}));
+ assert.equal(closed.state,'verified_incorrect');
+});

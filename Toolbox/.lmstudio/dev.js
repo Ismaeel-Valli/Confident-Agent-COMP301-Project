@@ -3977,7 +3977,8 @@ function checkValue(value, raw, spec, label, serialized = false, depth = 0) {
         merge(c2, checkValue(val, s.properties[key], spec, `${label}.${key}`, false, depth + 1));
       } else if (s.additionalProperties === false) c2.bad.push(`${label}: undeclared property ${key}.`);
       else if (typeof s.additionalProperties === "object") merge(c2, checkValue(val, s.additionalProperties, spec, `${label}.${key}`, false, depth + 1));
-      else note(c2, `${label}: property ${key} is not declared; the schema allows additional properties`);
+      else if (s.additionalProperties === true) note(c2, `${label}: property ${key} is not declared; the schema explicitly allows additional properties`);
+      else c2.unknown.push(`${label}: property ${key} is not declared; acceptance is undocumented.`);
     }
   }
   return c2;
@@ -4794,7 +4795,7 @@ function createConfidenceAgentTools(deps) {
       if (p.reference_id && p.spec != null) throw new Error("Supply reference_id or spec, not both.");
       const selected = p.reference_id ? { spec: structuredClone(BUNDLED_REFERENCES[p.reference_id]), source: `Bundled reference ${p.reference_id}.` } : evidenceFor(hostsFromCode(p.code), p.spec);
       const reference = selected.spec;
-      const r = await runIntervention({ ...p, spec: reference }, { runPyright: deps.runPyright, allowPyright: deps.allowPyright });
+      const r = await runIntervention({ ...p, spec: reference }, { runPyright: deps.runPyright, allowPyright: deps.allowPyright, lookupPackage: deps.lookupPackage });
       const v = r.attempts[r.attempts.length - 1].verification;
       return {
         toolbox_version: TOOLBOX_VERSION,

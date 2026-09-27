@@ -344,7 +344,11 @@ export function checkValue(value:any,raw:any,spec:any,label:string,serialized=fa
         merge(c,checkValue(val,s.properties[key],spec,`${label}.${key}`,false,depth+1));
       } else if (s.additionalProperties===false) c.bad.push(`${label}: undeclared property ${key}.`);
       else if (typeof s.additionalProperties==='object') merge(c,checkValue(val,s.additionalProperties,spec,`${label}.${key}`,false,depth+1));
-      else note(c, `${label}: property ${key} is not declared; the schema allows additional properties`);
+      // A schema that explicitly allows extra properties documents that they are accepted. When it
+      // is silent, an undeclared field is undocumented: like an undeclared query parameter it may
+      // be a hallucinated field (e.g. "name" for "new_name"), so it stays unresolved.
+      else if (s.additionalProperties===true) note(c, `${label}: property ${key} is not declared; the schema explicitly allows additional properties`);
+      else c.unknown.push(`${label}: property ${key} is not declared; acceptance is undocumented.`);
     }
   }
   return c;
