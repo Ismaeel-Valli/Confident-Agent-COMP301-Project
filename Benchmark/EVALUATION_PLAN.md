@@ -101,6 +101,23 @@ request with its own code. It must at least handle what the dataset's reference 
 use; the shared extractor, for example, leaves all 150 Open-Meteo references undetermined
 (`",".join(str(v) for v in [...])`).
 
+**Method (decided 2026-09-27): sandboxed execution.** Each candidate runs in a separate,
+isolated Python process with the task's test inputs, against a recording stand-in for
+`requests` that has the real library's names and signatures and returns a response built
+from the documented response schema. No request leaves the machine; sockets,
+subprocesses and file writes are blocked. This gives the exact request the code sends
+(conditions, loops and comprehensions included), the response fields it reads, and uses
+of `requests` functions or keywords that do not exist (class A). Each candidate also runs
+against an empty success and a server error for the behaviour checks. Details:
+`EvaluateBenchmark/README.md`.
+
+**Interpretations fixed with the method:** a candidate that makes no request (syntax
+error, crash such as a missing input key, or no call) is `runtime_failure`: not an API
+hallucination, counted in the "any error" row; an extra body field the specification
+documents is class B (it changes what is written), while an extra documented query
+parameter is class C (§2); a real `requests` feature the stand-in does not model, or
+another HTTP client, is undetermined.
+
 **Self-check.** Before scoring, the evaluator scores the dataset's 1,000 reference
 solutions: all must be correct. Any that are not point to an evaluator or answer-key error
 and are resolved before scoring model output.
@@ -170,3 +187,7 @@ classified by hand as in §4; the evaluator's error rate on the sample is report
   partial specifications; §5 evaluator independence and self-check; §6 operation-family
   clustering and exclusion of the pilot tasks; §8 dataset readiness. Prompted by the
   dataset audit and the dataset checks in §8, not by run 1's outcomes.
+- 2026-09-27 (before run 2): §5 evaluation method (sandboxed execution) and the
+  interpretations fixed with it (runtime failures, extra body fields). Chosen by the team
+  before the evaluator had scored any model output; the evaluator's self-check on the
+  1,000 reference solutions passed (all correct) before it was run on run 1.

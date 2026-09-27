@@ -1,0 +1,316 @@
+{
+  "label": "Qwen3.5-9B-Q4_K_M-full",
+  "tasks": 1000,
+  "primary": {
+    "tasks": 976,
+    "excluded_undetermined": 14,
+    "baseline_rate": 0.5225409836065574,
+    "intervention_rate": 0.030737704918032786,
+    "difference": 0.4918032786885246,
+    "discordant_baseline_only": 494,
+    "discordant_intervention_only": 14,
+    "mcnemar_p": 1.79231281319955e-126,
+    "ci_tasks": [
+      0.4600409836065574,
+      0.5245901639344263
+    ],
+    "ci_families": [
+      0.3297442799461642,
+      0.6256281407035176
+    ],
+    "families": 141,
+    "mcnemar_p_holm": 1.79231281319955e-126
+  },
+  "sensitivity": {
+    "undetermined_as_hallucination": {
+      "tasks": 990,
+      "excluded_undetermined": 0,
+      "baseline_rate": 0.5252525252525253,
+      "intervention_rate": 0.03434343434343434,
+      "difference": 0.4909090909090909,
+      "discordant_baseline_only": 504,
+      "discordant_intervention_only": 18,
+      "mcnemar_p": 1.4524084730332608e-124,
+      "ci_tasks": [
+        0.4575757575757576,
+        0.5242424242424243
+      ],
+      "ci_families": [
+        0.3295194508009153,
+        0.624090541632983
+      ],
+      "families": 141
+    },
+    "undetermined_as_correct": {
+      "tasks": 990,
+      "excluded_undetermined": 0,
+      "baseline_rate": 0.5151515151515151,
+      "intervention_rate": 0.030303030303030304,
+      "difference": 0.48484848484848486,
+      "discordant_baseline_only": 494,
+      "discordant_intervention_only": 14,
+      "mcnemar_p": 1.79231281319955e-126,
+      "ci_tasks": [
+        0.45151515151515154,
+        0.5181818181818182
+      ],
+      "ci_families": [
+        0.3231162196679438,
+        0.6191588785046729
+      ],
+      "families": 141
+    },
+    "including_pilot": {
+      "tasks": 986,
+      "excluded_undetermined": 14,
+      "baseline_rate": 0.5212981744421906,
+      "intervention_rate": 0.030425963488843813,
+      "difference": 0.4908722109533469,
+      "discordant_baseline_only": 498,
+      "discordant_intervention_only": 14,
+      "mcnemar_p": 1.2516968789815795e-127,
+      "ci_tasks": [
+        0.45841784989858014,
+        0.5243407707910751
+      ],
+      "ci_families": [
+        0.32981220657276994,
+        0.6248888888888889
+      ],
+      "families": 142
+    }
+  },
+  "secondary": {
+    "tasks": 976,
+    "excluded_undetermined": 14,
+    "baseline_rate": 0.6045081967213115,
+    "intervention_rate": 0.1290983606557377,
+    "difference": 0.47540983606557374,
+    "discordant_baseline_only": 508,
+    "discordant_intervention_only": 44,
+    "mcnemar_p": 4.2434827466305806e-101,
+    "ci_tasks": [
+      0.4395491803278688,
+      0.5112704918032787
+    ],
+    "ci_families": [
+      0.3293492695883134,
+      0.6022727272727273
+    ],
+    "families": 141
+  },
+  "any_error": {
+    "tasks": 976,
+    "excluded_undetermined": 14,
+    "baseline_rate": 0.7684426229508197,
+    "intervention_rate": 0.13319672131147542,
+    "difference": 0.6352459016393442,
+    "discordant_baseline_only": 642,
+    "discordant_intervention_only": 22,
+    "mcnemar_p": 2.0720150177573444e-159,
+    "ci_tasks": [
+      0.6024590163934426,
+      0.6680327868852459
+    ],
+    "ci_families": [
+      0.5175644028103045,
+      0.7344521224086871
+    ],
+    "families": 141
+  },
+  "baseline_classes": {
+    "A": 510,
+    "correct": 228,
+    "undetermined": 10,
+    "B": 82,
+    "runtime_failure": 160
+  },
+  "hallucination_types": {
+    "baseline": {
+      "wrong host, version or base path": 456,
+      "invented endpoint or method": 31,
+      "invalid value or structure": 10,
+      "invented parameter or body field": 14,
+      "missing required part or credential": 7,
+      "non-existent requests API": 2,
+      "other": 1
+    },
+    "intervention_shown": {
+      "invented parameter or body field": 4,
+      "undocumented response field": 2,
+      "wrong host, version or base path": 1,
+      "invalid value or structure": 18,
+      "missing required part or credential": 5
+    }
+  },
+  "primary_excluding_wrong_host": {
+    "baseline": 56,
+    "intervention_shown": 29
+  },
+  "shown_classes": {
+    "correct": 489,
+    "nothing_shown": 366,
+    "runtime_failure": 5,
+    "B": 96,
+    "A": 30,
+    "undetermined": 4
+  },
+  "final_classes": {
+    "correct": 513,
+    "undetermined": 49,
+    "runtime_failure": 8,
+    "B": 99,
+    "A": 321
+  },
+  "confusion": {
+    "correct|delivered": 489,
+    "undetermined|withheld": 45,
+    "runtime_failure|delivered": 5,
+    "correct|withheld": 24,
+    "B|delivered": 96,
+    "A|withheld": 291,
+    "A|delivered": 30,
+    "B|withheld": 3,
+    "runtime_failure|withheld": 3,
+    "undetermined|delivered": 4
+  },
+  "incorrect_rejection": 24,
+  "incorrect_acceptance_primary": 30,
+  "unapproved_code_shown": 0,
+  "ewcs": {
+    "auc_correct_vs_A": 0.9048672027290449,
+    "correct_n": 513,
+    "A_n": 320,
+    "share_correct_by_band": {
+      "0.60-0.85": {
+        "correct": 468,
+        "total": 648
+      },
+      "<0.60": {
+        "correct": 3,
+        "total": 217
+      },
+      ">=0.85": {
+        "correct": 42,
+        "total": 67
+      }
+    }
+  },
+  "corrections": {
+    "attempted": 395,
+    "allowed": 344,
+    "transitions": {
+      "A->correct": 126,
+      "undetermined->undetermined": 5,
+      "runtime_failure->correct": 14,
+      "correct->correct": 2,
+      "undetermined->correct": 6,
+      "A->undetermined": 2,
+      "undetermined->B": 3,
+      "B->B": 2,
+      "A->A": 158,
+      "A->B": 35,
+      "runtime_failure->runtime_failure": 3,
+      "runtime_failure->undetermined": 3,
+      "runtime_failure->B": 5,
+      "B->correct": 1,
+      "runtime_failure->A": 2,
+      "undetermined->A": 28
+    }
+  },
+  "protocol_notes": {
+    "verified the same code more than once": 305,
+    "reply differs from the final report": 97,
+    "reached the turn limit; the benchmark asked for the final reply": 330,
+    "corrected without a verified_incorrect layer": 51,
+    "more than one correction": 139
+  },
+  "behaviour": {
+    "baseline": {
+      "returns_expected_value": {
+        "ok": 691,
+        "of": 830
+      },
+      "empty_response_ok": {
+        "ok": 109,
+        "of": 830
+      },
+      "error_raises": {
+        "ok": 829,
+        "of": 830
+      }
+    },
+    "intervention_shown": {
+      "returns_expected_value": {
+        "ok": 492,
+        "of": 619
+      },
+      "empty_response_ok": {
+        "ok": 152,
+        "of": 619
+      },
+      "error_raises": {
+        "ok": 619,
+        "of": 619
+      }
+    }
+  },
+  "by_api": {
+    "DummyJSON": {
+      "tasks": 148,
+      "baseline_A": 100,
+      "intervention_A_shown": 0,
+      "baseline_undetermined": 5,
+      "intervention_undetermined": 0,
+      "delivered": 100
+    },
+    "GitHub": {
+      "tasks": 248,
+      "baseline_A": 15,
+      "intervention_A_shown": 6,
+      "baseline_undetermined": 0,
+      "intervention_undetermined": 0,
+      "delivered": 228
+    },
+    "JSONPlaceholder": {
+      "tasks": 148,
+      "baseline_A": 17,
+      "intervention_A_shown": 0,
+      "baseline_undetermined": 5,
+      "intervention_undetermined": 4,
+      "delivered": 143
+    },
+    "Open-Meteo": {
+      "tasks": 148,
+      "baseline_A": 110,
+      "intervention_A_shown": 1,
+      "baseline_undetermined": 0,
+      "intervention_undetermined": 0,
+      "delivered": 76
+    },
+    "Petstore": {
+      "tasks": 149,
+      "baseline_A": 119,
+      "intervention_A_shown": 23,
+      "baseline_undetermined": 0,
+      "intervention_undetermined": 0,
+      "delivered": 77
+    },
+    "REST Countries": {
+      "tasks": 149,
+      "baseline_A": 149,
+      "intervention_A_shown": 0,
+      "baseline_undetermined": 0,
+      "intervention_undetermined": 0,
+      "delivered": 0
+    }
+  },
+  "cost": {
+    "baseline": {},
+    "intervention": {}
+  },
+  "review_files": {
+    "review_queue": 60,
+    "audit_sample": 100
+  }
+}
