@@ -1,0 +1,162 @@
+{
+  "meta": {
+    "turns": [
+      {
+        "turn": 1,
+        "finish_reason": "tool_calls",
+        "usage": {
+          "prompt_tokens": 2339,
+          "completion_tokens": 136,
+          "total_tokens": 2475,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "model_seconds": 3.232,
+        "tool_calls": [
+          "verify_candidate"
+        ]
+      },
+      {
+        "turn": 2,
+        "finish_reason": "stop",
+        "usage": {
+          "prompt_tokens": 4916,
+          "completion_tokens": 636,
+          "total_tokens": 5552,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        },
+        "model_seconds": 10.26,
+        "tool_calls": []
+      }
+    ],
+    "verifications": [
+      {
+        "index": 1,
+        "turn": 1,
+        "code_sha256": "4bd0495fd782744ff6d65eab49310488ee492eeebb1491b55fa813f89eb01746",
+        "candidate_hash_matches": true,
+        "decision": "deliver_with_flag",
+        "ewcs": 0.7308,
+        "layers": {
+          "interface": "verified_correct",
+          "identifier": "verified_correct",
+          "access_point": "verified_correct",
+          "input_contract": "verified_correct",
+          "output_contract": "verified_correct",
+          "contextual": "not_applicable"
+        },
+        "has_contradiction": false,
+        "evidence_selection": "Frozen evidence dummyjson.curated.openapi.json selected for DummyJSON.",
+        "report": "### Confidence Agent Report\n\n**Decision:** deliver_with_flag\n**EWCS:** 0.7308 (signed: 0.7308, applicable weight: 13)\n\n| Layer | State | Tier | Weight | Factor | Positive | Signed |\n|---|---|---|---|---|---|---|\n| interface | verified_correct | tier_2 | 3 | 0.8 | 2.4 | 2.4 |\n| identifier | verified_correct | tier_4 | 3 | 0.5 | 1.5 | 1.5 |\n| access_point | verified_correct | tier_2 | 4 | 0.8 | 3.2 | 3.2 |\n| input_contract | verified_correct | tier_2 | 2 | 0.8 | 1.6 | 1.6 |\n| output_contract | verified_correct | tier_2 | 1 | 0.8 | 0.8 | 0.8 |\n| contextual | not_applicable | none | 2 | 0 | 0 | 0 |\n\nScope: API-claim and static evidence only. EWCS is not a probability of correctness. Task behavior has not been independently checked by this verifier.\n\nPolicy 2026-09-25.1: thresholds 0.85/0.6, uncertainty gate on.\n\nEvidence:\n\n- interface: requests maps to requests (2.34.2). Installation/callables checked separately by Pyright.\n- identifier: No identifier, attribute or API-call diagnostics in the configured environment (Pyright standard mode). A clean check does not establish REST contracts or task behavior.\n- access_point: GET https://dummyjson.com/products/{0} matches the declared server and operation GET /products/{id}. Noncritical: runtime path values are assumed to stay within one path segment.\n- input_contract: Required inputs, locations and supported value constraints checked for call_6_15 (/products/{id}). Noncritical: path.id: runtime value 0 is not statically known; its value constraints are not checked\n- output_contract: Response path [\"title\"] is documented for call_6_15 (/products/{id}).\n- contextual: No authentication requirement for this operation. Unused security definitions are not requirements.\n\nFlag: some checks rely on supporting static or package metadata evidence; the code was not executed.\n\n```python\nimport requests\n\ndef solve(inputs):\n    resource_id = inputs[\"resource_id\"]\n    url = \"https://dummyjson.com/products/{0}\".format(resource_id)\n    response = requests.get(url)\n    if response.status_code == 200:\n        data = response.json()\n        return data.get(\"title\") if data else None\n    elif response.status_code == 404:\n        return None\n    else:\n        raise Exception(f\"HTTP {response.status_code}: {response.text}\")\n```",
+        "extra_arguments": [],
+        "tool_seconds": 3.82,
+        "bridge_attempts": 1,
+        "bridge_failures": []
+      }
+    ],
+    "tool_failures": [],
+    "correction": {
+      "attempted": false,
+      "allowed": false,
+      "count": 0,
+      "first_decision": "deliver_with_flag",
+      "first_layers": {
+        "interface": "verified_correct",
+        "identifier": "verified_correct",
+        "access_point": "verified_correct",
+        "input_contract": "verified_correct",
+        "output_contract": "verified_correct",
+        "contextual": "not_applicable"
+      },
+      "final_decision_after_correction": null
+    },
+    "protocol_notes": [],
+    "final_finish_reason": "stop",
+    "final_reply": {
+      "present": true,
+      "prompted_by_benchmark": false,
+      "matches_report": true
+    },
+    "error": null,
+    "tokens": {
+      "requests": 2,
+      "prompt_tokens": 7255,
+      "completion_tokens": 772,
+      "total_tokens": 8027,
+      "reasoning_tokens": 0,
+      "completion_tokens_per_second": 57.22
+    },
+    "timing": {
+      "model_seconds": 13.492,
+      "tool_seconds": 3.82,
+      "other_seconds": 0.002
+    },
+    "task_id": "REST_PY_DJ_0002",
+    "mode": "intervention",
+    "model": "qwen3.5-9b-q4",
+    "model_label": "Qwen3.5-9B-Q4_KM-timing-check",
+    "dataset": "E:\\Confident-Agent-COMP301-Project\\Benchmark\\dataset\\rest_api_prompts_pilot.jsonl",
+    "instruction": "Write a Python function solve(inputs) for DummyJSON. Retrieve a product by identifier. The inputs dictionary provides: resource_id: Identifier of the product. Return the decoded JSON response. Return None for a successful empty response. Raise an exception for an unsuccessful HTTP response. Assume referenced resources and accounts exist. Do not execute the function.",
+    "started": "2026-09-30T17:00:40+00:00",
+    "finished": "2026-09-30T17:00:57+00:00",
+    "duration_seconds": 17.314,
+    "power": {
+      "measured": true,
+      "source": "LibreHardwareMonitor",
+      "channels": {
+        "gpu": "AMD Radeon RX 9070 XT: GPU Package",
+        "cpu": "AMD Ryzen 7 5700X3D: Package"
+      },
+      "gpu_energy_j": 3286.1,
+      "gpu_mean_w": 189.8,
+      "gpu_peak_w": 304.0,
+      "gpu_samples": 36,
+      "gpu_energy_above_idle_j": 2481.0,
+      "cpu_energy_j": 834.5,
+      "cpu_mean_w": 48.2,
+      "cpu_peak_w": 52.5,
+      "cpu_samples": 36,
+      "cpu_energy_above_idle_j": 200.8,
+      "measured_energy_j": 4120.6,
+      "measured_energy_wh": 1.1446,
+      "measured_energy_above_idle_j": 2681.8
+    }
+  },
+  "jsonl": {
+    "prompt_id": "REST_PY_DJ_0002",
+    "model": "qwen3.5-9b-q4",
+    "model_label": "Qwen3.5-9B-Q4_KM-timing-check",
+    "decision": "deliver_with_flag",
+    "ewcs": 0.7308,
+    "code_output": "import requests\n\ndef solve(inputs):\n    resource_id = inputs[\"resource_id\"]\n    url = \"https://dummyjson.com/products/{0}\".format(resource_id)\n    response = requests.get(url)\n    if response.status_code == 200:\n        data = response.json()\n        return data.get(\"title\") if data else None\n    elif response.status_code == 404:\n        return None\n    else:\n        raise Exception(f\"HTTP {response.status_code}: {response.text}\")",
+    "first_candidate": "import requests\n\ndef solve(inputs):\n    resource_id = inputs[\"resource_id\"]\n    url = \"https://dummyjson.com/products/{0}\".format(resource_id)\n    response = requests.get(url)\n    if response.status_code == 200:\n        data = response.json()\n        return data.get(\"title\") if data else None\n    elif response.status_code == 404:\n        return None\n    else:\n        raise Exception(f\"HTTP {response.status_code}: {response.text}\")",
+    "final_candidate": "import requests\n\ndef solve(inputs):\n    resource_id = inputs[\"resource_id\"]\n    url = \"https://dummyjson.com/products/{0}\".format(resource_id)\n    response = requests.get(url)\n    if response.status_code == 200:\n        data = response.json()\n        return data.get(\"title\") if data else None\n    elif response.status_code == 404:\n        return None\n    else:\n        raise Exception(f\"HTTP {response.status_code}: {response.text}\")",
+    "reply_code": "import requests\n\ndef solve(inputs):\n    resource_id = inputs[\"resource_id\"]\n    url = \"https://dummyjson.com/products/{0}\".format(resource_id)\n    response = requests.get(url)\n    if response.status_code == 200:\n        data = response.json()\n        return data.get(\"title\") if data else None\n    elif response.status_code == 404:\n        return None\n    else:\n        raise Exception(f\"HTTP {response.status_code}: {response.text}\")",
+    "final_reply_present": true,
+    "final_reply_prompted": false,
+    "verification_calls": 1,
+    "tool_failures": 0,
+    "model_turns": 2,
+    "correction_attempted": false,
+    "correction_allowed": false,
+    "correction_count": 0,
+    "first_decision": "deliver_with_flag",
+    "first_has_contradiction": false,
+    "first_ewcs": 0.7308,
+    "protocol_notes": [],
+    "error": null,
+    "duration_seconds": 17.314,
+    "model_seconds": 13.492,
+    "tool_seconds": 3.82,
+    "prompt_tokens": 7255,
+    "completion_tokens": 772,
+    "gpu_energy_j": 3286.1,
+    "cpu_energy_j": 834.5,
+    "measured_energy_j": 4120.6,
+    "measured_energy_above_idle_j": 2681.8
+  },
+  "summary": "deliver_with_flag; 1 verification(s)"
+}

@@ -1,0 +1,38 @@
+{
+  "id": "chatcmpl-sw7hdn6evsmcbx8s8jtb",
+  "object": "chat.completion",
+  "created": 1790785010,
+  "model": "qwen3.5-9b-q8",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "reasoning_content": "",
+        "tool_calls": [
+          {
+            "type": "function",
+            "id": "60ZXk8Lw34EWYWaJbgN9YxRPZdPlViyP",
+            "function": {
+              "name": "verify_candidate",
+              "arguments": "{\"code\":\"import requests\\n\\ndef solve(inputs):\\n    \\\"\\\"\\\"\\n    Submit a new post to JSONPlaceholder using the provided title.\\n    \\n    Args:\\n        inputs (dict): Must contain 'new_title' key with the title value.\\n        \\n    Returns:\\n        dict or None: Decoded JSON response if successful, None for empty response.\\n        \\n    Raises:\\n        Exception: If HTTP response is unsuccessful.\\n    \\\"\\\"\\\"\\n    base_url = \\\"https://jsonplaceholder.typicode.com\\\"\\n    url = f\\\"{base_url}/posts\\\"\\n    \\n    title = inputs[\\\"new_title\\\"]\\n    \\n    payload = {\\n        \\\"title\\\": title,\\n        \\\"body\\\": \\\"\\\",\\n        \\\"userId\\\": 1\\n    }\\n    \\n    response = requests.post(url, json=payload)\\n    \\n    if response.status_code != 201:\\n        raise Exception(f\\\"Failed to create post. Status code: {response.status_code}\\\")\\n    \\n    return None\"}"
+            }
+          }
+        ]
+      },
+      "logprobs": null,
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 2339,
+    "completion_tokens": 228,
+    "total_tokens": 2567,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen3.5-9b-q8"
+}

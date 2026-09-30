@@ -1,0 +1,137 @@
+{
+  "benchmark_version": "2026-09-27.2",
+  "mode": "intervention",
+  "model_label": "Qwen3.5-9B-Q4_KM-timing-check",
+  "tasks": 10,
+  "errors": {},
+  "seconds_per_task": {
+    "n": 10,
+    "total": 293.384,
+    "mean": 29.338,
+    "median": 24.556,
+    "p95": 67.903,
+    "min": 16.389,
+    "max": 67.903
+  },
+  "model_seconds_per_task": {
+    "n": 10,
+    "total": 216.326,
+    "mean": 21.633,
+    "median": 18.416,
+    "p95": 52.152,
+    "min": 12.483,
+    "max": 52.152
+  },
+  "prompt_tokens_per_task": {
+    "n": 10,
+    "total": 155878,
+    "mean": 15587.8,
+    "median": 11325.0,
+    "p95": 40457,
+    "min": 7156,
+    "max": 40457
+  },
+  "completion_tokens_per_task": {
+    "n": 10,
+    "total": 10730,
+    "mean": 1073,
+    "median": 993.0,
+    "p95": 2008,
+    "min": 723,
+    "max": 2008
+  },
+  "model_requests_per_task": {
+    "n": 10,
+    "total": 29,
+    "mean": 2.9,
+    "median": 2.5,
+    "p95": 5,
+    "min": 2,
+    "max": 5
+  },
+  "gpu_energy_j_per_task": {
+    "n": 10,
+    "total": 60421.2,
+    "mean": 6042.12,
+    "median": 5402.95,
+    "p95": 14364.5,
+    "min": 3246.7,
+    "max": 14364.5
+  },
+  "cpu_energy_j_per_task": {
+    "n": 10,
+    "total": 14094.2,
+    "mean": 1409.42,
+    "median": 1161.0,
+    "p95": 3277.4,
+    "min": 739.9,
+    "max": 3277.4
+  },
+  "measured_energy_j_per_task": {
+    "n": 10,
+    "total": 74515.2,
+    "mean": 7451.52,
+    "median": 6563.9,
+    "p95": 17641.9,
+    "min": 3986.5,
+    "max": 17641.9
+  },
+  "measured_energy_above_idle_j_per_task": {
+    "n": 10,
+    "total": 50135.2,
+    "mean": 5013.52,
+    "median": 4523.3,
+    "p95": 11999.1,
+    "min": 2624.7,
+    "max": 11999.1
+  },
+  "gpu_mean_w_per_task": {
+    "n": 10,
+    "total": 2065.5,
+    "mean": 206.55,
+    "median": 208.25,
+    "p95": 238.7,
+    "min": 167.9,
+    "max": 238.7
+  },
+  "cpu_mean_w_per_task": {
+    "n": 10,
+    "total": 476.5,
+    "mean": 47.65,
+    "median": 48.15,
+    "p95": 49.9,
+    "min": 44.3,
+    "max": 49.9
+  },
+  "decisions": {
+    "deliver_with_flag": 7,
+    "abstain": 3
+  },
+  "tool_seconds_per_task": {
+    "n": 10,
+    "total": 76.116,
+    "mean": 7.612,
+    "median": 6.104,
+    "p95": 16.043,
+    "min": 3.812,
+    "max": 16.043
+  },
+  "verification_calls": {
+    "1": 5,
+    "2": 3,
+    "4": 2
+  },
+  "tool_failures": 0,
+  "first_had_contradiction": 3,
+  "correction_attempted": 4,
+  "correction_attempted_when_allowed": 3,
+  "final_reply_prompted": 2,
+  "reply_matches_report": 9,
+  "protocol_notes": {
+    "reached the turn limit; the benchmark asked for the final reply": 2,
+    "verified the same code more than once": 2,
+    "corrected without a verified_incorrect layer": 1,
+    "reply differs from the final report": 1,
+    "more than one correction": 1
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "chatcmpl-xktgt7iy4h9itim5c3845s",
+  "object": "chat.completion",
+  "created": 1790783999,
+  "model": "qwen3.5-9b-q6",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "### Confidence Agent Report\n\n**Decision:** deliver_with_flag\n**EWCS:** 0.725 (signed: 0.725, applicable weight: 12)\n\n| Layer | State | Tier | Weight | Factor | Positive | Signed |\n|---|---|---|---|---|---|---|\n| interface | verified_correct | tier_2 | 3 | 0.8 | 2.4 | 2.4 |\n| identifier | verified_correct | tier_4 | 3 | 0.5 | 1.5 | 1.5 |\n| access_point | verified_correct | tier_2 | 4 | 0.8 | 3.2 | 3.2 |\n| input_contract | verified_correct | tier_2 | 2 | 0.8 | 1.6 | 1.6 |\n| output_contract | not_applicable | none | 1 | 0 | 0 | 0 |\n| contextual | not_applicable | none | 2 | 0 | 0 | 0 |\n\nScope: API-claim and static evidence only. EWCS is not a probability of correctness. Task behavior has not been independently checked by this verifier.\n\nPolicy 2026-09-25.1: thresholds 0.85/0.6, uncertainty gate on.\n\nEvidence:\n\n- interface: requests maps to requests (2.34.2). Installation/callables checked separately by Pyright.\n- identifier: No identifier, attribute or API-call diagnostics in the configured environment (Pyright standard mode). A clean check does not establish REST contracts or task behavior.\n- access_point: GET https://jsonplaceholder.typicode.com/posts matches the declared server and operation GET /posts.\n- input_contract: Required inputs, locations and supported value constraints checked for call_21_19 (/posts).\n- output_contract: No tracked response-field accesses.\n- contextual: No authentication requirement for this operation. Unused security definitions are not requirements.\n\nFlag: some checks rely on supporting static or package metadata evidence; the code was not executed.\n\n```python\nimport requests\n\ndef solve(inputs):\n    \"\"\"\n    Retrieve posts from JSONPlaceholder and return the decoded JSON response.\n    \n    Parameters:\n        inputs (dict): Must contain 'post_id' key with an integer value.\n    \n    Returns:\n        dict or None: Decoded JSON response, or None if successful but empty.\n    \n    Raises:\n        Exception: If HTTP response is unsuccessful.\n    \"\"\"\n    base_url = \"https://jsonplaceholder.typicode.com\"\n    endpoint = \"/posts\"\n    url = f\"{base_url}{endpoint}\"\n    \n    try:\n        response = requests.get(url)\n        response.raise_for_status()\n        \n        if response.status_code == 200 and len(response.json()) == 0:\n            return None\n        \n        return response.json()\n    except requests.exceptions.HTTPError as e:\n        raise Exception(f\"HTTP error occurred: {e}\")\n```",
+        "reasoning_content": "",
+        "tool_calls": []
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 4895,
+    "completion_tokens": 658,
+    "total_tokens": 5553,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen3.5-9b-q6"
+}

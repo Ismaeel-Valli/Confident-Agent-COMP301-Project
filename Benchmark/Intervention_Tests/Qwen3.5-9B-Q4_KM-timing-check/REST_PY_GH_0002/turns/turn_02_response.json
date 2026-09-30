@@ -1,0 +1,38 @@
+{
+  "id": "chatcmpl-zfjqihxnljls46dqdc8g",
+  "object": "chat.completion",
+  "created": 1790787538,
+  "model": "qwen3.5-9b-q4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "reasoning_content": "",
+        "tool_calls": [
+          {
+            "type": "function",
+            "id": "iDC10xVi0Icb6GanCG1Z2mT3Qc9NVwuT",
+            "function": {
+              "name": "verify_candidate",
+              "arguments": "{\"code\":\"import requests\\n\\ndef solve(inputs):\\n    \\\"\\\"\\\"\\n    Update an organization on GitHub using the REST API.\\n    \\n    Args:\\n        inputs (dict): Contains:\\n            - organization (str): The organization name.\\n            - new_name (str): The new name for the organization.\\n            - credential (str): Caller-supplied authentication token.\\n    \\n    Returns:\\n        dict or None: Decoded JSON response, or None if successful with empty response.\\n    \\n    Raises:\\n        Exception: For unsuccessful HTTP responses.\\n    \\\"\\\"\\\"\\n    base_url = \\\"https://api.github.com\\\"\\n    org_name = inputs[\\\"organization\\\"]\\n    new_name = inputs[\\\"new_name\\\"]\\n    credential = inputs[\\\"credential\\\"]\\n    \\n    url = f\\\"{base_url}/orgs/{org_name}\\\"\\n    headers = {\\n        \\\"Authorization\\\": f\\\"token {credential}\\\",\\n        \\\"Accept\\\": \\\"application/vnd.github.v3+json\\\"\\n    }\\n    \\n    payload = {\\\"name\\\": new_name}\\n    \\n    response = requests.patch(url, json=payload, headers=headers)\\n    response.raise_for_status()\\n    \\n    if response.status_code == 204:\\n        return None\\n    \\n    return response.json()\"}"
+            }
+          }
+        ]
+      },
+      "logprobs": null,
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 5404,
+    "completion_tokens": 286,
+    "total_tokens": 5690,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen3.5-9b-q4"
+}

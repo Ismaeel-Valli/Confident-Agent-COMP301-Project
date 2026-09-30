@@ -1,0 +1,38 @@
+{
+  "id": "chatcmpl-b3qw2365wgbjk7oiactyja",
+  "object": "chat.completion",
+  "created": 1790784394,
+  "model": "qwen3.5-9b-q6",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "reasoning_content": "",
+        "tool_calls": [
+          {
+            "type": "function",
+            "id": "KH3THGU52mBeP2Kw1B3qUtvT51RU2zrL",
+            "function": {
+              "name": "verify_candidate",
+              "arguments": "{\"code\":\"import requests\\n\\ndef solve(inputs):\\n    \\\"\\\"\\\"\\n    Update an existing pet in the Swagger Petstore API.\\n    \\n    Args:\\n        inputs (dict): Contains:\\n            - new_resource_id (int): New ID for the pet\\n            - new_name (str): New name for the pet\\n            - new_photo_links (list): New photo URLs for the pet\\n            - credential (str): Bearer token for authentication\\n    \\n    Returns:\\n        dict or None: Decoded JSON response, or None if successful with empty response.\\n    \\n    Raises:\\n        Exception: For unsuccessful HTTP responses.\\n    \\\"\\\"\\\"\\n    base_url = \\\"https://petstore3.swagger.io\\\"\\n    endpoint = \\\"/api/v3/pet/{pet_id}\\\"\\n    url = f\\\"{base_url}{endpoint}\\\".format(pet_id=inputs[\\\"new_resource_id\\\"])\\n    \\n    headers = {\\n        \\\"Authorization\\\": f\\\"Bearer {inputs['credential']}\\\",\\n        \\\"Content-Type\\\": \\\"application/json\\\"\\n    }\\n    \\n    payload = {\\n        \\\"id\\\": inputs[\\\"new_resource_id\\\"],\\n        \\\"name\\\": inputs[\\\"new_name\\\"],\\n        \\\"photoUrls\\\": inputs[\\\"new_photo_links\\\"]\\n    }\\n    \\n    response = requests.put(url, json=payload, headers=headers)\\n    \\n    if response.status_code >= 400:\\n        raise Exception(f\\\"Failed to update pet: {response.status_code} - {response.text}\\\")\\n    \\n    return response.json() if response.content else None\"}"
+            }
+          }
+        ]
+      },
+      "logprobs": null,
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 5079,
+    "completion_tokens": 343,
+    "total_tokens": 5422,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen3.5-9b-q6"
+}

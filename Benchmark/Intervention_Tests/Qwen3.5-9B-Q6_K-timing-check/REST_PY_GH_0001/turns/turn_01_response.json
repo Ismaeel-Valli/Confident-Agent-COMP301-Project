@@ -1,0 +1,38 @@
+{
+  "id": "chatcmpl-qztp6h4q8xe5nv4x340vca",
+  "object": "chat.completion",
+  "created": 1790784034,
+  "model": "qwen3.5-9b-q6",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "reasoning_content": "",
+        "tool_calls": [
+          {
+            "type": "function",
+            "id": "4yHPP1AEJ5Bq6o8pXm3v7u8qnetK21sm",
+            "function": {
+              "name": "verify_candidate",
+              "arguments": "{\"code\":\"import requests\\nimport json\\n\\ndef solve(inputs):\\n    \\\"\\\"\\\"\\n    Get organization details from GitHub REST API v2026-03-10.\\n    \\n    Args:\\n        inputs (dict): Must contain 'organization' and 'credential'.\\n        \\n    Returns:\\n        dict or None: Decoded JSON response, or None for empty successful response.\\n        \\n    Raises:\\n        Exception: For unsuccessful HTTP responses.\\n    \\\"\\\"\\\"\\n    org_name = inputs[\\\"organization\\\"]\\n    credential = inputs[\\\"credential\\\"]\\n    \\n    url = f\\\"https://api.github.com/orgs/{org_name}\\\"\\n    headers = {\\n        \\\"Authorization\\\": f\\\"token {credential}\\\",\\n        \\\"Accept\\\": \\\"application/vnd.github.v2026-03-10+json\\\"\\n    }\\n    \\n    response = requests.get(url, headers=headers)\\n    \\n    if response.status_code != 200:\\n        raise Exception(f\\\"Failed to fetch organization: {response.status_code} - {response.text}\\\")\\n    \\n    data = response.json()\\n    \\n    return data if data else None\"}"
+            }
+          }
+        ]
+      },
+      "logprobs": null,
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 2366,
+    "completion_tokens": 259,
+    "total_tokens": 2625,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen3.5-9b-q6"
+}

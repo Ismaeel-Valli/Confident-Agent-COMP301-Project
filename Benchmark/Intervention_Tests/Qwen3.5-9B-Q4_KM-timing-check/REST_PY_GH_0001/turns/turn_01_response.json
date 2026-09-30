@@ -1,0 +1,38 @@
+{
+  "id": "chatcmpl-u30eqh5womx0dse5hfvmq",
+  "object": "chat.completion",
+  "created": 1790787506,
+  "model": "qwen3.5-9b-q4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "reasoning_content": "",
+        "tool_calls": [
+          {
+            "type": "function",
+            "id": "iDmtaajYTj8lLpSPn9GEzKH5orpTgI8k",
+            "function": {
+              "name": "verify_candidate",
+              "arguments": "{\"code\":\"import requests\\n\\ndef solve(inputs):\\n    \\\"\\\"\\\"\\n    Get an organization from GitHub REST API version 2026-03-10.\\n    \\n    Args:\\n        inputs (dict): Dictionary containing:\\n            - \\\"organization\\\": The organization name (str)\\n            - \\\"credential\\\": Caller-supplied credential (str, assumed to have necessary permissions)\\n    \\n    Returns:\\n        dict or None: Decoded JSON response for successful request. Returns None for empty response.\\n    \\n    Raises:\\n        Exception: For unsuccessful HTTP responses.\\n    \\\"\\\"\\\"\\n    base_url = \\\"https://api.github.com\\\"\\n    organization = inputs[\\\"organization\\\"]\\n    credential = inputs[\\\"credential\\\"]\\n    \\n    headers = {\\n        \\\"Accept\\\": \\\"application/vnd.github.v3+json\\\",\\n        \\\"Authorization\\\": f\\\"token {credential}\\\"\\n    }\\n    \\n    url = f\\\"{base_url}/orgs/{organization}\\\"\\n    \\n    response = requests.get(url, headers=headers)\\n    \\n    if response.status_code == 200:\\n        return response.json()\\n    elif response.status_code == 204:\\n        return None\\n    else:\\n        raise Exception(f\\\"Failed to get organization {organization}: HTTP {response.status_code}\\\")\"}"
+            }
+          }
+        ]
+      },
+      "logprobs": null,
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 2366,
+    "completion_tokens": 292,
+    "total_tokens": 2658,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen3.5-9b-q4"
+}

@@ -1,0 +1,38 @@
+{
+  "id": "chatcmpl-9rmdrw2lv9n78etleysira",
+  "object": "chat.completion",
+  "created": 1790785040,
+  "model": "qwen3.5-9b-q8",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "reasoning_content": "",
+        "tool_calls": [
+          {
+            "type": "function",
+            "id": "ORUwaB5JlENVVYMjJdv1hYXnIJ3U2QGo",
+            "function": {
+              "name": "verify_candidate",
+              "arguments": "{\"code\":\"import requests\\nimport json\\n\\ndef solve(inputs):\\n    \\\"\\\"\\\"\\n    Get an organization from GitHub REST API v2026-03-10.\\n    \\n    Args:\\n        inputs (dict): Must contain 'organization' and 'credential'.\\n        \\n    Returns:\\n        dict or None: Decoded JSON response, or None for successful empty response.\\n        \\n    Raises:\\n        Exception: For unsuccessful HTTP responses.\\n    \\\"\\\"\\\"\\n    org = inputs[\\\"organization\\\"]\\n    credential = inputs[\\\"credential\\\"]\\n    \\n    url = f\\\"https://api.github.com/orgs/{org}\\\"\\n    headers = {\\n        \\\"Authorization\\\": f\\\"token {credential}\\\",\\n        \\\"Accept\\\": \\\"application/vnd.github+json\\\"\\n    }\\n    \\n    response = requests.get(url, headers=headers)\\n    \\n    if response.status_code == 200:\\n        data = response.json()\\n        return None if len(data) == 0 else data\\n    elif response.status_code in (401, 403):\\n        raise Exception(f\\\"Authentication failed: {response.status_code}\\\")\\n    else:\\n        raise Exception(f\\\"Failed to fetch organization: {response.status_code} - {response.text}\\\")\"}"
+            }
+          }
+        ]
+      },
+      "logprobs": null,
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 2366,
+    "completion_tokens": 284,
+    "total_tokens": 2650,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen3.5-9b-q8"
+}

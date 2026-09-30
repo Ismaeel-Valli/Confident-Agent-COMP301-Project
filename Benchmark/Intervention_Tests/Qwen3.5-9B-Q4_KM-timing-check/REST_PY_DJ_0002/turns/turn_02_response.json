@@ -1,0 +1,29 @@
+{
+  "id": "chatcmpl-zmh3b3bg8pl2vr7pee1re",
+  "object": "chat.completion",
+  "created": 1790787647,
+  "model": "qwen3.5-9b-q4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "### Confidence Agent Report\n\n**Decision:** deliver_with_flag\n**EWCS:** 0.7308 (signed: 0.7308, applicable weight: 13)\n\n| Layer | State | Tier | Weight | Factor | Positive | Signed |\n|---|---|---|---|---|---|---|\n| interface | verified_correct | tier_2 | 3 | 0.8 | 2.4 | 2.4 |\n| identifier | verified_correct | tier_4 | 3 | 0.5 | 1.5 | 1.5 |\n| access_point | verified_correct | tier_2 | 4 | 0.8 | 3.2 | 3.2 |\n| input_contract | verified_correct | tier_2 | 2 | 0.8 | 1.6 | 1.6 |\n| output_contract | verified_correct | tier_2 | 1 | 0.8 | 0.8 | 0.8 |\n| contextual | not_applicable | none | 2 | 0 | 0 | 0 |\n\nScope: API-claim and static evidence only. EWCS is not a probability of correctness. Task behavior has not been independently checked by this verifier.\n\nPolicy 2026-09-25.1: thresholds 0.85/0.6, uncertainty gate on.\n\nEvidence:\n\n- interface: requests maps to requests (2.34.2). Installation/callables checked separately by Pyright.\n- identifier: No identifier, attribute or API-call diagnostics in the configured environment (Pyright standard mode). A clean check does not establish REST contracts or task behavior.\n- access_point: GET https://dummyjson.com/products/{0} matches the declared server and operation GET /products/{id}. Noncritical: runtime path values are assumed to stay within one path segment.\n- input_contract: Required inputs, locations and supported value constraints checked for call_6_15 (/products/{id}). Noncritical: path.id: runtime value 0 is not statically known; its value constraints are not checked\n- output_contract: Response path [\"title\"] is documented for call_6_15 (/products/{id}).\n- contextual: No authentication requirement for this operation. Unused security definitions are not requirements.\n\nFlag: some checks rely on supporting static or package metadata evidence; the code was not executed.\n\n```python\nimport requests\n\ndef solve(inputs):\n    resource_id = inputs[\"resource_id\"]\n    url = \"https://dummyjson.com/products/{0}\".format(resource_id)\n    response = requests.get(url)\n    if response.status_code == 200:\n        data = response.json()\n        return data.get(\"title\") if data else None\n    elif response.status_code == 404:\n        return None\n    else:\n        raise Exception(f\"HTTP {response.status_code}: {response.text}\")\n```",
+        "reasoning_content": "",
+        "tool_calls": []
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 4916,
+    "completion_tokens": 636,
+    "total_tokens": 5552,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen3.5-9b-q4"
+}

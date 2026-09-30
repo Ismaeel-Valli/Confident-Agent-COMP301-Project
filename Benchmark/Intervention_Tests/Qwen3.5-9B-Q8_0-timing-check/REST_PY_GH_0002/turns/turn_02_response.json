@@ -1,0 +1,38 @@
+{
+  "id": "chatcmpl-h6d1fr1wscidfab8nar3o",
+  "object": "chat.completion",
+  "created": 1790785088,
+  "model": "qwen3.5-9b-q8",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "reasoning_content": "",
+        "tool_calls": [
+          {
+            "type": "function",
+            "id": "hdAW2aDeU0DYwpXTGsCDaffbVhLrXMS9",
+            "function": {
+              "name": "verify_candidate",
+              "arguments": "{\"code\":\"import requests\\nimport json\\n\\ndef solve(inputs):\\n    \\\"\\\"\\\"\\n    Update a GitHub organization using the REST API version 2026-03-10.\\n    \\n    Args:\\n        inputs (dict): Dictionary containing:\\n            - organization (str): The organization name\\n            - new_name (str): The new name for the organization\\n            - credential (str): Bearer token for authentication\\n    \\n    Returns:\\n        dict or None: Decoded JSON response, or None if successful with empty response\\n    \\n    Raises:\\n        Exception: For unsuccessful HTTP responses\\n    \\\"\\\"\\\"\\n    org = inputs[\\\"organization\\\"]\\n    new_name = inputs[\\\"new_name\\\"]\\n    credential = inputs[\\\"credential\\\"]\\n    \\n    # GitHub API endpoint for updating an organization\\n    url = f\\\"https://api.github.com/orgs/{org}\\\"\\n    \\n    headers = {\\n        \\\"Authorization\\\": f\\\"Bearer {credential}\\\",\\n        \\\"Accept\\\": \\\"application/vnd.github+json\\\",\\n        \\\"X-GitHub-Api-Version\\\": \\\"2026-03-10\\\"\\n    }\\n    \\n    # Prepare the payload\\n    payload = {\\n        \\\"name\\\": new_name\\n    }\\n    \\n    response = requests.patch(url, json=payload, headers=headers)\\n    \\n    if response.status_code >= 400:\\n        raise Exception(f\\\"Failed to update organization: {response.status_code} - {response.text}\\\")\\n    \\n    # Return decoded JSON response\\n    return response.json() if response.content else None\"}"
+            }
+          }
+        ]
+      },
+      "logprobs": null,
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 5542,
+    "completion_tokens": 347,
+    "total_tokens": 5889,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen3.5-9b-q8"
+}

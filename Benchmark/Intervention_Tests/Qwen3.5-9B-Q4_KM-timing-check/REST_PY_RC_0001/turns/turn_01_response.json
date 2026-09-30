@@ -1,0 +1,38 @@
+{
+  "id": "chatcmpl-yeq5sxxbyfj536j7rp14md",
+  "object": "chat.completion",
+  "created": 1790787658,
+  "model": "qwen3.5-9b-q4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "reasoning_content": "",
+        "tool_calls": [
+          {
+            "type": "function",
+            "id": "m1vTo7vVWNBe3qbFotxa8PIC1BczsIy4",
+            "function": {
+              "name": "verify_candidate",
+              "arguments": "{\"code\":\"import requests\\n\\ndef solve(inputs):\\n    url = \\\"https://restcountries.com/v3.1/all\\\"\\n    headers = {\\\"Authorization\\\": f\\\"Bearer {inputs['credential']}\\\"}\\n    response = requests.get(url, headers=headers)\\n    if response.status_code != 200:\\n        raise Exception(f\\\"HTTP error: {response.status_code}\\\")\\n    data = response.json()\\n    return data if data else None\"}"
+            }
+          }
+        ]
+      },
+      "logprobs": null,
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 2346,
+    "completion_tokens": 117,
+    "total_tokens": 2463,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen3.5-9b-q4"
+}

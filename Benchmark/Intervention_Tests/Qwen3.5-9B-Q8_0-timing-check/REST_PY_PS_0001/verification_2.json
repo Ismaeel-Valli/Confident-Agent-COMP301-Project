@@ -1,0 +1,244 @@
+{
+  "toolbox_version": "3.0.0",
+  "decision": "deliver",
+  "report": "### Confidence Agent Report\n\n**Decision:** deliver\n**EWCS:** 0.85 (signed: 0.85, applicable weight: 14)\n\n| Layer | State | Tier | Weight | Factor | Positive | Signed |\n|---|---|---|---|---|---|---|\n| interface | verified_correct | tier_2 | 3 | 0.8 | 2.4 | 2.4 |\n| identifier | verified_correct | tier_4 | 3 | 0.5 | 1.5 | 1.5 |\n| access_point | verified_correct | tier_1 | 4 | 1 | 4 | 4 |\n| input_contract | verified_correct | tier_1 | 2 | 1 | 2 | 2 |\n| output_contract | not_applicable | none | 1 | 0 | 0 | 0 |\n| contextual | verified_correct | tier_1 | 2 | 1 | 2 | 2 |\n\nScope: API-claim and static evidence only. EWCS is not a probability of correctness. Task behavior has not been independently checked by this verifier.\n\nPolicy 2026-09-25.1: thresholds 0.85/0.6, uncertainty gate on.\n\nEvidence:\n\n- interface: requests maps to requests (2.34.2). Installation/callables checked separately by Pyright.\n- identifier: No identifier, attribute or API-call diagnostics in the configured environment (Pyright standard mode). A clean check does not establish REST contracts or task behavior.\n- access_point: PUT https://petstore3.swagger.io/api/v3/pet matches the declared server and operation PUT /pet.\n- input_contract: Required inputs, locations and supported value constraints checked for call_36_15 (/pet). Noncritical: body.id: runtime value inputs['new_resource_id'] is not statically known; its value constraints are not checked; body.name: runtime value inputs['new_name'] is not statically known; its value constraints are not checked; body.photoUrls: runtime value inputs['new_photo_links'] is not statically known; its value constraints are not checked\n- output_contract: No tracked response-field accesses.\n- contextual: Required authentication placement and static shape match one security alternative. Credential validity is not tested. Noncritical: required scopes (write:pets, read:pets) belong to the petstore_auth token and cannot be checked statically; the credential is assumed to carry them; the oauth2 Bearer token credential is a runtime value; its validity is not tested\n\n```python\nimport requests\n\n\ndef solve(inputs):\n    \"\"\"\n    Update an existing pet in the Swagger Petstore (OpenAPI 3 service).\n    \n    Args:\n        inputs (dict): Must contain:\n            - new_resource_id (int): The id value for the updated pet.\n            - new_name (str): The name value for the updated pet.\n            - new_photo_links (list of str): The photoUrls value for the updated pet.\n            - credential (str): Bearer token for authentication.\n    \n    Returns:\n        dict or None: Decoded JSON response if successful, None for empty response.\n    \n    Raises:\n        Exception: If HTTP response is unsuccessful.\n    \"\"\"\n    base_url = \"https://petstore3.swagger.io\"\n    endpoint = \"/api/v3/pet\"\n    url = f\"{base_url}{endpoint}\"\n    \n    headers = {\n        \"Authorization\": f\"Bearer {inputs['credential']}\",\n        \"Content-Type\": \"application/json\"\n    }\n    \n    payload = {\n        \"id\": inputs[\"new_resource_id\"],\n        \"name\": inputs[\"new_name\"],\n        \"photoUrls\": inputs[\"new_photo_links\"]\n    }\n    \n    response = requests.put(url, json=payload, headers=headers)\n    \n    if response.status_code < 200 or response.status_code >= 300:\n        raise Exception(f\"HTTP {response.status_code}: {response.text}\")\n    \n    if len(response.content) == 0:\n        return None\n    \n    return response.json()\n```",
+  "candidate_hash": "83c1b682bae9b9ca21e960a29ea1b44fd50101c0ead0ab296a81a79fae5796bd",
+  "reference_id": null,
+  "evidence_selection": "Frozen evidence petstore.openapi.json selected for Petstore.",
+  "spec_hash": "3485af8f6e40c42e3e4dcafd3dafa0c8f884cbeee03a941f23362224bd3a2144",
+  "reference_evidence": {
+    "kind": "official",
+    "document_url": "https://petstore3.swagger.io/api/v3/openapi.json",
+    "note": "The document declares the relative server /api/v3. OpenAPI resolves relative server URLs against the document location recorded in sources/manifest.json.",
+    "review_status": "prepared by coding assistant 2026-09-25; team review pending",
+    "snapshot": "petstore.openapi.json"
+  },
+  "ewcs_report": {
+    "task_id": "candidate",
+    "ewcs": 0.85,
+    "signed_score": 0.85,
+    "has_incorrect_layer": false,
+    "total_applicable_weight": 14,
+    "positive_weight": 11.9,
+    "contributions": [
+      {
+        "layer": "interface",
+        "state": "verified_correct",
+        "tier": "tier_2",
+        "weight": 3,
+        "tier_factor": 0.8,
+        "positive_contribution": 2.4,
+        "signed_contribution": 2.4
+      },
+      {
+        "layer": "identifier",
+        "state": "verified_correct",
+        "tier": "tier_4",
+        "weight": 3,
+        "tier_factor": 0.5,
+        "positive_contribution": 1.5,
+        "signed_contribution": 1.5
+      },
+      {
+        "layer": "access_point",
+        "state": "verified_correct",
+        "tier": "tier_1",
+        "weight": 4,
+        "tier_factor": 1,
+        "positive_contribution": 4,
+        "signed_contribution": 4
+      },
+      {
+        "layer": "input_contract",
+        "state": "verified_correct",
+        "tier": "tier_1",
+        "weight": 2,
+        "tier_factor": 1,
+        "positive_contribution": 2,
+        "signed_contribution": 2
+      },
+      {
+        "layer": "output_contract",
+        "state": "not_applicable",
+        "tier": "none",
+        "weight": 1,
+        "tier_factor": 0,
+        "positive_contribution": 0,
+        "signed_contribution": 0
+      },
+      {
+        "layer": "contextual",
+        "state": "verified_correct",
+        "tier": "tier_1",
+        "weight": 2,
+        "tier_factor": 1,
+        "positive_contribution": 2,
+        "signed_contribution": 2
+      }
+    ],
+    "missing_layers": [],
+    "extraction_complete": true,
+    "failed_layers": [],
+    "unverifiable_layers": [],
+    "layer_results": [
+      {
+        "layer": "interface",
+        "state": "verified_correct",
+        "tier": "tier_2",
+        "weight": 3,
+        "evidence_source": "PyPI metadata + reviewed import mapping",
+        "evidence_detail": "requests maps to requests (2.34.2). Installation/callables checked separately by Pyright.",
+        "hallucination_type": null,
+        "claim_ids": [
+          "claim_1"
+        ]
+      },
+      {
+        "layer": "identifier",
+        "state": "verified_correct",
+        "tier": "tier_4",
+        "weight": 3,
+        "evidence_source": "Pyright structured diagnostics",
+        "evidence_detail": "No identifier, attribute or API-call diagnostics in the configured environment (Pyright standard mode). A clean check does not establish REST contracts or task behavior.",
+        "hallucination_type": null
+      },
+      {
+        "layer": "access_point",
+        "state": "verified_correct",
+        "tier": "tier_1",
+        "weight": 4,
+        "evidence_source": "OpenAPI servers + path + method",
+        "evidence_detail": "PUT https://petstore3.swagger.io/api/v3/pet matches the declared server and operation PUT /pet.",
+        "hallucination_type": null,
+        "claim_ids": [
+          "claim_8"
+        ]
+      },
+      {
+        "layer": "input_contract",
+        "state": "verified_correct",
+        "tier": "tier_1",
+        "weight": 2,
+        "evidence_source": "OpenAPI contract",
+        "evidence_detail": "Required inputs, locations and supported value constraints checked for call_36_15 (/pet).\nNoncritical: body.id: runtime value inputs['new_resource_id'] is not statically known; its value constraints are not checked; body.name: runtime value inputs['new_name'] is not statically known; its value constraints are not checked; body.photoUrls: runtime value inputs['new_photo_links'] is not statically known; its value constraints are not checked",
+        "hallucination_type": null,
+        "claim_ids": [
+          "claim_3",
+          "claim_4",
+          "claim_5",
+          "claim_6",
+          "claim_7",
+          "claim_8"
+        ]
+      },
+      {
+        "layer": "output_contract",
+        "state": "not_applicable",
+        "tier": "none",
+        "weight": 1,
+        "evidence_source": "extraction / specification",
+        "evidence_detail": "No tracked response-field accesses.",
+        "hallucination_type": null,
+        "claim_ids": []
+      },
+      {
+        "layer": "contextual",
+        "state": "verified_correct",
+        "tier": "tier_1",
+        "weight": 2,
+        "evidence_source": "OpenAPI contract",
+        "evidence_detail": "Required authentication placement and static shape match one security alternative. Credential validity is not tested.\nNoncritical: required scopes (write:pets, read:pets) belong to the petstore_auth token and cannot be checked statically; the credential is assumed to carry them; the oauth2 Bearer token credential is a runtime value; its validity is not tested",
+        "hallucination_type": null,
+        "claim_ids": [
+          "claim_3",
+          "claim_4",
+          "claim_5",
+          "claim_6",
+          "claim_7",
+          "claim_8"
+        ]
+      }
+    ],
+    "candidate_hash": "83c1b682bae9b9ca21e960a29ea1b44fd50101c0ead0ab296a81a79fae5796bd"
+  },
+  "layers": [
+    {
+      "layer": "interface",
+      "state": "verified_correct",
+      "tier": "tier_2",
+      "weight": 3,
+      "evidence_source": "PyPI metadata + reviewed import mapping",
+      "evidence_detail": "requests maps to requests (2.34.2). Installation/callables checked separately by Pyright.",
+      "hallucination_type": null,
+      "claim_ids": [
+        "claim_1"
+      ]
+    },
+    {
+      "layer": "identifier",
+      "state": "verified_correct",
+      "tier": "tier_4",
+      "weight": 3,
+      "evidence_source": "Pyright structured diagnostics",
+      "evidence_detail": "No identifier, attribute or API-call diagnostics in the configured environment (Pyright standard mode). A clean check does not establish REST contracts or task behavior.",
+      "hallucination_type": null
+    },
+    {
+      "layer": "access_point",
+      "state": "verified_correct",
+      "tier": "tier_1",
+      "weight": 4,
+      "evidence_source": "OpenAPI servers + path + method",
+      "evidence_detail": "PUT https://petstore3.swagger.io/api/v3/pet matches the declared server and operation PUT /pet.",
+      "hallucination_type": null,
+      "claim_ids": [
+        "claim_8"
+      ]
+    },
+    {
+      "layer": "input_contract",
+      "state": "verified_correct",
+      "tier": "tier_1",
+      "weight": 2,
+      "evidence_source": "OpenAPI contract",
+      "evidence_detail": "Required inputs, locations and supported value constraints checked for call_36_15 (/pet).\nNoncritical: body.id: runtime value inputs['new_resource_id'] is not statically known; its value constraints are not checked; body.name: runtime value inputs['new_name'] is not statically known; its value constraints are not checked; body.photoUrls: runtime value inputs['new_photo_links'] is not statically known; its value constraints are not checked",
+      "hallucination_type": null,
+      "claim_ids": [
+        "claim_3",
+        "claim_4",
+        "claim_5",
+        "claim_6",
+        "claim_7",
+        "claim_8"
+      ]
+    },
+    {
+      "layer": "output_contract",
+      "state": "not_applicable",
+      "tier": "none",
+      "weight": 1,
+      "evidence_source": "extraction / specification",
+      "evidence_detail": "No tracked response-field accesses.",
+      "hallucination_type": null,
+      "claim_ids": []
+    },
+    {
+      "layer": "contextual",
+      "state": "verified_correct",
+      "tier": "tier_1",
+      "weight": 2,
+      "evidence_source": "OpenAPI contract",
+      "evidence_detail": "Required authentication placement and static shape match one security alternative. Credential validity is not tested.\nNoncritical: required scopes (write:pets, read:pets) belong to the petstore_auth token and cannot be checked statically; the credential is assumed to carry them; the oauth2 Bearer token credential is a runtime value; its validity is not tested",
+      "hallucination_type": null,
+      "claim_ids": [
+        "claim_3",
+        "claim_4",
+        "claim_5",
+        "claim_6",
+        "claim_7",
+        "claim_8"
+      ]
+    }
+  ],
+  "extraction_issues": []
+}

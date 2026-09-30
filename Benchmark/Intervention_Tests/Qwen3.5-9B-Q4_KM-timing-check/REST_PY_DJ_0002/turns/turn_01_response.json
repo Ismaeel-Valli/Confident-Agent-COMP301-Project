@@ -1,0 +1,38 @@
+{
+  "id": "chatcmpl-d5k72lmhggerne2th1bqhg",
+  "object": "chat.completion",
+  "created": 1790787640,
+  "model": "qwen3.5-9b-q4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "reasoning_content": "",
+        "tool_calls": [
+          {
+            "type": "function",
+            "id": "ZmymGvgx8Fo0KHWpPE2n2XxR7uJ0YBZv",
+            "function": {
+              "name": "verify_candidate",
+              "arguments": "{\"code\":\"import requests\\n\\ndef solve(inputs):\\n    resource_id = inputs[\\\"resource_id\\\"]\\n    url = \\\"https://dummyjson.com/products/{0}\\\".format(resource_id)\\n    response = requests.get(url)\\n    if response.status_code == 200:\\n        data = response.json()\\n        return data.get(\\\"title\\\") if data else None\\n    elif response.status_code == 404:\\n        return None\\n    else:\\n        raise Exception(f\\\"HTTP {response.status_code}: {response.text}\\\")\"}"
+            }
+          }
+        ]
+      },
+      "logprobs": null,
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 2339,
+    "completion_tokens": 136,
+    "total_tokens": 2475,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen3.5-9b-q4"
+}
