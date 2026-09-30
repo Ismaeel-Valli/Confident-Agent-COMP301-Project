@@ -39,6 +39,7 @@ from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
+from evaluator import runs as run_registry
 from evaluator import stats
 from evaluator.classify import TaskContext, classify, code_hash
 from evaluator.report import write_report
@@ -439,9 +440,15 @@ def main() -> None:
         analyses[label] = analysis
         print(f"[{label}] hallucination reaching the user: baseline {analysis['primary']['baseline_rate']:.3f}, "
               f"intervention {analysis['primary']['intervention_rate']:.3f} (McNemar p={analysis['primary']['mcnemar_p']:.3g})", flush=True)
-    adjusted = stats.holm({l: a["primary"]["mcnemar_p"] for l, a in analyses.items()})
+    # Holm's correction across the main runs (plan §6). Preliminary runs (older benchmark
+    # version) are scored and reported but are not part of that family.
+    registry = run_registry.discover(args.benchmark, labels)
+    family = {l: a["primary"]["mcnemar_p"] for l, a in analyses.items() if registry[l]["role"] == "main"}
+    adjusted = stats.holm(family)
     for label, a in analyses.items():
-        a["primary"]["mcnemar_p_holm"] = adjusted[label]
+        a["run"] = {k: registry[label].get(k) for k in ("quantization", "benchmark_version", "role", "role_reason",
+                                                        "machine_gpu", "power_backend", "label_matches_quantization")}
+        a["primary"]["mcnemar_p_holm"] = adjusted.get(label)
         (args.out / label / "evaluation.json").write_text(json.dumps(a, indent=2, default=str), encoding="utf-8")
     meta = {"evaluator_version": EVALUATOR_VERSION, "evaluated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "task_file_sha256": sha, "task_file_matches_plan": sha == TASKS_SHA256, "self_check": {k: v for k, v in check.items() if k != "failures"},

@@ -39,7 +39,12 @@ def write_report(path: Path, analyses: dict, meta: dict) -> None:
              ""]
     for label, a in analyses.items():
         p = a["primary"]
-        lines += [f"## {label}", "",
+        run = a.get("run") or {}
+        role = (f"{run.get('role', 'unknown')} run ({run.get('role_reason', '')})"
+                + ("" if run.get("label_matches_quantization", True) else
+                   f"; **the label does not match the quantization LM Studio reported ({run.get('quantization')})**"))
+        lines += [f"## {label}", "", f"Quantization {run.get('quantization', 'n/a')}, benchmark {run.get('benchmark_version', 'n/a')}, "
+                  f"GPU {run.get('machine_gpu') or 'n/a'}: {role}.", "",
                   "### Unacceptable hallucinations reaching the user (primary, plan §3)", "",
                   "Rate = share of tasks whose code reaching the user is class A (API hallucination). "
                   "Baseline: the code block; intervention: the delivered code, or code shown in the reply. "
@@ -52,7 +57,8 @@ def write_report(path: Path, analyses: dict, meta: dict) -> None:
                   comparison_row("Including pilot tasks", a["sensitivity"]["including_pilot"]),
                   comparison_row("A or B (secondary)", a["secondary"]),
                   comparison_row("A, B or runtime failure", a["any_error"]),
-                  "", f"Holm-adjusted McNemar p across runs: {pval(p.get('mcnemar_p_holm'))}. "
+                  "", (f"Holm-adjusted McNemar p across the main runs: {pval(p.get('mcnemar_p_holm'))}. " if p.get("mcnemar_p_holm") is not None
+                       else "Not in the Holm family (preliminary run): the p-value above is uncorrected. ") +
                       f"Undetermined pairs excluded from the primary row: {p['excluded_undetermined']}. "
                       f"Operation families: {p['families']}.", ""]
         classes = sorted(set(a["baseline_classes"]) | set(a["shown_classes"]) | set(a["final_classes"]))

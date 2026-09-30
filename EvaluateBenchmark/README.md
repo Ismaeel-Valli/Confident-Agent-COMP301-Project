@@ -58,15 +58,36 @@ status code) for an empty success, and an exception for a server error.
 
 ## All project statistics as CSV
 
-After evaluating, `python compile_stats.py` writes `stats/`: one row per prompt and run
-with every label and measure (classes, hallucination kinds, repairs and regressions,
-verifier outcome, time, tokens, energy, agent behaviour), summaries per API, operation
-category, HTTP method, difficulty, authentication and specification source, a comparison
-of runs (models, quantizations), the verifier's precision, recall and F1 as a
-hallucination detector, and the kinds of error (hallucination, task fidelity, runtime failure) per category. Columns are described in
+After evaluating, `python compile_stats.py` writes `stats/`, stored per quantization
+level for data processing:
+
+```
+stats/runs.csv                             one row per run (settings, machine, role, totals)
+stats/by_quantization/<quant>/<label>/     the main runs: prompt_stats, group_stats,
+                                           metrics_long (tidy), verifier_detection,
+                                           error_kinds, run_info.json
+stats/preliminary/<quant>/<label>/         runs made with an older benchmark version
+stats/combined/                            every run in one file per table, plus
+                                           run_comparison.csv and quantization_comparison.csv
+```
+
+`prompt_stats.csv` has one row per prompt and run with every label and measure (classes,
+error kinds, repairs and regressions, verifier outcome, time, tokens, GPU/CPU energy,
+agent behaviour); the group tables summarise per API, operation category, HTTP method,
+difficulty, authentication and specification source. Runs are found automatically in the
+run folders or in zipped archives anywhere under `Benchmark/` (for example
+`Benchmark/Completed Runs/`); a run's quantization is the one LM Studio reported, and
+runs made with an older benchmark version are marked preliminary and kept out of the
+comparison and out of Holm's correction. Columns are described in
 [`stats/STATS_README.md`](stats/STATS_README.md).
 
 ## Manual review
+
+In `review_queue.csv`, `role` says what a candidate decides. **`baseline` and `shown`**
+(the code that reached the user) decide the primary result, so review these first.
+**`final`** is the last code the agent verified: when it was withheld it only affects the
+intervention's confusion matrix and EWCS calibration, not what reached the user. Reviews
+are keyed by the task and the code, so one review covers the same code in several runs.
 
 Copy rows of `review_queue.csv` (and `audit_sample.csv`) into `reviews/reviews.csv`,
 have two group members fill `reviewer_1_class` and `reviewer_2_class` independently with

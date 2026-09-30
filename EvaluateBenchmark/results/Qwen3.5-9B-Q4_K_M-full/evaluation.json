@@ -19,7 +19,7 @@
       0.6256281407035176
     ],
     "families": 141,
-    "mcnemar_p_holm": 1.79231281319955e-126
+    "mcnemar_p_holm": null
   },
   "sensitivity": {
     "undetermined_as_hallucination": {
@@ -311,5 +311,14 @@
   "review_files": {
     "review_queue": 60,
     "audit_sample": 100
+  },
+  "run": {
+    "quantization": "Q4_K_M",
+    "benchmark_version": "2026-09-26.2",
+    "role": "preliminary",
+    "role_reason": "benchmark 2026-09-26.2 is older than 2026-09-27.2: earlier measurements and verifier",
+    "machine_gpu": null,
+    "power_backend": null,
+    "label_matches_quantization": true
   }
 }

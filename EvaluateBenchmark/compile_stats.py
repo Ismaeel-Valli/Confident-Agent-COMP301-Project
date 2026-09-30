@@ -3,25 +3,25 @@
 Stats compiler
 ==============
 
-Compiles every statistic of the project into CSV files, one row per prompt and run plus
-grouped summaries. Standard library only.
+Compiles every statistic of the project into CSV files, laid out for data processing:
+per prompt, per group, per run and per quantization. Standard library only.
 
 Sources (nothing is re-run):
   - EvaluateBenchmark/results/<label>/per_task.jsonl   classes from evaluate_benchmark.py
-  - Benchmark result.json files per task, read from the run folders or from the zipped
-    archives (Benchmark/*.zip)                            time, tokens, energy, agent behaviour
-  - Benchmark run_manifest.json per run                   model, quantization, settings, machine
+  - Benchmark result.json and run_manifest.json files, from run folders or from zipped
+    archives anywhere under Benchmark/ (e.g. Completed Runs/...)   time, tokens, energy,
+    agent behaviour, settings, machine
   - the dataset's task file                               API, category, method, difficulty, auth
 
-Output (EvaluateBenchmark/stats/, described column by column in STATS_README.md):
-  prompt_stats.csv          one row per prompt and run: every label and measure
-  group_stats.csv           per run and group (overall, API, category, method, difficulty,
-                            authentication, specification source): rates, repairs and
-                            regressions with McNemar, abstention, cost
-  model_comparison.csv      one row per run (model / quantization): headline figures
-  verifier_detection.csv    the verifier as a hallucination detector: precision, recall, F1
-  error_kinds.csv           kinds of error reaching the user (A: API hallucination, B: task
-                            fidelity, runtime failure), per run, mode and category
+Output (EvaluateBenchmark/stats/, described in stats/STATS_README.md):
+  runs.csv                          one row per run: settings, machine, role, totals
+  combined/                         every run in one file per table (run_role column to filter)
+  by_quantization/<quant>/<label>/  the main runs, one folder per quantization level
+  preliminary/<quant>/<label>/      runs made with an older benchmark version
+each folder: prompt_stats.csv, group_stats.csv, verifier_detection.csv, error_kinds.csv,
+metrics_long.csv (tidy: one measurement per row), run_info.json.
+combined/ also has run_comparison.csv (one row per run) and, for the main runs,
+quantization_comparison.csv (one row per quantization, one column per headline measure).
 
 Usage:  python compile_stats.py            (after python evaluate_benchmark.py)
 """
@@ -29,58 +29,32 @@ from __future__ import annotations
 
 import csv
 import json
-import re
+import shutil
 import statistics
 import sys
-import zipfile
 from collections import Counter, defaultdict
 from pathlib import Path
 
 from evaluate_benchmark import TASKS_DEFAULT, hallucination_types, load_jsonl, runtime_failure_type, task_error_types
+from evaluator import runs as run_registry
 from evaluator.stats import holm, mcnemar_exact, wilson
 
 ROOT = Path(__file__).resolve().parent
 BENCHMARK = ROOT.parent / "Benchmark"
 RESULTS = ROOT / "results"
 OUT = ROOT / "stats"
-MODES = {"baseline": "Baseline_Tests", "intervention": "Intervention_Tests"}
 DIMENSIONS = ["overall", "api", "operation_category", "http_method", "difficulty", "auth_type", "spec_source"]
-
-
-# ---------------------------------------------------------------- reading the benchmark
-class BenchmarkFiles:
-    """result.json and run_manifest.json from run folders, or from zipped archives."""
-
-    def __init__(self, root: Path):
-        self.root = root
-        self.zipped: dict = {}
-        for archive in sorted(root.glob("*.zip")):
-            with zipfile.ZipFile(archive) as z:
-                for name in z.namelist():
-                    parts = name.replace("\\", "/").split("/")
-                    if len(parts) >= 3 and parts[0] in MODES.values() and parts[-1] in ("result.json", "run_manifest.json"):
-                        self.zipped[tuple(parts)] = (archive, name)
-
-    def read(self, *parts: str) -> dict | None:
-        path = self.root.joinpath(*parts)
-        if path.exists():
-            return json.loads(path.read_text(encoding="utf-8"))
-        hit = self.zipped.get(tuple(parts))
-        if hit:
-            with zipfile.ZipFile(hit[0]) as z:
-                return json.loads(z.read(hit[1]).decode("utf-8"))
-        return None
-
-    def result(self, mode: str, label: str, task: str) -> dict | None:
-        return self.read(MODES[mode], label, task, "result.json")
-
-    def manifest(self, mode: str, label: str) -> dict:
-        return self.read(MODES[mode], label, "run_manifest.json") or {}
 
 
 # ---------------------------------------------------------------- per-prompt values
 def num(x):
     return x if isinstance(x, (int, float)) and not isinstance(x, bool) else None
+
+
+def flag(x):
+    """A true/false value as 1/0; None when it was not recorded. (num() above deliberately
+    rejects booleans, which made every true/false column blank in the first version.)"""
+    return int(x) if isinstance(x, bool) or x in (0, 1) and x is not None else None
 
 
 def tokens(meta: dict) -> dict:
@@ -155,10 +129,11 @@ def prompt_row(label: str, task: dict, ev: dict, bres: dict | None, ires: dict |
                                                      else "FP" if withheld else "TN")
     bb, ib = ev.get("baseline_behaviour") or {}, ev.get("shown_behaviour") or {}
     row = {
-        "model_label": label, "model": run_info.get("model"), "quantization": run_info.get("quantization"),
-        "architecture": run_info.get("arch"), "context_length": run_info.get("context"), "thinking": run_info.get("thinking"),
+        "model_label": label, "run_role": run_info.get("role"), "model": run_info.get("model"),
+        "quantization": run_info.get("quantization"), "architecture": run_info.get("architecture"),
+        "context_length": run_info.get("context_length"), "thinking": run_info.get("thinking"),
         "temperature": run_info.get("temperature"), "benchmark_version": run_info.get("benchmark_version"),
-        "machine_gpu": run_info.get("gpu"), "machine_cpu": run_info.get("cpu"),
+        "machine_gpu": run_info.get("machine_gpu"), "machine_cpu": run_info.get("machine_cpu"),
         "task_id": task["task_id"], "api": api["api_name"], "operation_category": meta["category"],
         "http_method": api["method"], "endpoint": api["endpoint"], "difficulty": meta.get("difficulty"),
         "auth_type": (api.get("auth") or {}).get("type") or "none",
@@ -172,9 +147,9 @@ def prompt_row(label: str, task: dict, ev: dict, bres: dict | None, ires: dict |
         "b_runtime_failure_kind": runtime_failure_type(ev.get("baseline_reasons") or []) if b_cls == "runtime_failure" else "",
         "b_reasons": " | ".join(ev.get("baseline_reasons") or [])[:500],
         "b_has_code": int(b_cls != "no_code"), "b_finish_reason": ((bres or {}).get("jsonl") or {}).get("finish_reason"),
-        "b_returns_expected": num(bb.get("returns_expected_value")) if bb else None,
-        "b_empty_response_ok": num(bb.get("empty_response_ok")) if bb else None,
-        "b_error_raises": num(bb.get("error_raises")) if bb else None,
+        "b_returns_expected": flag(bb.get("returns_expected_value")) if bb else None,
+        "b_empty_response_ok": flag(bb.get("empty_response_ok")) if bb else None,
+        "b_error_raises": flag(bb.get("error_raises")) if bb else None,
         **cost_columns("b", bres),
         # intervention
         "i_decision": ev["decision"], "i_delivered": int(ev["delivered"]), "i_withheld": int(withheld),
@@ -188,16 +163,16 @@ def prompt_row(label: str, task: dict, ev: dict, bres: dict | None, ires: dict |
         "i_final_class": f_cls, "i_first_class": ev.get("first_class"),
         "i_verification_calls": num(ijsonl.get("verification_calls")), "i_tool_failures": num(ijsonl.get("tool_failures")),
         "i_model_turns": len(imeta.get("turns") or []) or num(ijsonl.get("model_turns")),
-        "i_first_had_contradiction": num(ijsonl.get("first_has_contradiction")),
-        "i_correction_attempted": num(ijsonl.get("correction_attempted")),
-        "i_correction_allowed": num(ijsonl.get("correction_allowed")), "i_correction_count": num(ijsonl.get("correction_count")),
+        "i_first_had_contradiction": flag(ijsonl.get("first_has_contradiction")),
+        "i_correction_attempted": flag(ijsonl.get("correction_attempted")),
+        "i_correction_allowed": flag(ijsonl.get("correction_allowed")), "i_correction_count": num(ijsonl.get("correction_count")),
         "i_correction_outcome": f"{ev.get('first_class')}->{f_cls}" if ijsonl.get("correction_attempted") else "",
-        "i_final_reply_prompted": num(ijsonl.get("final_reply_prompted")),
-        "i_reply_matches_report": num((imeta.get("final_reply") or {}).get("matches_report")),
+        "i_final_reply_prompted": flag(ijsonl.get("final_reply_prompted")),
+        "i_reply_matches_report": flag((imeta.get("final_reply") or {}).get("matches_report")),
         "i_protocol_note_count": len(ev.get("protocol_notes") or []), "i_protocol_notes": " | ".join(ev.get("protocol_notes") or []),
-        "i_returns_expected": num(ib.get("returns_expected_value")) if ib else None,
-        "i_empty_response_ok": num(ib.get("empty_response_ok")) if ib else None,
-        "i_error_raises": num(ib.get("error_raises")) if ib else None,
+        "i_returns_expected": flag(ib.get("returns_expected_value")) if ib else None,
+        "i_empty_response_ok": flag(ib.get("empty_response_ok")) if ib else None,
+        "i_error_raises": flag(ib.get("error_raises")) if ib else None,
         **cost_columns("i", ires),
         # paired
         "pair_hallucination": pair(b_h, i_h), "pair_correct": pair_good(b_ok, i_ok), "verifier_outcome": verifier,
@@ -237,8 +212,7 @@ def group_summary(rows: list) -> dict:
         (bb, nb), (ii, ni) = rate(r[key_b] for r in rows), rate(r[key_i] for r in rows)
         pairs = Counter(r[pair_key] for r in rows if r[pair_key])
         out.update({f"b_{name}_rate": bb, f"i_{name}_rate": ii,
-                    f"b_{name}_rate_ci": fmt_ci(wilson(round(bb * nb), nb)) if bb is not None else None,
-                    f"i_{name}_rate_ci": fmt_ci(wilson(round(ii * ni), ni)) if ii is not None else None,
+                    **ci_columns(f"b_{name}_rate", bb, nb), **ci_columns(f"i_{name}_rate", ii, ni),
                     f"{name}_paired_n": sum(pairs.values()), f"{name}_repairs": pairs["repair"],
                     f"{name}_regressions": pairs["regression"], f"{name}_both": pairs["both"], f"{name}_neither": pairs["neither"],
                     # repairs minus regressions over paired tasks: positive = the intervention is better
@@ -265,12 +239,22 @@ def group_summary(rows: list) -> dict:
                                         for r in rows if r["i_returns_expected"] is not None)[0],
     })
     for m in ("b", "i"):
+        seconds, joules = total(r[f"{m}_duration_s"] for r in rows), total(r[f"{m}_energy_j"] for r in rows)
+        wh = lambda key: round(total(r[key] for r in rows) / 3600, 3) if total(r[key] for r in rows) else None
         out.update({f"{m}_mean_duration_s": mean(r[f"{m}_duration_s"] for r in rows),
                     f"{m}_median_duration_s": median(r[f"{m}_duration_s"] for r in rows),
-                    f"{m}_total_duration_h": round(total(r[f"{m}_duration_s"] for r in rows) / 3600, 3) if total(r[f"{m}_duration_s"] for r in rows) else None,
+                    f"{m}_mean_model_s": mean(r[f"{m}_model_s"] for r in rows), f"{m}_mean_tool_s": mean(r[f"{m}_tool_s"] for r in rows),
+                    f"{m}_total_duration_h": round(seconds / 3600, 3) if seconds else None,
+                    f"{m}_mean_prompt_tokens": mean(r[f"{m}_prompt_tokens"] for r in rows),
+                    f"{m}_mean_completion_tokens": mean(r[f"{m}_completion_tokens"] for r in rows),
                     f"{m}_mean_total_tokens": mean(r[f"{m}_total_tokens"] for r in rows),
+                    f"{m}_total_tokens": total(r[f"{m}_total_tokens"] for r in rows),
+                    f"{m}_mean_completion_tokens_per_s": mean(r[f"{m}_completion_tokens_per_s"] for r in rows),
                     f"{m}_mean_energy_j": mean(r[f"{m}_energy_j"] for r in rows),
-                    f"{m}_total_energy_wh": round(total(r[f"{m}_energy_j"] for r in rows) / 3600, 3) if total(r[f"{m}_energy_j"] for r in rows) else None})
+                    f"{m}_mean_energy_above_idle_j": mean(r[f"{m}_energy_above_idle_j"] for r in rows),
+                    f"{m}_total_energy_wh": wh(f"{m}_energy_j"), f"{m}_total_gpu_energy_wh": wh(f"{m}_gpu_energy_j"),
+                    f"{m}_total_cpu_energy_wh": wh(f"{m}_cpu_energy_j"), f"{m}_total_energy_above_idle_wh": wh(f"{m}_energy_above_idle_j"),
+                    f"{m}_mean_power_w": round(joules / seconds, 1) if joules and seconds else None})
     correct_b = sum(r["b_correct"] == 1 for r in rows)
     correct_i = sum(r["i_correct_reaches_user"] == 1 for r in rows)
     out["b_seconds_per_correct_answer"] = round(total(r["b_duration_s"] for r in rows) / correct_b, 2) if correct_b and total(r["b_duration_s"] for r in rows) else None
@@ -280,9 +264,12 @@ def group_summary(rows: list) -> dict:
     return out
 
 
-def fmt_ci(interval) -> str:
-    lo, hi = interval
-    return f"[{lo:.4f}, {hi:.4f}]"
+def ci_columns(prefix: str, rate_value, n: int) -> dict:
+    """Wilson 95% interval of a rate, as two numeric columns."""
+    if rate_value is None:
+        return {f"{prefix}_ci_low": None, f"{prefix}_ci_high": None}
+    lo, hi = wilson(round(rate_value * n), n)
+    return {f"{prefix}_ci_low": round(lo, 4), f"{prefix}_ci_high": round(hi, 4)}
 
 
 def detection(rows: list, target: str) -> dict:
@@ -315,27 +302,45 @@ def write_csv(path: Path, rows: list) -> None:
         w.writerows(rows)
 
 
-def run_info(files: BenchmarkFiles, label: str) -> dict:
-    info = {}
-    for mode in ("intervention", "baseline"):
-        m = files.manifest(mode, label)
-        if not m:
-            continue
-        model = m.get("lmstudio_model_info") or {}
-        settings = m.get("settings") or {}
-        env = ((m.get("invocations") or [{}])[-1].get("environment") or {})
-        power = ((m.get("invocations") or [{}])[-1].get("power") or {})
-        info.setdefault("model", settings.get("model"))
-        info.setdefault("quantization", model.get("quantization"))
-        info.setdefault("arch", model.get("arch"))
-        info.setdefault("context", m.get("context_limit"))
-        info.setdefault("thinking", settings.get("thinking"))
-        info.setdefault("temperature", settings.get("temperature"))
-        info.setdefault("benchmark_version", settings.get("benchmark_version") or "2026-09-26.2 or earlier")
-        gpus = power.get("gpus") or env.get("gpus") or []
-        info.setdefault("gpu", ", ".join(g.get("name", "") for g in gpus) or None)
-        info.setdefault("cpu", env.get("cpu"))
-    return info
+ID_COLUMNS = ("model_label", "quantization", "run_role", "benchmark_version", "dimension", "group")
+
+
+def metrics_long(group_rows: list) -> list:
+    """Tidy table: one measurement per row, for pivoting in pandas, R or a spreadsheet."""
+    out = []
+    for g in group_rows:
+        for metric, value in g.items():
+            if metric in ID_COLUMNS or not isinstance(value, (int, float)) or isinstance(value, bool):
+                continue
+            if metric.startswith("b_"):
+                mode, name = "baseline", metric[2:]
+            elif metric.startswith("i_"):
+                mode, name = "intervention", metric[2:]
+            else:
+                mode, name = "paired", metric
+            out.append({**{k: g.get(k) for k in ID_COLUMNS}, "mode": mode, "metric": name, "value": value})
+    return out
+
+
+def write_csv(path: Path, rows: list) -> None:
+    if not rows:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fields = list(dict.fromkeys(k for r in rows for k in r))
+    with path.open("w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fields)
+        w.writeheader()
+        w.writerows(rows)
+
+
+HEADLINE = ("n", "b_hallucination_rate", "i_hallucination_rate", "hallucination_improvement", "hallucination_repairs",
+            "hallucination_regressions", "hallucination_mcnemar_p", "hallucination_mcnemar_p_holm", "b_correct_rate",
+            "i_correct_rate", "correct_improvement", "i_abstention_rate", "i_incorrect_acceptance", "i_incorrect_rejection",
+            "i_mean_ewcs", "i_corrections_attempted", "i_correction_success_rate", "i_protocol_compliance_rate",
+            "i_final_reply_prompted_rate", "b_behaviour_all_ok_rate", "i_behaviour_all_ok_rate", "b_mean_duration_s",
+            "i_mean_duration_s", "b_total_duration_h", "i_total_duration_h", "b_mean_total_tokens", "i_mean_total_tokens",
+            "b_mean_energy_j", "i_mean_energy_j", "b_total_energy_wh", "i_total_energy_wh", "b_mean_power_w", "i_mean_power_w",
+            "b_seconds_per_correct_answer", "i_seconds_per_correct_answer", "b_wh_per_correct_answer", "i_wh_per_correct_answer")
 
 
 def main() -> None:
@@ -343,66 +348,117 @@ def main() -> None:
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(errors="replace")
     tasks = {t["task_id"]: t for t in load_jsonl(TASKS_DEFAULT)}
-    files = BenchmarkFiles(BENCHMARK)
     labels = sorted(p.name for p in RESULTS.iterdir() if (p / "per_task.jsonl").exists()) if RESULTS.exists() else []
     if not labels:
         sys.exit("No evaluated runs found: run python evaluate_benchmark.py first.")
-    OUT.mkdir(exist_ok=True)
-    prompt_rows, group_rows, model_rows, detect_rows, kind_rows = [], [], [], [], []
+    registry = run_registry.discover(BENCHMARK, labels)
+    files = run_registry.BenchmarkFiles(BENCHMARK)
+    prompt_rows, group_rows, model_rows, detect_rows, kind_rows, run_rows = [], [], [], [], [], []
+    per_run: dict = {}
     for label in labels:
-        info = run_info(files, label)
-        evaluated = load_jsonl(RESULTS / label / "per_task.jsonl")
+        info = registry[label]
         rows = []
-        for ev in evaluated:
+        for ev in load_jsonl(RESULTS / label / "per_task.jsonl"):
             t = ev["task_id"]
             rows.append(prompt_row(label, tasks[t], ev, files.result("baseline", label, t), files.result("intervention", label, t), info))
-        missing_cost = sum(r["b_duration_s"] is None for r in rows)
-        print(f"[{label}] {len(rows)} prompts" + (f"; {missing_cost} without benchmark result files" if missing_cost else ""))
-        prompt_rows += rows
-        main_rows = [r for r in rows if not r["pilot"]]  # plan §6: pilot tasks excluded from summaries
+        without = sum(r["b_duration_s"] is None for r in rows)
+        print(f"[{label}] {info['quantization']} ({info['role']}): {len(rows)} prompts"
+              + (f"; {without} without benchmark result files (cost columns empty)" if without else ""), flush=True)
+        main_rows = [r for r in rows if not r["pilot"]]  # plan §6: pilot tasks are excluded from summaries
+        g_rows, d_rows, k_rows = [], [], []
         for dim in DIMENSIONS:
             groups = {"all": main_rows} if dim == "overall" else defaultdict(list)
             if dim != "overall":
                 for r in main_rows:
                     groups[r[dim]].append(r)
             for value, members in sorted(groups.items(), key=lambda kv: str(kv[0])):
-                group_rows.append({"model_label": label, "quantization": info.get("quantization"), "dimension": dim,
-                                   "group": value, **group_summary(members)})
-        overall = next(g for g in group_rows if g["model_label"] == label and g["dimension"] == "overall")
-        model_rows.append({"model_label": label, **{k: info.get(k) for k in ("model", "quantization", "arch", "context", "thinking",
-                                                                            "temperature", "benchmark_version", "gpu", "cpu")},
-                           **{k: v for k, v in overall.items() if k not in ("model_label", "quantization", "dimension", "group")}})
-        for dim in ("overall", "api"):
-            groups = {"all": main_rows} if dim == "overall" else defaultdict(list)
-            if dim == "api":
-                for r in main_rows:
-                    groups[r["api"]].append(r)
-            for value, members in sorted(groups.items()):
-                for target in ("A", "A_or_B"):
-                    detect_rows.append({"model_label": label, "dimension": dim, "group": value, **detection(members, target)})
-        for dim in DIMENSIONS:
-            groups = {"all": main_rows} if dim == "overall" else defaultdict(list)
-            if dim != "overall":
-                for r in main_rows:
-                    groups[r[dim]].append(r)
-            for value, members in sorted(groups.items(), key=lambda kv: str(kv[0])):
+                g_rows.append({"model_label": label, "quantization": info["quantization"], "run_role": info["role"],
+                               "benchmark_version": info["benchmark_version"], "dimension": dim, "group": value,
+                               **group_summary(members)})
                 for mode, prefix in (("baseline", "b"), ("intervention", "i")):
                     for error_class, key in (("A", "hallucination_kinds"), ("B", "task_error_kinds"),
                                              ("runtime_failure", "runtime_failure_kind")):
                         kinds = Counter(k for r in members for k in r[f"{prefix}_{key}"].split("|") if k)
                         for kind, n in sorted(kinds.items(), key=lambda kv: -kv[1]):
-                            kind_rows.append({"model_label": label, "mode": mode, "error_class": error_class,
-                                              "dimension": dim, "group": value, "kind": kind, "tasks": n,
-                                              "group_tasks": len(members), "share_of_group": round(n / len(members), 4)})
-    adjusted = holm({m["model_label"]: m["hallucination_mcnemar_p"] for m in model_rows if m["hallucination_mcnemar_p"] is not None})
+                            k_rows.append({"model_label": label, "quantization": info["quantization"], "run_role": info["role"],
+                                           "mode": mode, "error_class": error_class, "dimension": dim, "group": value,
+                                           "kind": kind, "tasks": n, "group_tasks": len(members),
+                                           "share_of_group": round(n / len(members), 4)})
+                if dim in ("overall", "api"):
+                    for target in ("A", "A_or_B"):
+                        d_rows.append({"model_label": label, "quantization": info["quantization"], "run_role": info["role"],
+                                       "dimension": dim, "group": value, **detection(members, target)})
+        overall = next(g for g in g_rows if g["dimension"] == "overall")
+        # whole-run totals over every prompt, pilot included: what the run actually cost
+        totals = {}
+        for m in ("b", "i"):
+            secs = total(r[f"{m}_duration_s"] for r in rows)
+            joules = total(r[f"{m}_energy_j"] for r in rows)
+            totals.update({f"{m}_run_hours": round(secs / 3600, 3) if secs else None,
+                           f"{m}_run_energy_wh": round(joules / 3600, 3) if joules else None,
+                           f"{m}_run_tokens": total(r[f"{m}_total_tokens"] for r in rows)})
+        run_rows.append({"model_label": label, "quantization": info["quantization"], "role": info["role"],
+                         "role_reason": info["role_reason"], "label_matches_quantization": int(info["label_matches_quantization"]),
+                         **{k: info.get(k) for k in ("model", "architecture", "context_length", "thinking", "temperature",
+                                                     "max_tokens", "max_turns", "seed", "benchmark_version", "frozen_package_evidence",
+                                                     "started_first", "machine_cpu", "machine_gpu", "machine_ram_gb",
+                                                     "power_backend", "power_idle_w")},
+                         "git_commits": " ".join(info["commits"]), "prompts": len(rows), "prompts_summarised": len(main_rows), **totals})
+        model_rows.append({"model_label": label, "run_role": info["role"], "model": info.get("model"),
+                           "quantization": info["quantization"], "architecture": info.get("architecture"),
+                           "context_length": info.get("context_length"), "benchmark_version": info["benchmark_version"],
+                           "machine_gpu": info.get("machine_gpu"), **{k: v for k, v in overall.items() if k not in ID_COLUMNS}})
+        per_run[label] = (rows, g_rows, d_rows, k_rows)
+        prompt_rows += rows
+        group_rows += g_rows
+        detect_rows += d_rows
+        kind_rows += k_rows
+    files.close()
+    # Holm's correction across the main runs only (plan §6); preliminary runs keep their raw p-value.
+    adjusted = holm({m["model_label"]: m["hallucination_mcnemar_p"] for m in model_rows
+                     if m["run_role"] == "main" and m["hallucination_mcnemar_p"] is not None})
     for m in model_rows:
         m["hallucination_mcnemar_p_holm"] = adjusted.get(m["model_label"])
-    write_csv(OUT / "prompt_stats.csv", prompt_rows)
-    write_csv(OUT / "group_stats.csv", group_rows)
-    write_csv(OUT / "model_comparison.csv", model_rows)
-    write_csv(OUT / "verifier_detection.csv", detect_rows)
-    write_csv(OUT / "error_kinds.csv", kind_rows)
-    print(f"Wrote {len(prompt_rows)} prompt rows, {len(group_rows)} group rows, {len(model_rows)} run(s) to {OUT}")
+    holm_by_label = {m["model_label"]: m["hallucination_mcnemar_p_holm"] for m in model_rows}
+    for g in group_rows:
+        if g["dimension"] == "overall":
+            g["hallucination_mcnemar_p_holm"] = holm_by_label.get(g["model_label"])
+
+    # ---- write: regenerate the tables from scratch (they are never edited by hand)
+    for name in ("combined", "by_quantization", "preliminary"):
+        shutil.rmtree(OUT / name, ignore_errors=True)
+    for stale in ("prompt_stats.csv", "group_stats.csv", "model_comparison.csv", "verifier_detection.csv",
+                  "hallucination_kinds.csv", "error_kinds.csv"):
+        (OUT / stale).unlink(missing_ok=True)  # the flat layout of earlier versions
+    OUT.mkdir(exist_ok=True)
+    write_csv(OUT / "runs.csv", sorted(run_rows, key=lambda r: (r["role"] != "main", r["quantization"] or "", r["model_label"])))
+    combined = OUT / "combined"
+    write_csv(combined / "prompt_stats.csv", prompt_rows)
+    write_csv(combined / "group_stats.csv", group_rows)
+    write_csv(combined / "verifier_detection.csv", detect_rows)
+    write_csv(combined / "error_kinds.csv", kind_rows)
+    write_csv(combined / "metrics_long.csv", metrics_long(group_rows))
+    ordered = sorted(model_rows, key=lambda r: (r["run_role"] != "main", r["quantization"] or "", r["model_label"]))
+    write_csv(combined / "run_comparison.csv", ordered)
+    write_csv(combined / "quantization_comparison.csv", [
+        {"quantization": m["quantization"], "model_label": m["model_label"], "model": m["model"], **{k: m.get(k) for k in HEADLINE}}
+        for m in ordered if m["run_role"] == "main"])
+    for label, (rows, g_rows, d_rows, k_rows) in per_run.items():
+        info = registry[label]
+        folder = OUT / ("by_quantization" if info["role"] == "main" else "preliminary") / (info["quantization"] or "unknown") / label
+        write_csv(folder / "prompt_stats.csv", rows)
+        write_csv(folder / "group_stats.csv", g_rows)
+        write_csv(folder / "verifier_detection.csv", d_rows)
+        write_csv(folder / "error_kinds.csv", k_rows)
+        write_csv(folder / "metrics_long.csv", metrics_long(g_rows))
+        overall = next(g for g in g_rows if g["dimension"] == "overall")
+        headline = {k: overall.get(k) for k in HEADLINE if k != "hallucination_mcnemar_p_holm"}
+        headline["hallucination_mcnemar_p_holm"] = holm_by_label.get(label)
+        (folder / "run_info.json").write_text(json.dumps(
+            {"run": {k: v for k, v in info.items() if k not in ("versions", "started")}, "prompts": len(rows),
+             "headline": headline}, indent=2), encoding="utf-8")
+        print(f"  -> {folder.relative_to(ROOT)}", flush=True)
+    print(f"Wrote {len(prompt_rows)} prompt rows for {len(labels)} run(s) to {OUT}")
 
 
 if __name__ == "__main__":

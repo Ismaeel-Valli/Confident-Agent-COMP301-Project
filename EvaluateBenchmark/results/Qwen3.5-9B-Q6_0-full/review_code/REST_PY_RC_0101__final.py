@@ -1,0 +1,48 @@
+def solve(inputs):
+    """
+    Look up countries by exact match on their subregion using REST Countries v5 API.
+    
+    Args:
+        inputs (dict): Dictionary containing:
+            - value: The subregion to match exactly
+            - result_limit: Maximum number of results to return
+            - included_attributes: List of country attributes to include in response
+            - credential: Caller-supplied credential with necessary permissions
+    
+    Returns:
+        dict or None: Decoded JSON response, or None for successful empty response
+    
+    Raises:
+        Exception: For unsuccessful HTTP responses
+    """
+    import requests
+    
+    # Build the API URL with query parameters
+    base_url = "https://api.restcountries.com/v5.0"
+    params = {
+        "subregion": inputs["value"],
+        "limit": inputs["result_limit"]
+    }
+    
+    # Make the API request
+    response = requests.get(base_url, params=params)
+    
+    # Raise exception for unsuccessful HTTP responses
+    response.raise_for_status()
+    
+    # Decode JSON response
+    data = response.json()
+    
+    # Filter to only include requested attributes if specified
+    if inputs["included_attributes"]:
+        filtered_data = []
+        for country in data:
+            filtered_country = {}
+            for attr in inputs["included_attributes"]:
+                if attr in country:
+                    filtered_country[attr] = country[attr]
+            filtered_data.append(filtered_country)
+        return filtered_data
+    
+    # Return the full response (or None if empty)
+    return data if data else None

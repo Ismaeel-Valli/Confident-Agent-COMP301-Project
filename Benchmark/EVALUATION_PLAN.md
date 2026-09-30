@@ -144,8 +144,16 @@ classified by hand as in §4; the evaluator's error rate on the sample is report
 
 ## 7. Runs
 
-- **Run 1** (benchmark 2026-09-26.2) and **run 2** (benchmark 2026-09-27.1) are scored
+- **Run 1** (benchmark 2026-09-26.2) and **run 2** (benchmark 2026-09-27.2) are scored
   with this plan. Run 2 is the main result.
+- **Quantizations.** The same model at further quantization levels (Q6_K, Q8_0) is run
+  with run 2's benchmark version, settings and machine, and scored with this plan.
+  A run is **main** when it used the newest benchmark version among the runs, and
+  **preliminary** when it used an older one (run 1: no power or timing data, and the
+  verifier before the fixes). Only main runs are compared with each other and form the
+  Holm family of §6; preliminary runs are scored and reported with their uncorrected
+  p-value. The quantization of a run is the one LM Studio reported for the loaded model,
+  not the one in its label.
 - Run 2 includes a verifier change found by inspecting run 1: an undeclared request-body
   field in a schema that does not mention extra fields is now unresolved, as an undeclared
   query parameter already was. This is disclosed as a change made after seeing run 1;
@@ -191,3 +199,7 @@ classified by hand as in §4; the evaluator's error rate on the sample is report
   interpretations fixed with it (runtime failures, extra body fields). Chosen by the team
   before the evaluator had scored any model output; the evaluator's self-check on the
   1,000 reference solutions passed (all correct) before it was run on run 1.
+- 2026-09-30: §6 and §7 clarify the Holm family: the main runs only (newest benchmark
+  version), with run 1 as a preliminary run. Run 2 and the Q6_K and Q8_0 runs had been
+  made but not yet scored when this was decided, so it was fixed before their results were
+  seen. Also corrects run 2's benchmark version to 2026-09-27.2 (§7).
