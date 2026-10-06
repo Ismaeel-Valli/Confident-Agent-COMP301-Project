@@ -1,10 +1,10 @@
 # Evaluation report
 
-Evaluator 2026-09-27.1, 2026-10-06T04:29:57+00:00. Rules: `Benchmark/EVALUATION_PLAN.md`.
+Evaluator 2026-09-27.1, 2026-10-06T15:15:37+00:00. Rules: `Benchmark/EVALUATION_PLAN.md`.
 
 - Answer key: task file SHA-256 `7a09f2bb566dbabb…` (matches the plan).
 - Self-check: 1000/1000 reference solutions scored correct; behaviour requirements met by 1000.
-- Manual reviews applied from: none yet (undetermined candidates are excluded from the primary result).
+- Manual reviews applied from: reviews\reviews.csv.
 - Intervals: 10000 bootstrap resamples (seed 301), over tasks and over operation families.
 
 ## QQwen3.5-9B-Q6_K-full-Latest
@@ -17,26 +17,25 @@ Rate = share of tasks whose code reaching the user is class A (API hallucination
 
 | Comparison | Tasks | Baseline | Intervention | Difference | 95% CI (tasks) | 95% CI (families) | Discordant | McNemar p |
 |---|---:|---:|---:|---:|---|---|---|---:|
-| **Primary** (undetermined excluded) | 973 | 50.9% | 2.4% | +48.5 pp | [+45.2, +51.9] pp | [+32.4, +62.3] pp | 482 / 10 | < 0.0001 |
-| Undetermined counted as hallucination | 990 | 51.6% | 2.4% | +49.2 pp | [+46.0, +52.4] pp | [+33.7, +62.5] pp | 498 / 11 | < 0.0001 |
-| Undetermined counted as correct | 990 | 50.0% | 2.3% | +47.7 pp | [+44.4, +50.9] pp | [+31.7, +61.3] pp | 482 / 10 | < 0.0001 |
-| Including pilot tasks | 982 | 50.7% | 2.3% | +48.4 pp | [+45.1, +51.5] pp | [+32.2, +61.8] pp | 485 / 10 | < 0.0001 |
-| A or B (secondary) | 973 | 55.8% | 9.0% | +46.8 pp | [+43.3, +50.4] pp | [+30.9, +60.4] pp | 482 / 27 | < 0.0001 |
-| A, B or runtime failure | 973 | 62.3% | 9.8% | +52.5 pp | [+49.1, +55.9] pp | [+37.3, +65.1] pp | 530 / 19 | < 0.0001 |
+| **Primary** (undetermined excluded) | 990 | 50.8% | 2.3% | +48.5 pp | [+45.3, +51.7] pp | [+32.7, +62.1] pp | 490 / 10 | < 0.0001 |
+| Undetermined counted as hallucination | 990 | 50.8% | 2.3% | +48.5 pp | [+45.3, +51.7] pp | [+32.7, +62.1] pp | 490 / 10 | < 0.0001 |
+| Undetermined counted as correct | 990 | 50.8% | 2.3% | +48.5 pp | [+45.3, +51.7] pp | [+32.7, +62.1] pp | 490 / 10 | < 0.0001 |
+| Including pilot tasks | 1000 | 50.7% | 2.3% | +48.4 pp | [+45.2, +51.6] pp | [+32.8, +61.7] pp | 494 / 10 | < 0.0001 |
+| A or B (secondary) | 990 | 56.5% | 9.5% | +47.0 pp | [+43.4, +50.4] pp | [+31.4, +60.4] pp | 493 / 28 | < 0.0001 |
+| A, B or runtime failure | 990 | 62.8% | 10.2% | +52.6 pp | [+49.3, +56.0] pp | [+37.8, +65.0] pp | 541 / 20 | < 0.0001 |
 
-Holm-adjusted McNemar p across the main runs: < 0.0001. Undetermined pairs excluded from the primary row: 17. Operation families: 141.
+Holm-adjusted McNemar p across the main runs: < 0.0001. Undetermined pairs excluded from the primary row: 0. Operation families: 141.
 
 ### Classes (pilot excluded)
 
 | Class | Baseline code | Intervention: shown to user | Intervention: final candidate |
 |---|---:|---:|---:|
-| A | 495 | 23 | 222 |
-| B | 48 | 70 | 78 |
+| A | 503 | 23 | 370 |
+| B | 56 | 71 | 91 |
 | correct | 365 | 498 | 518 |
 | no_code | 3 | 0 | 0 |
 | nothing_shown | 0 | 391 | 0 |
 | runtime_failure | 63 | 7 | 11 |
-| undetermined | 16 | 1 | 161 |
 
 ### Kinds of API hallucination reaching the user (tasks; a task can have several)
 
@@ -46,8 +45,8 @@ Holm-adjusted McNemar p across the main runs: < 0.0001. Undetermined pairs exclu
 | invented endpoint or method | 70 | 0 |
 | invalid value or structure | 11 | 21 |
 | invented parameter or body field | 5 | 0 |
-| missing required part or credential | 3 | 2 |
 | undocumented response field | 3 | 0 |
+| missing required part or credential | 3 | 2 |
 
 Tasks with a hallucination other than a wrong host, version or base path: baseline 87, intervention 23. The intervention prompt names the current hosts (by design, Benchmark README), so this row separates that context from what verification catches.
 
@@ -56,11 +55,10 @@ Tasks with a hallucination other than a wrong host, version or base path: baseli
 
 | Final candidate | Delivered | Withheld |
 |---|---:|---:|
-| A | 23 | 199 |
-| B | 70 | 8 |
+| A | 23 | 347 |
+| B | 71 | 20 |
 | correct | 498 | 20 |
 | runtime_failure | 7 | 4 |
-| undetermined | 1 | 160 |
 
 - Incorrect acceptance (class A shown to the user): 23
 - Incorrect rejection (correct final candidate withheld): 20
@@ -68,12 +66,12 @@ Tasks with a hallucination other than a wrong host, version or base path: baseli
 
 ### Confidence metric (EWCS of the final candidate)
 
-AUC, correct vs class A: 0.887 (correct n=518, A n=222).
+AUC, correct vs class A: 0.932 (correct n=518, A n=370).
 
 | EWCS band | Correct | Of decided (correct, A, B) |
 |---|---:|---:|
-| 0.60-0.85 | 486 | 653 |
-| <0.60 | 0 | 110 |
+| 0.60-0.85 | 486 | 672 |
+| <0.60 | 0 | 252 |
 | >=0.85 | 32 | 55 |
 
 ### Corrections
@@ -82,15 +80,13 @@ Attempted 425 (allowed by the prompt: 377).
 
 | First candidate → final | Tasks |
 |---|---:|
-| A->A | 158 |
+| A->A | 165 |
 | A->correct | 123 |
-| undetermined->undetermined | 49 |
-| A->B | 29 |
-| undetermined->A | 20 |
+| undetermined->A | 63 |
+| A->B | 33 |
 | correct->correct | 14 |
-| undetermined->B | 8 |
+| undetermined->B | 9 |
 | runtime_failure->runtime_failure | 7 |
-| A->undetermined | 6 |
 | undetermined->correct | 6 |
 | runtime_failure->correct | 2 |
 | B->B | 2 |
@@ -119,9 +115,9 @@ Attempted 425 (allowed by the prompt: 377).
 
 | API | Tasks | Baseline A | Intervention A shown | Delivered | Undetermined (baseline / shown) |
 |---|---:|---:|---:|---:|---|
-| DummyJSON | 148 | 51 | 0 | 114 | 9 / 0 |
+| DummyJSON | 148 | 59 | 0 | 114 | 0 / 0 |
 | GitHub | 248 | 38 | 0 | 223 | 0 / 0 |
-| JSONPlaceholder | 148 | 27 | 0 | 136 | 7 / 1 |
+| JSONPlaceholder | 148 | 27 | 0 | 136 | 0 / 0 |
 | Open-Meteo | 148 | 107 | 0 | 62 | 0 / 0 |
 | Petstore | 149 | 124 | 23 | 64 | 0 / 0 |
 | REST Countries | 149 | 148 | 0 | 0 | 0 / 0 |
@@ -139,7 +135,7 @@ Attempted 425 (allowed by the prompt: 377).
 | prompt_tokens | 156.5 | 21305.9 | 136.1x |
 | tool_seconds | n/a | 2.3 | n/a |
 
-Manual review: 179 undetermined candidates in `QQwen3.5-9B-Q6_K-full-Latest/review_queue.csv`; audit sample of 101 in `QQwen3.5-9B-Q6_K-full-Latest/audit_sample.csv` (plan §4–5).
+Manual review: 0 undetermined candidates in `QQwen3.5-9B-Q6_K-full-Latest/review_queue.csv`; audit sample of 102 in `QQwen3.5-9B-Q6_K-full-Latest/audit_sample.csv` (plan §4–5).
 
 ## Qwen3.5-9B-Q4_KM-full-Latest
 
@@ -151,26 +147,25 @@ Rate = share of tasks whose code reaching the user is class A (API hallucination
 
 | Comparison | Tasks | Baseline | Intervention | Difference | 95% CI (tasks) | 95% CI (families) | Discordant | McNemar p |
 |---|---:|---:|---:|---:|---|---|---|---:|
-| **Primary** (undetermined excluded) | 976 | 51.8% | 1.6% | +50.2 pp | [+46.9, +53.4] pp | [+34.1, +63.2] pp | 498 / 8 | < 0.0001 |
-| Undetermined counted as hallucination | 990 | 52.5% | 1.6% | +50.9 pp | [+47.7, +54.1] pp | [+35.4, +63.8] pp | 512 / 8 | < 0.0001 |
-| Undetermined counted as correct | 990 | 51.1% | 1.6% | +49.5 pp | [+46.3, +52.7] pp | [+33.9, +62.6] pp | 498 / 8 | < 0.0001 |
-| Including pilot tasks | 986 | 51.8% | 1.6% | +50.2 pp | [+47.0, +53.4] pp | [+34.4, +63.2] pp | 503 / 8 | < 0.0001 |
-| A or B (secondary) | 976 | 59.2% | 11.1% | +48.2 pp | [+44.6, +51.7] pp | [+33.6, +60.7] pp | 511 / 41 | < 0.0001 |
-| A, B or runtime failure | 976 | 74.6% | 11.5% | +63.1 pp | [+59.9, +66.3] pp | [+50.8, +73.3] pp | 635 / 19 | < 0.0001 |
+| **Primary** (undetermined excluded) | 990 | 51.8% | 1.6% | +50.2 pp | [+47.0, +53.3] pp | [+34.6, +63.2] pp | 505 / 8 | < 0.0001 |
+| Undetermined counted as hallucination | 990 | 51.8% | 1.6% | +50.2 pp | [+47.0, +53.3] pp | [+34.6, +63.2] pp | 505 / 8 | < 0.0001 |
+| Undetermined counted as correct | 990 | 51.8% | 1.6% | +50.2 pp | [+47.0, +53.3] pp | [+34.6, +63.2] pp | 505 / 8 | < 0.0001 |
+| Including pilot tasks | 1000 | 51.8% | 1.6% | +50.2 pp | [+47.0, +53.4] pp | [+34.8, +63.1] pp | 510 / 8 | < 0.0001 |
+| A or B (secondary) | 990 | 59.8% | 11.1% | +48.7 pp | [+45.1, +52.3] pp | [+34.8, +61.0] pp | 523 / 41 | < 0.0001 |
+| A, B or runtime failure | 990 | 74.9% | 11.5% | +63.4 pp | [+60.1, +66.7] pp | [+51.3, +73.5] pp | 647 / 19 | < 0.0001 |
 
-Holm-adjusted McNemar p across the main runs: < 0.0001. Undetermined pairs excluded from the primary row: 14. Operation families: 140.
+Holm-adjusted McNemar p across the main runs: < 0.0001. Undetermined pairs excluded from the primary row: 0. Operation families: 141.
 
 ### Classes (pilot excluded)
 
 | Class | Baseline code | Intervention: shown to user | Intervention: final candidate |
 |---|---:|---:|---:|
-| A | 506 | 16 | 327 |
-| B | 72 | 94 | 98 |
+| A | 513 | 16 | 357 |
+| B | 79 | 94 | 100 |
 | correct | 247 | 504 | 525 |
 | no_code | 1 | 0 | 0 |
 | nothing_shown | 0 | 372 | 0 |
 | runtime_failure | 150 | 4 | 8 |
-| undetermined | 14 | 0 | 32 |
 
 ### Kinds of API hallucination reaching the user (tasks; a task can have several)
 
@@ -181,8 +176,8 @@ Holm-adjusted McNemar p across the main runs: < 0.0001. Undetermined pairs exclu
 | invalid value or structure | 9 | 11 |
 | invented parameter or body field | 8 | 0 |
 | missing required part or credential | 5 | 3 |
-| non-existent requests API | 1 | 0 |
 | other | 1 | 0 |
+| non-existent requests API | 1 | 0 |
 | undocumented response field | 0 | 1 |
 
 Tasks with a hallucination other than a wrong host, version or base path: baseline 58, intervention 15. The intervention prompt names the current hosts (by design, Benchmark README), so this row separates that context from what verification catches.
@@ -192,11 +187,10 @@ Tasks with a hallucination other than a wrong host, version or base path: baseli
 
 | Final candidate | Delivered | Withheld |
 |---|---:|---:|
-| A | 16 | 311 |
-| B | 94 | 4 |
+| A | 16 | 341 |
+| B | 94 | 6 |
 | correct | 504 | 21 |
 | runtime_failure | 4 | 4 |
-| undetermined | 0 | 32 |
 
 - Incorrect acceptance (class A shown to the user): 16
 - Incorrect rejection (correct final candidate withheld): 21
@@ -204,12 +198,12 @@ Tasks with a hallucination other than a wrong host, version or base path: baseli
 
 ### Confidence metric (EWCS of the final candidate)
 
-AUC, correct vs class A: 0.938 (correct n=525, A n=327).
+AUC, correct vs class A: 0.943 (correct n=525, A n=357).
 
 | EWCS band | Correct | Of decided (correct, A, B) |
 |---|---:|---:|
-| 0.60-0.85 | 484 | 667 |
-| <0.60 | 2 | 230 |
+| 0.60-0.85 | 484 | 685 |
+| <0.60 | 2 | 244 |
 | >=0.85 | 39 | 53 |
 
 ### Corrections
@@ -218,21 +212,18 @@ Attempted 403 (allowed by the prompt: 349).
 
 | First candidate → final | Tasks |
 |---|---:|
-| A->A | 159 |
+| A->A | 164 |
 | A->correct | 121 |
 | A->B | 36 |
+| undetermined->A | 27 |
 | runtime_failure->correct | 23 |
-| undetermined->A | 22 |
-| undetermined->undetermined | 7 |
-| undetermined->B | 7 |
-| runtime_failure->B | 5 |
-| A->undetermined | 4 |
+| undetermined->B | 8 |
+| runtime_failure->B | 6 |
 | undetermined->correct | 4 |
 | correct->correct | 4 |
 | runtime_failure->runtime_failure | 4 |
 | B->B | 3 |
 | runtime_failure->A | 3 |
-| runtime_failure->undetermined | 1 |
 
 ### Agent protocol notes
 
@@ -256,9 +247,9 @@ Attempted 403 (allowed by the prompt: 349).
 
 | API | Tasks | Baseline A | Intervention A shown | Delivered | Undetermined (baseline / shown) |
 |---|---:|---:|---:|---:|---|
-| DummyJSON | 148 | 97 | 0 | 108 | 6 / 0 |
+| DummyJSON | 148 | 103 | 0 | 108 | 0 / 0 |
 | GitHub | 248 | 12 | 1 | 220 | 0 / 0 |
-| JSONPlaceholder | 148 | 22 | 0 | 145 | 8 / 0 |
+| JSONPlaceholder | 148 | 23 | 0 | 145 | 0 / 0 |
 | Open-Meteo | 148 | 109 | 1 | 83 | 0 / 0 |
 | Petstore | 149 | 118 | 14 | 62 | 0 / 0 |
 | REST Countries | 149 | 148 | 0 | 0 | 0 / 0 |
@@ -276,7 +267,7 @@ Attempted 403 (allowed by the prompt: 349).
 | prompt_tokens | 156.5 | 20117.7 | 128.6x |
 | tool_seconds | n/a | 9.1 | n/a |
 
-Manual review: 46 undetermined candidates in `Qwen3.5-9B-Q4_KM-full-Latest/review_queue.csv`; audit sample of 102 in `Qwen3.5-9B-Q4_KM-full-Latest/audit_sample.csv` (plan §4–5).
+Manual review: 0 undetermined candidates in `Qwen3.5-9B-Q4_KM-full-Latest/review_queue.csv`; audit sample of 103 in `Qwen3.5-9B-Q4_KM-full-Latest/audit_sample.csv` (plan §4–5).
 
 ## Qwen3.5-9B-Q8_0-full-Latest
 
@@ -288,26 +279,25 @@ Rate = share of tasks whose code reaching the user is class A (API hallucination
 
 | Comparison | Tasks | Baseline | Intervention | Difference | 95% CI (tasks) | 95% CI (families) | Discordant | McNemar p |
 |---|---:|---:|---:|---:|---|---|---|---:|
-| **Primary** (undetermined excluded) | 976 | 55.1% | 2.0% | +53.1 pp | [+49.9, +56.1] pp | [+37.6, +65.7] pp | 521 / 3 | < 0.0001 |
-| Undetermined counted as hallucination | 990 | 55.6% | 2.2% | +53.3 pp | [+50.2, +56.5] pp | [+38.2, +65.8] pp | 533 / 5 | < 0.0001 |
-| Undetermined counted as correct | 990 | 54.3% | 2.0% | +52.3 pp | [+49.2, +55.5] pp | [+36.9, +65.1] pp | 521 / 3 | < 0.0001 |
-| Including pilot tasks | 986 | 55.0% | 2.0% | +52.9 pp | [+49.8, +56.1] pp | [+37.6, +65.5] pp | 525 / 3 | < 0.0001 |
-| A or B (secondary) | 976 | 60.7% | 9.6% | +51.0 pp | [+47.5, +54.4] pp | [+35.9, +63.6] pp | 520 / 22 | < 0.0001 |
-| A, B or runtime failure | 976 | 65.1% | 9.9% | +55.1 pp | [+51.7, +58.4] pp | [+40.7, +67.0] pp | 559 / 21 | < 0.0001 |
+| **Primary** (undetermined excluded) | 990 | 55.2% | 2.0% | +53.1 pp | [+50.0, +56.3] pp | [+37.9, +65.7] pp | 529 / 3 | < 0.0001 |
+| Undetermined counted as hallucination | 990 | 55.2% | 2.0% | +53.1 pp | [+50.0, +56.3] pp | [+37.9, +65.7] pp | 529 / 3 | < 0.0001 |
+| Undetermined counted as correct | 990 | 55.2% | 2.0% | +53.1 pp | [+50.0, +56.3] pp | [+37.9, +65.7] pp | 529 / 3 | < 0.0001 |
+| Including pilot tasks | 1000 | 55.0% | 2.0% | +53.0 pp | [+49.9, +56.0] pp | [+38.0, +65.5] pp | 533 / 3 | < 0.0001 |
+| A or B (secondary) | 990 | 61.0% | 9.7% | +51.3 pp | [+47.9, +54.7] pp | [+36.4, +63.7] pp | 532 / 24 | < 0.0001 |
+| A, B or runtime failure | 990 | 65.4% | 10.0% | +55.4 pp | [+52.0, +58.6] pp | [+41.1, +66.9] pp | 571 / 23 | < 0.0001 |
 
-Holm-adjusted McNemar p across the main runs: < 0.0001. Undetermined pairs excluded from the primary row: 14. Operation families: 141.
+Holm-adjusted McNemar p across the main runs: < 0.0001. Undetermined pairs excluded from the primary row: 0. Operation families: 141.
 
 ### Classes (pilot excluded)
 
 | Class | Baseline code | Intervention: shown to user | Intervention: final candidate |
 |---|---:|---:|---:|
-| A | 538 | 20 | 203 |
-| B | 54 | 74 | 87 |
+| A | 546 | 20 | 350 |
+| B | 58 | 76 | 98 |
 | correct | 341 | 508 | 536 |
 | no_code | 2 | 0 | 0 |
 | nothing_shown | 0 | 383 | 0 |
 | runtime_failure | 43 | 3 | 6 |
-| undetermined | 12 | 2 | 158 |
 
 ### Kinds of API hallucination reaching the user (tasks; a task can have several)
 
@@ -316,8 +306,8 @@ Holm-adjusted McNemar p across the main runs: < 0.0001. Undetermined pairs exclu
 | wrong host, version or base path | 446 | 0 |
 | invented endpoint or method | 72 | 0 |
 | missing required part or credential | 8 | 4 |
-| invented parameter or body field | 7 | 0 |
 | invalid value or structure | 7 | 16 |
+| invented parameter or body field | 7 | 0 |
 | undocumented response field | 4 | 0 |
 | non-existent requests API | 1 | 0 |
 
@@ -328,11 +318,10 @@ Tasks with a hallucination other than a wrong host, version or base path: baseli
 
 | Final candidate | Delivered | Withheld |
 |---|---:|---:|
-| A | 20 | 183 |
-| B | 74 | 13 |
+| A | 20 | 330 |
+| B | 76 | 22 |
 | correct | 508 | 28 |
 | runtime_failure | 3 | 3 |
-| undetermined | 2 | 156 |
 
 - Incorrect acceptance (class A shown to the user): 20
 - Incorrect rejection (correct final candidate withheld): 28
@@ -340,12 +329,12 @@ Tasks with a hallucination other than a wrong host, version or base path: baseli
 
 ### Confidence metric (EWCS of the final candidate)
 
-AUC, correct vs class A: 0.893 (correct n=536, A n=203).
+AUC, correct vs class A: 0.937 (correct n=536, A n=350).
 
 | EWCS band | Correct | Of decided (correct, A, B) |
 |---|---:|---:|
-| 0.60-0.85 | 496 | 658 |
-| <0.60 | 1 | 110 |
+| 0.60-0.85 | 496 | 684 |
+| <0.60 | 1 | 242 |
 | >=0.85 | 39 | 58 |
 
 ### Corrections
@@ -354,15 +343,13 @@ Attempted 444 (allowed by the prompt: 387).
 
 | First candidate → final | Tasks |
 |---|---:|
-| A->A | 157 |
+| A->A | 166 |
 | A->correct | 150 |
-| undetermined->undetermined | 48 |
-| A->B | 34 |
-| undetermined->A | 23 |
-| undetermined->B | 9 |
+| undetermined->A | 62 |
+| A->B | 36 |
+| undetermined->B | 11 |
 | undetermined->correct | 8 |
 | correct->correct | 8 |
-| A->undetermined | 4 |
 | B->B | 2 |
 | B->correct | 1 |
 
@@ -388,9 +375,9 @@ Attempted 444 (allowed by the prompt: 387).
 
 | API | Tasks | Baseline A | Intervention A shown | Delivered | Undetermined (baseline / shown) |
 |---|---:|---:|---:|---:|---|
-| DummyJSON | 148 | 80 | 0 | 110 | 7 / 0 |
+| DummyJSON | 148 | 87 | 0 | 110 | 0 / 0 |
 | GitHub | 248 | 43 | 0 | 230 | 0 / 0 |
-| JSONPlaceholder | 148 | 22 | 0 | 138 | 5 / 2 |
+| JSONPlaceholder | 148 | 23 | 0 | 138 | 0 / 0 |
 | Open-Meteo | 148 | 109 | 0 | 63 | 0 / 0 |
 | Petstore | 149 | 135 | 20 | 65 | 0 / 0 |
 | REST Countries | 149 | 149 | 0 | 1 | 0 / 0 |
@@ -408,5 +395,5 @@ Attempted 444 (allowed by the prompt: 387).
 | prompt_tokens | 156.5 | 21555.5 | 137.7x |
 | tool_seconds | n/a | 9.6 | n/a |
 
-Manual review: 171 undetermined candidates in `Qwen3.5-9B-Q8_0-full-Latest/review_queue.csv`; audit sample of 101 in `Qwen3.5-9B-Q8_0-full-Latest/audit_sample.csv` (plan §4–5).
+Manual review: 0 undetermined candidates in `Qwen3.5-9B-Q8_0-full-Latest/review_queue.csv`; audit sample of 102 in `Qwen3.5-9B-Q8_0-full-Latest/audit_sample.csv` (plan §4–5).
 

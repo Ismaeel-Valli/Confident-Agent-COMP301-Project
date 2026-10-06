@@ -93,7 +93,9 @@ In `review_queue.csv`, `role` says what a candidate decides. **`baseline` and `s
 intervention's confusion matrix and EWCS calibration, not what reached the user. Reviews
 are keyed by the task and the code, so one review covers the same code in several runs.
 
-Copy rows of `review_queue.csv` (and `audit_sample.csv`) into `EvaluateBenchmark/reviews/reviews.csv`,
+The final runs' review is done: `reviews/review_rules.py` records each documentation
+check as a rule and writes `reviews/reviews.csv` (plan, change of 2026-10-06). For new
+runs: copy rows of `review_queue.csv` (and `audit_sample.csv`) into `EvaluateBenchmark/reviews/reviews.csv`,
 have two group members fill `reviewer_1_class` and `reviewer_2_class` independently with
 `correct`, `A`, `B` or `runtime_failure` using the plan's rules, then agree an
 `agreed_class`. Rerun the evaluator: undetermined candidates with an agreed class are

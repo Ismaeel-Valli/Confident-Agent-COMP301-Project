@@ -224,3 +224,13 @@ classified by hand as in §4; the evaluator's error rate on the sample is report
   alike), so the choice does not change the conclusions. The superseded runs are kept in
   `Archive/Superseded Benchmark Runs`; Q4_K_M and Q8_0, each run twice with the same
   settings, can be reported as a repeat-run check.
+- 2026-10-06: §4 manual review of the final runs' undetermined candidates (396 distinct
+  candidates: 46 that reached the user, 350 that were withheld). For lack of time it was made
+  with AI assistance (Claude), not by two group members independently, so no agreement
+  (kappa) can be reported. Each question a partial specification left open was checked once
+  against the provider's documentation and, where the documentation is silent, the live
+  public API; the answers are recorded as rules with their evidence in
+  `EvaluateBenchmark/reviews/review_rules.py`, and every decision with its reason in
+  `reviews/reviews.csv` (`reviewer_2_class` left for a group member's check). The §2 rules
+  were applied unchanged: a name the provider does not have is class A; a name it has is
+  judged as for an official specification.

@@ -28,15 +28,15 @@
   "prompts": 1000,
   "headline": {
     "n": 990,
-    "b_hallucination_rate": 0.5501,
+    "b_hallucination_rate": 0.5515,
     "i_hallucination_rate": 0.0202,
-    "hallucination_improvement": 0.5307,
-    "hallucination_repairs": 521,
+    "hallucination_improvement": 0.5313,
+    "hallucination_repairs": 529,
     "hallucination_regressions": 3,
-    "hallucination_mcnemar_p": 8.732986821764443e-151,
-    "b_correct_rate": 0.3487,
-    "i_correct_rate": 0.5142,
-    "correct_improvement": 0.165,
+    "hallucination_mcnemar_p": 3.5699623716908254e-153,
+    "b_correct_rate": 0.3444,
+    "i_correct_rate": 0.5131,
+    "correct_improvement": 0.1687,
     "i_abstention_rate": 0.3869,
     "i_incorrect_acceptance": 20,
     "i_incorrect_rejection": 28,
@@ -63,6 +63,6 @@
     "i_seconds_per_correct_answer": 94.34,
     "b_wh_per_correct_answer": 1.7111,
     "i_wh_per_correct_answer": 7.051,
-    "hallucination_mcnemar_p_holm": 2.619896046529333e-150
+    "hallucination_mcnemar_p_holm": 1.0709887115072476e-152
   }
 }

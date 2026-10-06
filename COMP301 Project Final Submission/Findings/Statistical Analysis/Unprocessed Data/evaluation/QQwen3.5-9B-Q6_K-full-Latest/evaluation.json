@@ -2,127 +2,126 @@
   "label": "QQwen3.5-9B-Q6_K-full-Latest",
   "tasks": 1000,
   "primary": {
-    "tasks": 973,
-    "excluded_undetermined": 17,
-    "baseline_rate": 0.5087358684480987,
-    "intervention_rate": 0.023638232271325797,
-    "difference": 0.4850976361767729,
-    "discordant_baseline_only": 482,
+    "tasks": 990,
+    "excluded_undetermined": 0,
+    "baseline_rate": 0.5080808080808081,
+    "intervention_rate": 0.023232323232323233,
+    "difference": 0.48484848484848486,
+    "discordant_baseline_only": 490,
     "discordant_intervention_only": 10,
-    "mcnemar_p": 3.336154995018817e-128,
+    "mcnemar_p": 1.533028171757011e-130,
     "ci_tasks": [
-      0.4522096608427544,
-      0.5190133607399794
+      0.45252525252525255,
+      0.5171717171717172
     ],
     "ci_families": [
-      0.3241150442477876,
-      0.6226027397260274
+      0.32716763005780347,
+      0.6206322795341098
     ],
     "families": 141,
-    "mcnemar_p_holm": 3.336154995018817e-128
+    "mcnemar_p_holm": 1.533028171757011e-130
   },
   "sensitivity": {
     "undetermined_as_hallucination": {
       "tasks": 990,
       "excluded_undetermined": 0,
-      "baseline_rate": 0.5161616161616162,
-      "intervention_rate": 0.024242424242424242,
-      "difference": 0.4919191919191919,
-      "discordant_baseline_only": 498,
-      "discordant_intervention_only": 11,
-      "mcnemar_p": 1.6289535451558133e-131,
+      "baseline_rate": 0.5080808080808081,
+      "intervention_rate": 0.023232323232323233,
+      "difference": 0.48484848484848486,
+      "discordant_baseline_only": 490,
+      "discordant_intervention_only": 10,
+      "mcnemar_p": 1.533028171757011e-130,
       "ci_tasks": [
-        0.4595959595959596,
-        0.5242424242424243
+        0.45252525252525255,
+        0.5171717171717172
       ],
       "ci_families": [
-        0.3368055555555556,
-        0.6253002401921537
+        0.32716763005780347,
+        0.6206322795341098
       ],
       "families": 141
     },
     "undetermined_as_correct": {
       "tasks": 990,
       "excluded_undetermined": 0,
-      "baseline_rate": 0.5,
+      "baseline_rate": 0.5080808080808081,
       "intervention_rate": 0.023232323232323233,
-      "difference": 0.4767676767676768,
-      "discordant_baseline_only": 482,
+      "difference": 0.48484848484848486,
+      "discordant_baseline_only": 490,
       "discordant_intervention_only": 10,
-      "mcnemar_p": 3.336154995018817e-128,
+      "mcnemar_p": 1.533028171757011e-130,
       "ci_tasks": [
-        0.4444444444444444,
-        0.509090909090909
+        0.45252525252525255,
+        0.5171717171717172
       ],
       "ci_families": [
-        0.3170454545454545,
-        0.6130653266331658
+        0.32716763005780347,
+        0.6206322795341098
       ],
       "families": 141
     },
     "including_pilot": {
-      "tasks": 982,
-      "excluded_undetermined": 18,
-      "baseline_rate": 0.5071283095723014,
-      "intervention_rate": 0.023421588594704685,
-      "difference": 0.48370672097759676,
-      "discordant_baseline_only": 485,
+      "tasks": 1000,
+      "excluded_undetermined": 0,
+      "baseline_rate": 0.507,
+      "intervention_rate": 0.023,
+      "difference": 0.484,
+      "discordant_baseline_only": 494,
       "discordant_intervention_only": 10,
-      "mcnemar_p": 4.433478880856343e-129,
+      "mcnemar_p": 1.0381904119929816e-131,
       "ci_tasks": [
-        0.4511201629327902,
-        0.515274949083503
+        0.452,
+        0.516
       ],
       "ci_families": [
-        0.3222543352601156,
-        0.6182197496522949
+        0.32786885245901637,
+        0.6165540540540541
       ],
       "families": 142
     }
   },
   "secondary": {
-    "tasks": 973,
-    "excluded_undetermined": 17,
-    "baseline_rate": 0.5580678314491264,
-    "intervention_rate": 0.09044193216855087,
-    "difference": 0.4676258992805755,
-    "discordant_baseline_only": 482,
-    "discordant_intervention_only": 27,
-    "mcnemar_p": 6.938438460828122e-109,
+    "tasks": 990,
+    "excluded_undetermined": 0,
+    "baseline_rate": 0.5646464646464646,
+    "intervention_rate": 0.09494949494949495,
+    "difference": 0.4696969696969697,
+    "discordant_baseline_only": 493,
+    "discordant_intervention_only": 28,
+    "mcnemar_p": 5.704430719848011e-111,
     "ci_tasks": [
-      0.43268242548818087,
-      0.5035971223021583
+      0.43434343434343436,
+      0.5040404040404041
     ],
     "ci_families": [
-      0.3088235294117647,
-      0.6038062283737025
+      0.3141426783479349,
+      0.6040209790209791
     ],
     "families": 141
   },
   "any_error": {
-    "tasks": 973,
-    "excluded_undetermined": 17,
-    "baseline_rate": 0.6228160328879754,
-    "intervention_rate": 0.09763617677286741,
-    "difference": 0.5251798561151079,
-    "discordant_baseline_only": 530,
-    "discordant_intervention_only": 19,
-    "mcnemar_p": 7.608811870576342e-131,
+    "tasks": 990,
+    "excluded_undetermined": 0,
+    "baseline_rate": 0.6282828282828283,
+    "intervention_rate": 0.10202020202020202,
+    "difference": 0.5262626262626262,
+    "discordant_baseline_only": 541,
+    "discordant_intervention_only": 20,
+    "mcnemar_p": 7.652604352659271e-133,
     "ci_tasks": [
-      0.49126413155190135,
-      0.5590955806783144
+      0.49292929292929294,
+      0.5595959595959596
     ],
     "ci_families": [
-      0.3728813559322034,
-      0.6512237762237763
+      0.37756497948016415,
+      0.6500789889415481
     ],
     "families": 141
   },
   "baseline_classes": {
     "correct": 365,
-    "A": 495,
-    "undetermined": 16,
-    "B": 48,
+    "A": 503,
+    "B": 56,
     "runtime_failure": 63,
     "no_code": 3
   },
@@ -147,45 +146,41 @@
   "shown_classes": {
     "correct": 498,
     "nothing_shown": 391,
-    "B": 70,
+    "B": 71,
     "runtime_failure": 7,
-    "undetermined": 1,
     "A": 23
   },
   "final_classes": {
     "correct": 518,
-    "undetermined": 161,
+    "B": 91,
     "runtime_failure": 11,
-    "A": 222,
-    "B": 78
+    "A": 370
   },
   "confusion": {
     "correct|delivered": 498,
-    "undetermined|withheld": 160,
+    "B|withheld": 20,
     "runtime_failure|withheld": 4,
+    "A|withheld": 347,
     "correct|withheld": 20,
-    "A|withheld": 199,
-    "B|delivered": 70,
+    "B|delivered": 71,
     "runtime_failure|delivered": 7,
-    "B|withheld": 8,
-    "undetermined|delivered": 1,
     "A|delivered": 23
   },
   "incorrect_rejection": 20,
   "incorrect_acceptance_primary": 23,
   "unapproved_code_shown": 0,
   "ewcs": {
-    "auc_correct_vs_A": 0.8873221677275731,
+    "auc_correct_vs_A": 0.9322680788897005,
     "correct_n": 518,
-    "A_n": 222,
+    "A_n": 370,
     "share_correct_by_band": {
       "0.60-0.85": {
         "correct": 486,
-        "total": 653
+        "total": 672
       },
       "<0.60": {
         "correct": 0,
-        "total": 110
+        "total": 252
       },
       ">=0.85": {
         "correct": 32,
@@ -198,18 +193,16 @@
     "allowed": 377,
     "transitions": {
       "A->correct": 123,
-      "A->undetermined": 6,
+      "A->B": 33,
       "runtime_failure->runtime_failure": 7,
-      "A->A": 158,
+      "A->A": 165,
       "undetermined->correct": 6,
       "runtime_failure->correct": 2,
-      "undetermined->undetermined": 49,
-      "undetermined->B": 8,
+      "undetermined->A": 63,
+      "undetermined->B": 9,
       "correct->correct": 14,
-      "A->B": 29,
       "B->B": 2,
-      "runtime_failure->A": 1,
-      "undetermined->A": 20
+      "runtime_failure->A": 1
     }
   },
   "protocol_notes": {
@@ -253,9 +246,9 @@
   "by_api": {
     "DummyJSON": {
       "tasks": 148,
-      "baseline_A": 51,
+      "baseline_A": 59,
       "intervention_A_shown": 0,
-      "baseline_undetermined": 9,
+      "baseline_undetermined": 0,
       "intervention_undetermined": 0,
       "delivered": 114
     },
@@ -271,8 +264,8 @@
       "tasks": 148,
       "baseline_A": 27,
       "intervention_A_shown": 0,
-      "baseline_undetermined": 7,
-      "intervention_undetermined": 1,
+      "baseline_undetermined": 0,
+      "intervention_undetermined": 0,
       "delivered": 136
     },
     "Open-Meteo": {
@@ -397,8 +390,8 @@
     }
   },
   "review_files": {
-    "review_queue": 179,
-    "audit_sample": 101
+    "review_queue": 0,
+    "audit_sample": 102
   },
   "run": {
     "quantization": "Q6_K",
