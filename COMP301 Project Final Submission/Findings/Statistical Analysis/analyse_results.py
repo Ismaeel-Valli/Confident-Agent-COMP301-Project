@@ -65,6 +65,9 @@ def plot_efficacy(quant_comp_path):
     # Load quantization comparison data
     df = pd.read_csv(quant_comp_path)
 
+    # Sort so the chart goes Q4 -> Q6 -> Q8
+    df = df.sort_values('quantization')
+
     # Set up the grouped bar chart data
     labels = df['quantization'].tolist()
     b_halluc = df['b_hallucination_rate'] * 100
