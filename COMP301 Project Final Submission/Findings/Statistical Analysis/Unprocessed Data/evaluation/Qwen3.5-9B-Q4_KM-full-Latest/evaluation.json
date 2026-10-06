@@ -1,0 +1,414 @@
+{
+  "label": "Qwen3.5-9B-Q4_KM-full-Latest",
+  "tasks": 1000,
+  "primary": {
+    "tasks": 976,
+    "excluded_undetermined": 14,
+    "baseline_rate": 0.5184426229508197,
+    "intervention_rate": 0.01639344262295082,
+    "difference": 0.5020491803278688,
+    "discordant_baseline_only": 498,
+    "discordant_intervention_only": 8,
+    "mcnemar_p": 9.781119792098528e-136,
+    "ci_tasks": [
+      0.4692622950819672,
+      0.5338114754098361
+    ],
+    "ci_families": [
+      0.34103260869565216,
+      0.6318493150684932
+    ],
+    "families": 140,
+    "mcnemar_p_holm": 1.9562239584197056e-135
+  },
+  "sensitivity": {
+    "undetermined_as_hallucination": {
+      "tasks": 990,
+      "excluded_undetermined": 0,
+      "baseline_rate": 0.5252525252525253,
+      "intervention_rate": 0.01616161616161616,
+      "difference": 0.509090909090909,
+      "discordant_baseline_only": 512,
+      "discordant_intervention_only": 8,
+      "mcnemar_p": 7.43451052870527e-140,
+      "ci_tasks": [
+        0.4767676767676768,
+        0.5414141414141415
+      ],
+      "ci_families": [
+        0.3544165757906216,
+        0.6375404530744336
+      ],
+      "families": 141
+    },
+    "undetermined_as_correct": {
+      "tasks": 990,
+      "excluded_undetermined": 0,
+      "baseline_rate": 0.5111111111111111,
+      "intervention_rate": 0.01616161616161616,
+      "difference": 0.494949494949495,
+      "discordant_baseline_only": 498,
+      "discordant_intervention_only": 8,
+      "mcnemar_p": 9.781119792098528e-136,
+      "ci_tasks": [
+        0.4626262626262626,
+        0.5272727272727272
+      ],
+      "ci_families": [
+        0.33858267716535434,
+        0.6259814418272662
+      ],
+      "families": 141
+    },
+    "including_pilot": {
+      "tasks": 986,
+      "excluded_undetermined": 14,
+      "baseline_rate": 0.5182555780933062,
+      "intervention_rate": 0.016227180527383367,
+      "difference": 0.5020283975659229,
+      "discordant_baseline_only": 503,
+      "discordant_intervention_only": 8,
+      "mcnemar_p": 3.3080285673896108e-137,
+      "ci_tasks": [
+        0.4695740365111562,
+        0.5344827586206896
+      ],
+      "ci_families": [
+        0.34363411619283063,
+        0.6317073170731707
+      ],
+      "families": 141
+    }
+  },
+  "secondary": {
+    "tasks": 976,
+    "excluded_undetermined": 14,
+    "baseline_rate": 0.5922131147540983,
+    "intervention_rate": 0.11065573770491803,
+    "difference": 0.48155737704918034,
+    "discordant_baseline_only": 511,
+    "discordant_intervention_only": 41,
+    "mcnemar_p": 2.5245121555240614e-104,
+    "ci_tasks": [
+      0.4456967213114754,
+      0.5174180327868853
+    ],
+    "ci_families": [
+      0.33578792341678937,
+      0.6068796068796068
+    ],
+    "families": 140
+  },
+  "any_error": {
+    "tasks": 976,
+    "excluded_undetermined": 14,
+    "baseline_rate": 0.7459016393442623,
+    "intervention_rate": 0.11475409836065574,
+    "difference": 0.6311475409836066,
+    "discordant_baseline_only": 635,
+    "discordant_intervention_only": 19,
+    "mcnemar_p": 5.455128634142088e-161,
+    "ci_tasks": [
+      0.5993852459016393,
+      0.6629098360655737
+    ],
+    "ci_families": [
+      0.5078407720144753,
+      0.7327150084317032
+    ],
+    "families": 140
+  },
+  "baseline_classes": {
+    "correct": 247,
+    "undetermined": 14,
+    "A": 506,
+    "runtime_failure": 150,
+    "B": 72,
+    "no_code": 1
+  },
+  "hallucination_types": {
+    "baseline": {
+      "wrong host, version or base path": 449,
+      "other": 1,
+      "invented endpoint or method": 39,
+      "invented parameter or body field": 8,
+      "invalid value or structure": 9,
+      "non-existent requests API": 1,
+      "missing required part or credential": 5
+    },
+    "intervention_shown": {
+      "undocumented response field": 1,
+      "wrong host, version or base path": 1,
+      "missing required part or credential": 3,
+      "invalid value or structure": 11
+    }
+  },
+  "primary_excluding_wrong_host": {
+    "baseline": 58,
+    "intervention_shown": 15
+  },
+  "shown_classes": {
+    "correct": 504,
+    "runtime_failure": 4,
+    "nothing_shown": 372,
+    "B": 94,
+    "A": 16
+  },
+  "final_classes": {
+    "correct": 525,
+    "runtime_failure": 8,
+    "undetermined": 32,
+    "B": 98,
+    "A": 327
+  },
+  "confusion": {
+    "correct|delivered": 504,
+    "runtime_failure|delivered": 4,
+    "correct|withheld": 21,
+    "undetermined|withheld": 32,
+    "B|withheld": 4,
+    "B|delivered": 94,
+    "A|withheld": 311,
+    "A|delivered": 16,
+    "runtime_failure|withheld": 4
+  },
+  "incorrect_rejection": 21,
+  "incorrect_acceptance_primary": 16,
+  "unapproved_code_shown": 0,
+  "ewcs": {
+    "auc_correct_vs_A": 0.9380515508955876,
+    "correct_n": 525,
+    "A_n": 327,
+    "share_correct_by_band": {
+      "0.60-0.85": {
+        "correct": 484,
+        "total": 667
+      },
+      "<0.60": {
+        "correct": 2,
+        "total": 230
+      },
+      ">=0.85": {
+        "correct": 39,
+        "total": 53
+      }
+    }
+  },
+  "corrections": {
+    "attempted": 403,
+    "allowed": 349,
+    "transitions": {
+      "A->correct": 121,
+      "undetermined->undetermined": 7,
+      "A->undetermined": 4,
+      "undetermined->correct": 4,
+      "runtime_failure->correct": 23,
+      "undetermined->B": 7,
+      "correct->correct": 4,
+      "A->A": 159,
+      "runtime_failure->runtime_failure": 4,
+      "B->B": 3,
+      "A->B": 36,
+      "runtime_failure->undetermined": 1,
+      "runtime_failure->B": 5,
+      "runtime_failure->A": 3,
+      "undetermined->A": 22
+    }
+  },
+  "protocol_notes": {
+    "reached the turn limit; the benchmark asked for the final reply": 337,
+    "verified the same code more than once": 310,
+    "corrected without a verified_incorrect layer": 54,
+    "reply differs from the final report": 90,
+    "more than one correction": 150
+  },
+  "behaviour": {
+    "baseline": {
+      "returns_expected_value": {
+        "ok": 672,
+        "of": 839
+      },
+      "empty_response_ok": {
+        "ok": 97,
+        "of": 839
+      },
+      "error_raises": {
+        "ok": 837,
+        "of": 839
+      }
+    },
+    "intervention_shown": {
+      "returns_expected_value": {
+        "ok": 508,
+        "of": 614
+      },
+      "empty_response_ok": {
+        "ok": 152,
+        "of": 614
+      },
+      "error_raises": {
+        "ok": 613,
+        "of": 614
+      }
+    }
+  },
+  "by_api": {
+    "DummyJSON": {
+      "tasks": 148,
+      "baseline_A": 97,
+      "intervention_A_shown": 0,
+      "baseline_undetermined": 6,
+      "intervention_undetermined": 0,
+      "delivered": 108
+    },
+    "GitHub": {
+      "tasks": 248,
+      "baseline_A": 12,
+      "intervention_A_shown": 1,
+      "baseline_undetermined": 0,
+      "intervention_undetermined": 0,
+      "delivered": 220
+    },
+    "JSONPlaceholder": {
+      "tasks": 148,
+      "baseline_A": 22,
+      "intervention_A_shown": 0,
+      "baseline_undetermined": 8,
+      "intervention_undetermined": 0,
+      "delivered": 145
+    },
+    "Open-Meteo": {
+      "tasks": 148,
+      "baseline_A": 109,
+      "intervention_A_shown": 1,
+      "baseline_undetermined": 0,
+      "intervention_undetermined": 0,
+      "delivered": 83
+    },
+    "Petstore": {
+      "tasks": 149,
+      "baseline_A": 118,
+      "intervention_A_shown": 14,
+      "baseline_undetermined": 0,
+      "intervention_undetermined": 0,
+      "delivered": 62
+    },
+    "REST Countries": {
+      "tasks": 149,
+      "baseline_A": 148,
+      "intervention_A_shown": 0,
+      "baseline_undetermined": 0,
+      "intervention_undetermined": 0,
+      "delivered": 0
+    }
+  },
+  "cost": {
+    "baseline": {
+      "duration_seconds": {
+        "mean": 5.809028282828283,
+        "median": 5.3580000000000005,
+        "total": 5750.938,
+        "n": 990
+      },
+      "model_seconds": {
+        "mean": 5.80700101010101,
+        "median": 5.355,
+        "total": 5748.931,
+        "n": 990
+      },
+      "prompt_tokens": {
+        "mean": 156.4909090909091,
+        "median": 154.0,
+        "total": 154926,
+        "n": 990
+      },
+      "completion_tokens": {
+        "mean": 373.0979797979798,
+        "median": 339.0,
+        "total": 369367,
+        "n": 990
+      },
+      "gpu_energy_j": {
+        "mean": 1437.939696969697,
+        "median": 1314.5,
+        "total": 1423560.3,
+        "n": 990
+      },
+      "cpu_energy_j": {
+        "mean": 273.9249494949495,
+        "median": 254.0,
+        "total": 271185.7,
+        "n": 990
+      },
+      "measured_energy_j": {
+        "mean": 1711.8631313131314,
+        "median": 1565.15,
+        "total": 1694744.5,
+        "n": 990
+      }
+    },
+    "intervention": {
+      "duration_seconds": {
+        "mean": 36.94771818181818,
+        "median": 31.2435,
+        "total": 36578.241,
+        "n": 990
+      },
+      "model_seconds": {
+        "mean": 27.808061616161616,
+        "median": 24.654,
+        "total": 27529.981,
+        "n": 990
+      },
+      "tool_seconds": {
+        "mean": 9.13049797979798,
+        "median": 7.8295,
+        "total": 9039.193,
+        "n": 990
+      },
+      "prompt_tokens": {
+        "mean": 20117.739393939395,
+        "median": 15265.0,
+        "total": 19916562,
+        "n": 990
+      },
+      "completion_tokens": {
+        "mean": 1302.730303030303,
+        "median": 1237.0,
+        "total": 1289703,
+        "n": 990
+      },
+      "gpu_energy_j": {
+        "mean": 7678.177474747475,
+        "median": 6758.25,
+        "total": 7601395.7,
+        "n": 990
+      },
+      "cpu_energy_j": {
+        "mean": 1524.9240404040404,
+        "median": 1284.85,
+        "total": 1509674.8,
+        "n": 990
+      },
+      "measured_energy_j": {
+        "mean": 9203.101313131314,
+        "median": 8019.0,
+        "total": 9111070.3,
+        "n": 990
+      }
+    }
+  },
+  "review_files": {
+    "review_queue": 46,
+    "audit_sample": 102
+  },
+  "run": {
+    "quantization": "Q4_K_M",
+    "benchmark_version": "2026-09-27.2",
+    "role": "main",
+    "role_reason": "benchmark 2026-09-27.2",
+    "machine_gpu": "AMD Radeon RX 9070 XT",
+    "power_backend": "LibreHardwareMonitor",
+    "label_matches_quantization": true
+  }
+}

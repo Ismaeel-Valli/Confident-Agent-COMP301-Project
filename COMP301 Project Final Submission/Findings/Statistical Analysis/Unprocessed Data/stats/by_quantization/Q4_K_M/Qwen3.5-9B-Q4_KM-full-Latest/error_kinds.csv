@@ -1,0 +1,311 @@
+model_label,quantization,run_role,mode,error_class,dimension,group,kind,tasks,group_tasks,share_of_group
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,overall,all,"wrong host, version or base path",449,990,0.4535
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,overall,all,invented endpoint or method,39,990,0.0394
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,overall,all,invalid value or structure,9,990,0.0091
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,overall,all,invented parameter or body field,8,990,0.0081
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,overall,all,missing required part or credential,5,990,0.0051
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,overall,all,other,1,990,0.001
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,overall,all,non-existent requests API,1,990,0.001
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,overall,all,credential missing or malformed (API requirement unknown),52,990,0.0525
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,overall,all,method not acceptable for the task,10,990,0.0101
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,overall,all,request body differs (fields or values),8,990,0.0081
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,overall,all,omitted parameter the task specifies,5,990,0.0051
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,overall,all,different declared endpoint,1,990,0.001
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,overall,all,different parameter value,1,990,0.001
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,overall,all,input used as the wrong type (e.g. credential string as a dict),128,990,0.1293
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,overall,all,raises its own error before the request,17,990,0.0172
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,overall,all,syntax error,2,990,0.002
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,overall,all,reads an input the task does not provide,1,990,0.001
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,overall,all,wrong call or argument types,1,990,0.001
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,overall,all,undefined name,1,990,0.001
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,overall,all,invalid value or structure,11,990,0.0111
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,overall,all,missing required part or credential,3,990,0.003
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,overall,all,undocumented response field,1,990,0.001
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,overall,all,"wrong host, version or base path",1,990,0.001
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,overall,all,omitted parameter the task specifies,43,990,0.0434
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,overall,all,method not acceptable for the task,25,990,0.0253
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,overall,all,request body differs (fields or values),11,990,0.0111
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,overall,all,different parameter value,9,990,0.0091
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,overall,all,different declared endpoint,7,990,0.0071
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,runtime_failure,overall,all,reads an input the task does not provide,2,990,0.002
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,runtime_failure,overall,all,input used as the wrong type (e.g. credential string as a dict),2,990,0.002
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,DummyJSON,"wrong host, version or base path",93,148,0.6284
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,DummyJSON,invented endpoint or method,3,148,0.0203
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,DummyJSON,other,1,148,0.0068
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,api,DummyJSON,omitted parameter the task specifies,6,148,0.0405
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,api,DummyJSON,request body differs (fields or values),1,148,0.0068
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,runtime_failure,api,DummyJSON,reads an input the task does not provide,2,148,0.0135
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,GitHub,invented endpoint or method,11,248,0.0444
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,GitHub,invented parameter or body field,1,248,0.004
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,api,GitHub,credential missing or malformed (API requirement unknown),52,248,0.2097
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,api,GitHub,omitted parameter the task specifies,5,248,0.0202
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,api,GitHub,request body differs (fields or values),1,248,0.004
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,api,GitHub,different declared endpoint,1,248,0.004
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,api,GitHub,different parameter value,1,248,0.004
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,api,GitHub,input used as the wrong type (e.g. credential string as a dict),102,248,0.4113
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,api,GitHub,raises its own error before the request,14,248,0.0565
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,api,GitHub,syntax error,1,248,0.004
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,api,GitHub,undocumented response field,1,248,0.004
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,api,GitHub,omitted parameter the task specifies,13,248,0.0524
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,api,GitHub,request body differs (fields or values),7,248,0.0282
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,api,GitHub,different declared endpoint,7,248,0.0282
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,api,GitHub,different parameter value,4,248,0.0161
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,runtime_failure,api,GitHub,input used as the wrong type (e.g. credential string as a dict),2,248,0.0081
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,JSONPlaceholder,invented endpoint or method,21,148,0.1419
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,JSONPlaceholder,invalid value or structure,1,148,0.0068
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,api,JSONPlaceholder,method not acceptable for the task,10,148,0.0676
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,api,JSONPlaceholder,request body differs (fields or values),7,148,0.0473
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,api,JSONPlaceholder,reads an input the task does not provide,1,148,0.0068
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,api,JSONPlaceholder,method not acceptable for the task,25,148,0.1689
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,api,JSONPlaceholder,request body differs (fields or values),3,148,0.0203
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,Open-Meteo,"wrong host, version or base path",99,148,0.6689
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,Open-Meteo,invented parameter or body field,5,148,0.0338
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,Open-Meteo,invalid value or structure,5,148,0.0338
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,api,Open-Meteo,"wrong host, version or base path",1,148,0.0068
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,api,Open-Meteo,omitted parameter the task specifies,24,148,0.1622
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,api,Open-Meteo,different parameter value,5,148,0.0338
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,Petstore,"wrong host, version or base path",109,149,0.7315
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,Petstore,missing required part or credential,5,149,0.0336
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,Petstore,invented endpoint or method,4,149,0.0268
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,Petstore,invalid value or structure,3,149,0.0201
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,Petstore,invented parameter or body field,2,149,0.0134
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,Petstore,non-existent requests API,1,149,0.0067
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,api,Petstore,input used as the wrong type (e.g. credential string as a dict),25,149,0.1678
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,api,Petstore,raises its own error before the request,3,149,0.0201
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,api,Petstore,wrong call or argument types,1,149,0.0067
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,api,Petstore,syntax error,1,149,0.0067
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,api,Petstore,undefined name,1,149,0.0067
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,api,Petstore,invalid value or structure,11,149,0.0738
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,api,Petstore,missing required part or credential,3,149,0.0201
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,api,REST Countries,"wrong host, version or base path",148,149,0.9933
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,api,REST Countries,input used as the wrong type (e.g. credential string as a dict),1,149,0.0067
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,operation_category,create,"wrong host, version or base path",105,232,0.4526
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,operation_category,create,missing required part or credential,5,232,0.0216
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,operation_category,create,invented endpoint or method,4,232,0.0172
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,operation_category,create,invalid value or structure,3,232,0.0129
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,operation_category,create,invented parameter or body field,2,232,0.0086
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,operation_category,create,credential missing or malformed (API requirement unknown),13,232,0.056
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,operation_category,create,request body differs (fields or values),8,232,0.0345
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,operation_category,create,input used as the wrong type (e.g. credential string as a dict),44,232,0.1897
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,operation_category,create,raises its own error before the request,5,232,0.0216
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,operation_category,create,wrong call or argument types,1,232,0.0043
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,operation_category,create,syntax error,1,232,0.0043
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,operation_category,create,undefined name,1,232,0.0043
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,operation_category,create,invalid value or structure,9,232,0.0388
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,operation_category,create,request body differs (fields or values),10,232,0.0431
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,operation_category,delete,"wrong host, version or base path",2,30,0.0667
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,operation_category,delete,credential missing or malformed (API requirement unknown),1,30,0.0333
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,operation_category,delete,different declared endpoint,1,30,0.0333
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,operation_category,delete,input used as the wrong type (e.g. credential string as a dict),2,30,0.0667
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,operation_category,delete,syntax error,1,30,0.0333
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,operation_category,delete,different declared endpoint,1,30,0.0333
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,operation_category,read,"wrong host, version or base path",263,494,0.5324
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,operation_category,read,invalid value or structure,6,494,0.0121
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,operation_category,read,invented endpoint or method,5,494,0.0101
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,operation_category,read,invented parameter or body field,5,494,0.0101
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,operation_category,read,other,1,494,0.002
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,operation_category,read,non-existent requests API,1,494,0.002
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,operation_category,read,credential missing or malformed (API requirement unknown),37,494,0.0749
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,operation_category,read,omitted parameter the task specifies,5,494,0.0101
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,operation_category,read,different parameter value,1,494,0.002
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,operation_category,read,input used as the wrong type (e.g. credential string as a dict),38,494,0.0769
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,operation_category,read,raises its own error before the request,9,494,0.0182
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,operation_category,read,reads an input the task does not provide,1,494,0.002
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,operation_category,read,missing required part or credential,3,494,0.0061
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,operation_category,read,undocumented response field,1,494,0.002
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,operation_category,read,"wrong host, version or base path",1,494,0.002
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,operation_category,read,omitted parameter the task specifies,43,494,0.087
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,operation_category,read,different parameter value,9,494,0.0182
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,operation_category,read,different declared endpoint,5,494,0.0101
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,runtime_failure,operation_category,read,reads an input the task does not provide,2,494,0.004
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,operation_category,search_filter,"wrong host, version or base path",35,37,0.9459
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,operation_category,update,"wrong host, version or base path",44,197,0.2234
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,operation_category,update,invented endpoint or method,30,197,0.1523
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,operation_category,update,invented parameter or body field,1,197,0.0051
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,operation_category,update,method not acceptable for the task,10,197,0.0508
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,operation_category,update,credential missing or malformed (API requirement unknown),1,197,0.0051
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,operation_category,update,input used as the wrong type (e.g. credential string as a dict),44,197,0.2234
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,operation_category,update,raises its own error before the request,3,197,0.0152
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,operation_category,update,invalid value or structure,2,197,0.0102
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,operation_category,update,method not acceptable for the task,25,197,0.1269
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,operation_category,update,request body differs (fields or values),1,197,0.0051
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,operation_category,update,different declared endpoint,1,197,0.0051
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,runtime_failure,operation_category,update,input used as the wrong type (e.g. credential string as a dict),2,197,0.0102
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,DELETE,"wrong host, version or base path",2,30,0.0667
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,http_method,DELETE,credential missing or malformed (API requirement unknown),1,30,0.0333
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,http_method,DELETE,different declared endpoint,1,30,0.0333
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,http_method,DELETE,input used as the wrong type (e.g. credential string as a dict),2,30,0.0667
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,http_method,DELETE,syntax error,1,30,0.0333
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,http_method,DELETE,different declared endpoint,1,30,0.0333
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,GET,"wrong host, version or base path",298,531,0.5612
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,GET,invalid value or structure,6,531,0.0113
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,GET,invented endpoint or method,5,531,0.0094
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,GET,invented parameter or body field,5,531,0.0094
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,GET,other,1,531,0.0019
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,GET,non-existent requests API,1,531,0.0019
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,http_method,GET,credential missing or malformed (API requirement unknown),37,531,0.0697
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,http_method,GET,omitted parameter the task specifies,5,531,0.0094
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,http_method,GET,different parameter value,1,531,0.0019
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,http_method,GET,input used as the wrong type (e.g. credential string as a dict),38,531,0.0716
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,http_method,GET,raises its own error before the request,9,531,0.0169
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,http_method,GET,reads an input the task does not provide,1,531,0.0019
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,http_method,GET,missing required part or credential,3,531,0.0056
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,http_method,GET,undocumented response field,1,531,0.0019
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,http_method,GET,"wrong host, version or base path",1,531,0.0019
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,http_method,GET,omitted parameter the task specifies,43,531,0.081
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,http_method,GET,different parameter value,9,531,0.0169
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,http_method,GET,different declared endpoint,5,531,0.0094
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,runtime_failure,http_method,GET,reads an input the task does not provide,2,531,0.0038
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,PATCH,"wrong host, version or base path",23,146,0.1575
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,PATCH,invented endpoint or method,21,146,0.1438
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,PATCH,invented parameter or body field,1,146,0.0068
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,http_method,PATCH,method not acceptable for the task,9,146,0.0616
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,http_method,PATCH,credential missing or malformed (API requirement unknown),1,146,0.0068
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,http_method,PATCH,input used as the wrong type (e.g. credential string as a dict),34,146,0.2329
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,http_method,PATCH,raises its own error before the request,2,146,0.0137
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,http_method,PATCH,method not acceptable for the task,25,146,0.1712
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,http_method,PATCH,request body differs (fields or values),1,146,0.0068
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,runtime_failure,http_method,PATCH,input used as the wrong type (e.g. credential string as a dict),2,146,0.0137
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,POST,"wrong host, version or base path",105,232,0.4526
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,POST,missing required part or credential,5,232,0.0216
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,POST,invented endpoint or method,4,232,0.0172
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,POST,invalid value or structure,3,232,0.0129
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,POST,invented parameter or body field,2,232,0.0086
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,http_method,POST,credential missing or malformed (API requirement unknown),13,232,0.056
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,http_method,POST,request body differs (fields or values),8,232,0.0345
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,http_method,POST,input used as the wrong type (e.g. credential string as a dict),44,232,0.1897
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,http_method,POST,raises its own error before the request,5,232,0.0216
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,http_method,POST,wrong call or argument types,1,232,0.0043
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,http_method,POST,syntax error,1,232,0.0043
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,http_method,POST,undefined name,1,232,0.0043
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,http_method,POST,invalid value or structure,9,232,0.0388
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,http_method,POST,request body differs (fields or values),10,232,0.0431
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,PUT,"wrong host, version or base path",21,51,0.4118
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,http_method,PUT,invented endpoint or method,9,51,0.1765
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,http_method,PUT,method not acceptable for the task,1,51,0.0196
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,http_method,PUT,input used as the wrong type (e.g. credential string as a dict),10,51,0.1961
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,http_method,PUT,raises its own error before the request,1,51,0.0196
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,http_method,PUT,invalid value or structure,2,51,0.0392
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,http_method,PUT,different declared endpoint,1,51,0.0196
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,difficulty,easy,"wrong host, version or base path",86,267,0.3221
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,difficulty,easy,invented endpoint or method,14,267,0.0524
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,difficulty,easy,other,1,267,0.0037
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,difficulty,easy,invalid value or structure,1,267,0.0037
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,difficulty,easy,non-existent requests API,1,267,0.0037
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,difficulty,easy,method not acceptable for the task,9,267,0.0337
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,difficulty,easy,request body differs (fields or values),7,267,0.0262
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,difficulty,easy,reads an input the task does not provide,1,267,0.0037
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,difficulty,easy,method not acceptable for the task,25,267,0.0936
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,difficulty,easy,request body differs (fields or values),4,267,0.015
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,difficulty,easy,omitted parameter the task specifies,4,267,0.015
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,runtime_failure,difficulty,easy,reads an input the task does not provide,2,267,0.0075
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,difficulty,hard,credential missing or malformed (API requirement unknown),2,3,0.6667
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,difficulty,hard,input used as the wrong type (e.g. credential string as a dict),1,3,0.3333
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,difficulty,medium,"wrong host, version or base path",363,720,0.5042
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,difficulty,medium,invented endpoint or method,25,720,0.0347
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,difficulty,medium,invented parameter or body field,8,720,0.0111
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,difficulty,medium,invalid value or structure,8,720,0.0111
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,difficulty,medium,missing required part or credential,5,720,0.0069
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,difficulty,medium,credential missing or malformed (API requirement unknown),50,720,0.0694
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,difficulty,medium,omitted parameter the task specifies,5,720,0.0069
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,difficulty,medium,request body differs (fields or values),1,720,0.0014
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,difficulty,medium,different declared endpoint,1,720,0.0014
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,difficulty,medium,different parameter value,1,720,0.0014
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,difficulty,medium,method not acceptable for the task,1,720,0.0014
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,difficulty,medium,input used as the wrong type (e.g. credential string as a dict),127,720,0.1764
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,difficulty,medium,raises its own error before the request,17,720,0.0236
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,difficulty,medium,syntax error,2,720,0.0028
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,difficulty,medium,wrong call or argument types,1,720,0.0014
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,difficulty,medium,undefined name,1,720,0.0014
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,difficulty,medium,invalid value or structure,11,720,0.0153
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,difficulty,medium,missing required part or credential,3,720,0.0042
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,difficulty,medium,undocumented response field,1,720,0.0014
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,difficulty,medium,"wrong host, version or base path",1,720,0.0014
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,difficulty,medium,omitted parameter the task specifies,39,720,0.0542
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,difficulty,medium,different parameter value,9,720,0.0125
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,difficulty,medium,request body differs (fields or values),7,720,0.0097
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,difficulty,medium,different declared endpoint,7,720,0.0097
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,runtime_failure,difficulty,medium,input used as the wrong type (e.g. credential string as a dict),2,720,0.0028
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,auth_type,api_key,"wrong host, version or base path",151,154,0.9805
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,auth_type,api_key,invented endpoint or method,2,154,0.013
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,auth_type,api_key,input used as the wrong type (e.g. credential string as a dict),1,154,0.0065
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,auth_type,api_key,missing required part or credential,3,154,0.0195
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,auth_type,bearer,invented endpoint or method,11,248,0.0444
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,auth_type,bearer,invented parameter or body field,1,248,0.004
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,auth_type,bearer,credential missing or malformed (API requirement unknown),52,248,0.2097
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,auth_type,bearer,omitted parameter the task specifies,5,248,0.0202
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,auth_type,bearer,request body differs (fields or values),1,248,0.004
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,auth_type,bearer,different declared endpoint,1,248,0.004
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,auth_type,bearer,different parameter value,1,248,0.004
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,auth_type,bearer,input used as the wrong type (e.g. credential string as a dict),102,248,0.4113
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,auth_type,bearer,raises its own error before the request,14,248,0.0565
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,auth_type,bearer,syntax error,1,248,0.004
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,auth_type,bearer,undocumented response field,1,248,0.004
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,auth_type,bearer,omitted parameter the task specifies,13,248,0.0524
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,auth_type,bearer,request body differs (fields or values),7,248,0.0282
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,auth_type,bearer,different declared endpoint,7,248,0.0282
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,auth_type,bearer,different parameter value,4,248,0.0161
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,runtime_failure,auth_type,bearer,input used as the wrong type (e.g. credential string as a dict),2,248,0.0081
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,auth_type,none,"wrong host, version or base path",242,495,0.4889
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,auth_type,none,invented endpoint or method,25,495,0.0505
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,auth_type,none,invalid value or structure,6,495,0.0121
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,auth_type,none,invented parameter or body field,5,495,0.0101
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,auth_type,none,other,1,495,0.002
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,auth_type,none,non-existent requests API,1,495,0.002
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,auth_type,none,method not acceptable for the task,10,495,0.0202
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,auth_type,none,request body differs (fields or values),7,495,0.0141
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,auth_type,none,reads an input the task does not provide,1,495,0.002
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,auth_type,none,"wrong host, version or base path",1,495,0.002
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,auth_type,none,omitted parameter the task specifies,30,495,0.0606
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,auth_type,none,method not acceptable for the task,25,495,0.0505
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,auth_type,none,different parameter value,5,495,0.0101
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,auth_type,none,request body differs (fields or values),4,495,0.0081
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,runtime_failure,auth_type,none,reads an input the task does not provide,2,495,0.004
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,auth_type,oauth2,"wrong host, version or base path",56,93,0.6022
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,auth_type,oauth2,missing required part or credential,5,93,0.0538
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,auth_type,oauth2,invalid value or structure,3,93,0.0323
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,auth_type,oauth2,invented parameter or body field,2,93,0.0215
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,auth_type,oauth2,invented endpoint or method,1,93,0.0108
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,auth_type,oauth2,input used as the wrong type (e.g. credential string as a dict),25,93,0.2688
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,auth_type,oauth2,raises its own error before the request,3,93,0.0323
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,auth_type,oauth2,wrong call or argument types,1,93,0.0108
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,auth_type,oauth2,syntax error,1,93,0.0108
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,auth_type,oauth2,undefined name,1,93,0.0108
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,auth_type,oauth2,invalid value or structure,11,93,0.1183
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,spec_source,official,"wrong host, version or base path",208,545,0.3817
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,spec_source,official,invented endpoint or method,15,545,0.0275
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,spec_source,official,invented parameter or body field,8,545,0.0147
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,spec_source,official,invalid value or structure,8,545,0.0147
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,spec_source,official,missing required part or credential,5,545,0.0092
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,spec_source,official,non-existent requests API,1,545,0.0018
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,spec_source,official,credential missing or malformed (API requirement unknown),52,545,0.0954
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,spec_source,official,omitted parameter the task specifies,5,545,0.0092
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,spec_source,official,request body differs (fields or values),1,545,0.0018
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,spec_source,official,different declared endpoint,1,545,0.0018
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,spec_source,official,different parameter value,1,545,0.0018
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,spec_source,official,input used as the wrong type (e.g. credential string as a dict),127,545,0.233
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,spec_source,official,raises its own error before the request,17,545,0.0312
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,spec_source,official,syntax error,2,545,0.0037
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,spec_source,official,wrong call or argument types,1,545,0.0018
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,spec_source,official,undefined name,1,545,0.0018
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,spec_source,official,invalid value or structure,11,545,0.0202
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,spec_source,official,missing required part or credential,3,545,0.0055
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,spec_source,official,undocumented response field,1,545,0.0018
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,A,spec_source,official,"wrong host, version or base path",1,545,0.0018
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,spec_source,official,omitted parameter the task specifies,37,545,0.0679
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,spec_source,official,different parameter value,9,545,0.0165
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,spec_source,official,request body differs (fields or values),7,545,0.0128
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,spec_source,official,different declared endpoint,7,545,0.0128
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,runtime_failure,spec_source,official,input used as the wrong type (e.g. credential string as a dict),2,545,0.0037
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,spec_source,partial,"wrong host, version or base path",241,445,0.5416
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,spec_source,partial,invented endpoint or method,24,445,0.0539
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,spec_source,partial,other,1,445,0.0022
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,A,spec_source,partial,invalid value or structure,1,445,0.0022
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,spec_source,partial,method not acceptable for the task,10,445,0.0225
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,B,spec_source,partial,request body differs (fields or values),7,445,0.0157
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,spec_source,partial,reads an input the task does not provide,1,445,0.0022
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,baseline,runtime_failure,spec_source,partial,input used as the wrong type (e.g. credential string as a dict),1,445,0.0022
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,spec_source,partial,method not acceptable for the task,25,445,0.0562
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,spec_source,partial,omitted parameter the task specifies,6,445,0.0135
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,B,spec_source,partial,request body differs (fields or values),4,445,0.009
+Qwen3.5-9B-Q4_KM-full-Latest,Q4_K_M,main,intervention,runtime_failure,spec_source,partial,reads an input the task does not provide,2,445,0.0045
