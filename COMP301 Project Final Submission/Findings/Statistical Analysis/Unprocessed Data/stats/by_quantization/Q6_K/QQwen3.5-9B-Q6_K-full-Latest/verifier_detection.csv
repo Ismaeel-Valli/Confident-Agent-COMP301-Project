@@ -1,12 +1,12 @@
 model_label,quantization,run_role,dimension,group,target,n,TP,FP,FN,TN,precision,recall,f1,false_positive_rate,false_negative_rate,specificity,accuracy
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,overall,all,A,990,347,44,23,576,0.8875,0.9378,0.912,0.071,0.0622,0.929,0.9323
-QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,overall,all,A_or_B,990,367,24,94,505,0.9386,0.7961,0.8615,0.0454,0.2039,0.9546,0.8808
+QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,overall,all,A_or_B,990,367,24,93,506,0.9386,0.7978,0.8625,0.0453,0.2022,0.9547,0.8818
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,api,DummyJSON,A,148,20,14,0,114,0.5882,1.0,0.7407,0.1094,0.0,0.8906,0.9054
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,api,DummyJSON,A_or_B,148,25,9,4,110,0.7353,0.8621,0.7937,0.0756,0.1379,0.9244,0.9122
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,api,GitHub,A,248,11,14,0,223,0.44,1.0,0.6111,0.0591,0.0,0.9409,0.9435
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,api,GitHub,A_or_B,248,12,13,18,205,0.48,0.4,0.4364,0.0596,0.6,0.9404,0.875
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,api,JSONPlaceholder,A,148,2,10,0,136,0.1667,1.0,0.2858,0.0685,0.0,0.9315,0.9324
-QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,api,JSONPlaceholder,A_or_B,148,10,2,37,99,0.8333,0.2128,0.339,0.0198,0.7872,0.9802,0.7365
+QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,api,JSONPlaceholder,A_or_B,148,10,2,36,100,0.8333,0.2174,0.3448,0.0196,0.7826,0.9804,0.7432
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,api,Open-Meteo,A,148,85,1,0,62,0.9884,1.0,0.9942,0.0159,0.0,0.9841,0.9932
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,api,Open-Meteo,A_or_B,148,86,0,10,52,1.0,0.8958,0.945,0.0,0.1042,1.0,0.9324
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,api,Petstore,A,149,80,5,23,41,0.9412,0.7767,0.8511,0.1087,0.2233,0.8913,0.8121

@@ -1,6 +1,6 @@
 # Evaluation report
 
-Evaluator 2026-09-27.1, 2026-10-06T15:15:37+00:00. Rules: `Benchmark/EVALUATION_PLAN.md`.
+Evaluator 2026-09-27.1, 2026-10-09T13:17:15+00:00. Rules: `Benchmark/EVALUATION_PLAN.md`.
 
 - Answer key: task file SHA-256 `7a09f2bb566dbabb…` (matches the plan).
 - Self-check: 1000/1000 reference solutions scored correct; behaviour requirements met by 1000.
@@ -21,8 +21,8 @@ Rate = share of tasks whose code reaching the user is class A (API hallucination
 | Undetermined counted as hallucination | 990 | 50.8% | 2.3% | +48.5 pp | [+45.3, +51.7] pp | [+32.7, +62.1] pp | 490 / 10 | < 0.0001 |
 | Undetermined counted as correct | 990 | 50.8% | 2.3% | +48.5 pp | [+45.3, +51.7] pp | [+32.7, +62.1] pp | 490 / 10 | < 0.0001 |
 | Including pilot tasks | 1000 | 50.7% | 2.3% | +48.4 pp | [+45.2, +51.6] pp | [+32.8, +61.7] pp | 494 / 10 | < 0.0001 |
-| A or B (secondary) | 990 | 56.5% | 9.5% | +47.0 pp | [+43.4, +50.4] pp | [+31.4, +60.4] pp | 493 / 28 | < 0.0001 |
-| A, B or runtime failure | 990 | 62.8% | 10.2% | +52.6 pp | [+49.3, +56.0] pp | [+37.8, +65.0] pp | 541 / 20 | < 0.0001 |
+| A or B (secondary) | 990 | 56.5% | 9.4% | +47.1 pp | [+43.5, +50.5] pp | [+31.5, +60.5] pp | 493 / 27 | < 0.0001 |
+| A, B or runtime failure | 990 | 62.8% | 10.1% | +52.7 pp | [+49.4, +56.1] pp | [+37.9, +65.1] pp | 541 / 19 | < 0.0001 |
 
 Holm-adjusted McNemar p across the main runs: < 0.0001. Undetermined pairs excluded from the primary row: 0. Operation families: 141.
 
@@ -31,8 +31,8 @@ Holm-adjusted McNemar p across the main runs: < 0.0001. Undetermined pairs exclu
 | Class | Baseline code | Intervention: shown to user | Intervention: final candidate |
 |---|---:|---:|---:|
 | A | 503 | 23 | 370 |
-| B | 56 | 71 | 91 |
-| correct | 365 | 498 | 518 |
+| B | 56 | 70 | 90 |
+| correct | 365 | 499 | 519 |
 | no_code | 3 | 0 | 0 |
 | nothing_shown | 0 | 391 | 0 |
 | runtime_failure | 63 | 7 | 11 |
@@ -45,8 +45,8 @@ Holm-adjusted McNemar p across the main runs: < 0.0001. Undetermined pairs exclu
 | invented endpoint or method | 70 | 0 |
 | invalid value or structure | 11 | 21 |
 | invented parameter or body field | 5 | 0 |
-| undocumented response field | 3 | 0 |
 | missing required part or credential | 3 | 2 |
+| undocumented response field | 3 | 0 |
 
 Tasks with a hallucination other than a wrong host, version or base path: baseline 87, intervention 23. The intervention prompt names the current hosts (by design, Benchmark README), so this row separates that context from what verification catches.
 
@@ -56,8 +56,8 @@ Tasks with a hallucination other than a wrong host, version or base path: baseli
 | Final candidate | Delivered | Withheld |
 |---|---:|---:|
 | A | 23 | 347 |
-| B | 71 | 20 |
-| correct | 498 | 20 |
+| B | 70 | 20 |
+| correct | 499 | 20 |
 | runtime_failure | 7 | 4 |
 
 - Incorrect acceptance (class A shown to the user): 23
@@ -66,11 +66,11 @@ Tasks with a hallucination other than a wrong host, version or base path: baseli
 
 ### Confidence metric (EWCS of the final candidate)
 
-AUC, correct vs class A: 0.932 (correct n=518, A n=370).
+AUC, correct vs class A: 0.932 (correct n=519, A n=370).
 
 | EWCS band | Correct | Of decided (correct, A, B) |
 |---|---:|---:|
-| 0.60-0.85 | 486 | 672 |
+| 0.60-0.85 | 487 | 672 |
 | <0.60 | 0 | 252 |
 | >=0.85 | 32 | 55 |
 
@@ -176,8 +176,8 @@ Holm-adjusted McNemar p across the main runs: < 0.0001. Undetermined pairs exclu
 | invalid value or structure | 9 | 11 |
 | invented parameter or body field | 8 | 0 |
 | missing required part or credential | 5 | 3 |
-| other | 1 | 0 |
 | non-existent requests API | 1 | 0 |
+| other | 1 | 0 |
 | undocumented response field | 0 | 1 |
 
 Tasks with a hallucination other than a wrong host, version or base path: baseline 58, intervention 15. The intervention prompt names the current hosts (by design, Benchmark README), so this row separates that context from what verification catches.
@@ -283,8 +283,8 @@ Rate = share of tasks whose code reaching the user is class A (API hallucination
 | Undetermined counted as hallucination | 990 | 55.2% | 2.0% | +53.1 pp | [+50.0, +56.3] pp | [+37.9, +65.7] pp | 529 / 3 | < 0.0001 |
 | Undetermined counted as correct | 990 | 55.2% | 2.0% | +53.1 pp | [+50.0, +56.3] pp | [+37.9, +65.7] pp | 529 / 3 | < 0.0001 |
 | Including pilot tasks | 1000 | 55.0% | 2.0% | +53.0 pp | [+49.9, +56.0] pp | [+38.0, +65.5] pp | 533 / 3 | < 0.0001 |
-| A or B (secondary) | 990 | 61.0% | 9.7% | +51.3 pp | [+47.9, +54.7] pp | [+36.4, +63.7] pp | 532 / 24 | < 0.0001 |
-| A, B or runtime failure | 990 | 65.4% | 10.0% | +55.4 pp | [+52.0, +58.6] pp | [+41.1, +66.9] pp | 571 / 23 | < 0.0001 |
+| A or B (secondary) | 990 | 61.0% | 9.5% | +51.5 pp | [+48.2, +54.8] pp | [+36.7, +63.9] pp | 532 / 22 | < 0.0001 |
+| A, B or runtime failure | 990 | 65.4% | 9.8% | +55.6 pp | [+52.2, +58.8] pp | [+41.4, +67.1] pp | 571 / 21 | < 0.0001 |
 
 Holm-adjusted McNemar p across the main runs: < 0.0001. Undetermined pairs excluded from the primary row: 0. Operation families: 141.
 
@@ -293,8 +293,8 @@ Holm-adjusted McNemar p across the main runs: < 0.0001. Undetermined pairs exclu
 | Class | Baseline code | Intervention: shown to user | Intervention: final candidate |
 |---|---:|---:|---:|
 | A | 546 | 20 | 350 |
-| B | 58 | 76 | 98 |
-| correct | 341 | 508 | 536 |
+| B | 58 | 74 | 96 |
+| correct | 341 | 510 | 538 |
 | no_code | 2 | 0 | 0 |
 | nothing_shown | 0 | 383 | 0 |
 | runtime_failure | 43 | 3 | 6 |
@@ -319,8 +319,8 @@ Tasks with a hallucination other than a wrong host, version or base path: baseli
 | Final candidate | Delivered | Withheld |
 |---|---:|---:|
 | A | 20 | 330 |
-| B | 76 | 22 |
-| correct | 508 | 28 |
+| B | 74 | 22 |
+| correct | 510 | 28 |
 | runtime_failure | 3 | 3 |
 
 - Incorrect acceptance (class A shown to the user): 20
@@ -329,11 +329,11 @@ Tasks with a hallucination other than a wrong host, version or base path: baseli
 
 ### Confidence metric (EWCS of the final candidate)
 
-AUC, correct vs class A: 0.937 (correct n=536, A n=350).
+AUC, correct vs class A: 0.937 (correct n=538, A n=350).
 
 | EWCS band | Correct | Of decided (correct, A, B) |
 |---|---:|---:|
-| 0.60-0.85 | 496 | 684 |
+| 0.60-0.85 | 498 | 684 |
 | <0.60 | 1 | 242 |
 | >=0.85 | 39 | 58 |
 
@@ -347,8 +347,8 @@ Attempted 444 (allowed by the prompt: 387).
 | A->correct | 150 |
 | undetermined->A | 62 |
 | A->B | 36 |
-| undetermined->B | 11 |
-| undetermined->correct | 8 |
+| undetermined->B | 10 |
+| undetermined->correct | 9 |
 | correct->correct | 8 |
 | B->B | 2 |
 | B->correct | 1 |

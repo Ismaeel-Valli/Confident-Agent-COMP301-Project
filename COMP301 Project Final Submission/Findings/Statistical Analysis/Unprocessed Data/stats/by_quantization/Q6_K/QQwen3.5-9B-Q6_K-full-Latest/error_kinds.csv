@@ -23,7 +23,7 @@ QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,overall,all,method not acc
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,overall,all,omitted parameter the task specifies,14,990,0.0141
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,overall,all,different parameter value,9,990,0.0091
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,overall,all,request body differs (fields or values),8,990,0.0081
-QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,overall,all,different declared endpoint,7,990,0.0071
+QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,overall,all,different declared endpoint,6,990,0.0061
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,overall,all,extra requests,1,990,0.001
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,overall,all,credential missing or malformed (API requirement unknown),1,990,0.001
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,runtime_failure,overall,all,raises its own error before the request,5,990,0.0051
@@ -59,7 +59,7 @@ QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,baseline,B,api,JSONPlaceholder,request bo
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,baseline,B,api,JSONPlaceholder,different declared endpoint,3,148,0.0203
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,baseline,runtime_failure,api,JSONPlaceholder,raises its own error before the request,1,148,0.0068
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,api,JSONPlaceholder,method not acceptable for the task,33,148,0.223
-QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,api,JSONPlaceholder,different declared endpoint,3,148,0.0203
+QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,api,JSONPlaceholder,different declared endpoint,2,148,0.0135
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,api,JSONPlaceholder,request body differs (fields or values),1,148,0.0068
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,runtime_failure,api,JSONPlaceholder,raises its own error before the request,2,148,0.0135
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,baseline,A,api,Open-Meteo,"wrong host, version or base path",99,148,0.6689
@@ -115,7 +115,7 @@ QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,A,operation_category,read,mi
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,A,operation_category,read,invalid value or structure,1,494,0.002
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,operation_category,read,omitted parameter the task specifies,14,494,0.0283
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,operation_category,read,different parameter value,9,494,0.0182
-QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,operation_category,read,different declared endpoint,7,494,0.0142
+QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,operation_category,read,different declared endpoint,6,494,0.0121
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,operation_category,read,extra requests,1,494,0.002
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,operation_category,read,credential missing or malformed (API requirement unknown),1,494,0.002
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,runtime_failure,operation_category,read,raises its own error before the request,4,494,0.0081
@@ -152,7 +152,7 @@ QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,A,http_method,GET,missing re
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,A,http_method,GET,invalid value or structure,1,531,0.0019
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,http_method,GET,omitted parameter the task specifies,14,531,0.0264
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,http_method,GET,different parameter value,9,531,0.0169
-QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,http_method,GET,different declared endpoint,7,531,0.0132
+QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,http_method,GET,different declared endpoint,6,531,0.0113
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,http_method,GET,extra requests,1,531,0.0019
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,http_method,GET,credential missing or malformed (API requirement unknown),1,531,0.0019
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,runtime_failure,http_method,GET,raises its own error before the request,4,531,0.0075
@@ -196,7 +196,7 @@ QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,baseline,B,difficulty,easy,omitted parame
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,baseline,runtime_failure,difficulty,easy,raises its own error before the request,1,267,0.0037
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,difficulty,easy,method not acceptable for the task,31,267,0.1161
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,difficulty,easy,omitted parameter the task specifies,4,267,0.015
-QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,difficulty,easy,different declared endpoint,3,267,0.0112
+QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,difficulty,easy,different declared endpoint,2,267,0.0075
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,difficulty,easy,request body differs (fields or values),1,267,0.0037
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,runtime_failure,difficulty,easy,raises its own error before the request,2,267,0.0075
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,baseline,B,difficulty,hard,request body differs (fields or values),1,3,0.3333
@@ -263,8 +263,8 @@ QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,baseline,runtime_failure,auth_type,none,r
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,auth_type,none,method not acceptable for the task,33,495,0.0667
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,auth_type,none,omitted parameter the task specifies,7,495,0.0141
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,auth_type,none,different parameter value,7,495,0.0141
-QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,auth_type,none,different declared endpoint,3,495,0.0061
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,auth_type,none,request body differs (fields or values),3,495,0.0061
+QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,auth_type,none,different declared endpoint,2,495,0.004
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,runtime_failure,auth_type,none,raises its own error before the request,2,495,0.004
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,baseline,A,auth_type,oauth2,"wrong host, version or base path",65,93,0.6989
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,baseline,A,auth_type,oauth2,invented endpoint or method,4,93,0.043
@@ -313,6 +313,6 @@ QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,baseline,runtime_failure,spec_source,part
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,baseline,runtime_failure,spec_source,partial,syntax error,1,445,0.0022
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,spec_source,partial,method not acceptable for the task,33,445,0.0742
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,spec_source,partial,omitted parameter the task specifies,4,445,0.009
-QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,spec_source,partial,different declared endpoint,3,445,0.0067
+QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,spec_source,partial,different declared endpoint,2,445,0.0045
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,B,spec_source,partial,request body differs (fields or values),1,445,0.0022
 QQwen3.5-9B-Q6_K-full-Latest,Q6_K,main,intervention,runtime_failure,spec_source,partial,raises its own error before the request,2,445,0.0045

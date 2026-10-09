@@ -35,8 +35,8 @@
     "hallucination_regressions": 10,
     "hallucination_mcnemar_p": 1.533028171757011e-130,
     "b_correct_rate": 0.3687,
-    "i_correct_rate": 0.503,
-    "correct_improvement": 0.1343,
+    "i_correct_rate": 0.504,
+    "correct_improvement": 0.1354,
     "i_abstention_rate": 0.3949,
     "i_incorrect_acceptance": 23,
     "i_incorrect_rejection": 20,
@@ -60,9 +60,9 @@
     "b_mean_power_w": 310.1,
     "i_mean_power_w": 314.7,
     "b_seconds_per_correct_answer": 16.82,
-    "i_seconds_per_correct_answer": 76.22,
+    "i_seconds_per_correct_answer": 76.07,
     "b_wh_per_correct_answer": 1.4488,
-    "i_wh_per_correct_answer": 6.6632,
+    "i_wh_per_correct_answer": 6.6498,
     "hallucination_mcnemar_p_holm": 1.533028171757011e-130
   }
 }

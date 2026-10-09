@@ -84,18 +84,18 @@
     "tasks": 990,
     "excluded_undetermined": 0,
     "baseline_rate": 0.5646464646464646,
-    "intervention_rate": 0.09494949494949495,
-    "difference": 0.4696969696969697,
+    "intervention_rate": 0.09393939393939393,
+    "difference": 0.4707070707070707,
     "discordant_baseline_only": 493,
-    "discordant_intervention_only": 28,
-    "mcnemar_p": 5.704430719848011e-111,
+    "discordant_intervention_only": 27,
+    "mcnemar_p": 6.118346888594549e-112,
     "ci_tasks": [
-      0.43434343434343436,
-      0.5040404040404041
+      0.4353535353535353,
+      0.5050505050505051
     ],
     "ci_families": [
-      0.3141426783479349,
-      0.6040209790209791
+      0.31512071156289706,
+      0.604882459312839
     ],
     "families": 141
   },
@@ -103,18 +103,18 @@
     "tasks": 990,
     "excluded_undetermined": 0,
     "baseline_rate": 0.6282828282828283,
-    "intervention_rate": 0.10202020202020202,
-    "difference": 0.5262626262626262,
+    "intervention_rate": 0.10101010101010101,
+    "difference": 0.5272727272727272,
     "discordant_baseline_only": 541,
-    "discordant_intervention_only": 20,
-    "mcnemar_p": 7.652604352659271e-133,
+    "discordant_intervention_only": 19,
+    "mcnemar_p": 5.445992272737659e-134,
     "ci_tasks": [
-      0.49292929292929294,
-      0.5595959595959596
+      0.49393939393939396,
+      0.5606060606060606
     ],
     "ci_families": [
-      0.37756497948016415,
-      0.6500789889415481
+      0.3786127167630058,
+      0.651082251082251
     ],
     "families": 141
   },
@@ -144,25 +144,25 @@
     "intervention_shown": 23
   },
   "shown_classes": {
-    "correct": 498,
+    "correct": 499,
     "nothing_shown": 391,
-    "B": 71,
+    "B": 70,
     "runtime_failure": 7,
     "A": 23
   },
   "final_classes": {
-    "correct": 518,
-    "B": 91,
+    "correct": 519,
+    "B": 90,
     "runtime_failure": 11,
     "A": 370
   },
   "confusion": {
-    "correct|delivered": 498,
+    "correct|delivered": 499,
     "B|withheld": 20,
     "runtime_failure|withheld": 4,
     "A|withheld": 347,
     "correct|withheld": 20,
-    "B|delivered": 71,
+    "B|delivered": 70,
     "runtime_failure|delivered": 7,
     "A|delivered": 23
   },
@@ -170,12 +170,12 @@
   "incorrect_acceptance_primary": 23,
   "unapproved_code_shown": 0,
   "ewcs": {
-    "auc_correct_vs_A": 0.9322680788897005,
-    "correct_n": 518,
+    "auc_correct_vs_A": 0.93227881060251,
+    "correct_n": 519,
     "A_n": 370,
     "share_correct_by_band": {
       "0.60-0.85": {
-        "correct": 486,
+        "correct": 487,
         "total": 672
       },
       "<0.60": {

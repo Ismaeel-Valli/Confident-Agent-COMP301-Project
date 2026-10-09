@@ -234,3 +234,13 @@ classified by hand as in §4; the evaluator's error rate on the sample is report
   `reviews/reviews.csv` (`reviewer_2_class` left for a group member's check). The §2 rules
   were applied unchanged: a name the provider does not have is class A; a name it has is
   judged as for an official specification.
+- 2026-10-07: §4 second review. A group member classified the 46 reviewed candidates that
+  reached the user (`reviewer_2_class`) independently of the first review: agreement on 43
+  of 46, Cohen's kappa 0.88 (first review AI-assisted, second by a group member). The three
+  disagreements (REST_PY_JP_0009, _0015, _0071: the agent's shown code reads the resource
+  from a list endpoint, `/comments?id=` or `/albums`, instead of `/comments/{id}` or
+  `/albums/{id}`) were settled by the group as correct, because the code returns the
+  resource the task asks for. Under the closed list of §2 a different declared endpoint is
+  class B, so this relaxes §2 for these three candidates; it changes only the intervention's
+  correct-code figures (Q6_K one task, Q8_0 two, Q4_K_M none) and no hallucination figure. The 350 withheld
+  candidates have the first review only.
