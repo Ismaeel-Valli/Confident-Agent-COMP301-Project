@@ -1,0 +1,4 @@
+quantization,AUC_correct_vs_A,n_correct,n_A,median_ewcs_correct,median_ewcs_A
+Q4_K_M,0.9426490596238496,525,357,0.825,0.2786
+Q6_K,0.93227881060251,519,370,0.825,0.2786
+Q8_0,0.9372729686670207,538,350,0.825,0.2786

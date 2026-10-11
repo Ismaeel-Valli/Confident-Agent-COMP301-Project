@@ -1,0 +1,4 @@
+quantization,model_label,run_role,dimension,group,target,n,TP,FP,FN,TN,precision,recall,f1,false_positive_rate,false_negative_rate,specificity,accuracy
+Q4_K_M,Qwen3.5-9B-Q4_KM-full-Latest,main,overall,all,A_or_B,990,347,25,110,508,0.9328,0.7593,0.8372,0.0469,0.2407,0.9531,0.8636
+Q6_K,QQwen3.5-9B-Q6_K-full-Latest,main,overall,all,A_or_B,990,367,24,93,506,0.9386,0.7978,0.8625,0.0453,0.2022,0.9547,0.8818
+Q8_0,Qwen3.5-9B-Q8_0-full-Latest,main,overall,all,A_or_B,990,352,31,94,513,0.9191,0.7892,0.8492,0.057,0.2108,0.943,0.8737
