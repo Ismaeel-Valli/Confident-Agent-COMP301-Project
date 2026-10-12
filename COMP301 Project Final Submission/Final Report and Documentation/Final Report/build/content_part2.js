@@ -7,7 +7,7 @@ module.exports = [
   // -------------------------------------------------------------- 5
   { t: 'h1', text: '5 Baseline Evaluation' },
   { t: 'h2', text: '5.1 One pinned model configuration' },
-  { t: 'p', text: 'The lecturer\'s first concern was that earlier documents named three different local models (Qwen3.6 9B, Qwen3.6 35B-A3B and Qwen3.5 9B-Instruct). The final experiment uses exactly one model, served exactly one way, with the settings in {tab:config}; both conditions and all three quantization runs use them. The only factor varied between runs is the quantization of the same weights, which we treat as three replications of the experiment rather than as a treatment (Section 7.1).' },
+  { t: 'p', text: 'The lecturer\'s first concern was that earlier documents described the local model and its settings inconsistently (for example Qwen3.6 9B in Progress Report One and Qwen3.5 9B-Instruct in Progress Report Two, with different temperatures and context lengths). The final experiment uses exactly one model, served exactly one way, with the settings in {tab:config}; both conditions and all three quantization runs use them. The only factor varied between runs is the quantization of the same weights, which we treat as three replications of the experiment rather than as a treatment (Section 7.1).' },
   { t: 'table', key: 'config', caption: 'The pinned model and run configuration (identical for baseline and intervention; read from the run manifests).', cols: [2.2, 5.2],
     header: ['Setting', 'Value'],
     rows: [
@@ -24,18 +24,7 @@ module.exports = [
       ['Machine', 'Windows 11; AMD Ryzen 7 5700X3D (8 cores); 32 GB RAM; AMD Radeon RX 9070 XT; Durban Central'],
       ['Run dates (SAST)', 'Q6_K 30 Sep–1 Oct; Q8_0 1–2 Oct; Q4_K_M 2–3 Oct 2026'],
     ] },
-  { t: 'h2', text: '5.2 Pilot evidence (Practical Three), reconciled' },
-  { t: 'p', text: 'Practical Three compared our local model with four commercial assistants on ten one-shot coding prompts, each embedding a trap: an invented method, a fabricated endpoint, a removed API, a platform limitation, an undefined term, or a request to cite a benchmark test case. The lecturer asked us to reconcile two discrepancies and to label the study correctly. {fig:pilot} shows the result.' },
-  { t: 'fig', key: 'pilot', file: RF + 'R06_pilot_reconciliation.png', caption: 'Pilot hallucination counts as recorded in the workbook summary, as reported in Practical Three, and as reconciled from the verdict justifications.' },
-  { t: 'bullets', items: [
-    '**Authoritative version.** The submitted workbook is `Baseline_Template_Final_V9.xlsx`; the Practical Three text referred to V8 in error. V9 is the authoritative record and is kept in the submission.',
-    '**The Copilot count.** The workbook\'s summary sheet gives 1/10, the report 2/10. Re-reading every verdict against its raw response shows that Copilot\'s verdict cells were written as free text rather than Yes/No: the summary counted only cells beginning with "Yes" (P10), the report added P5, and the justifications themselves describe hallucinations on **P5, P8, P9 and P10**. The reconciled count is therefore **4/10**. All other systems reconcile exactly (Qwen 6, Gemini 2, ChatGPT 2, DeepSeek 8).',
-    '**A different model.** The pilot\'s "Qwen" column was a community fine-tune (Qwen3.6-35B-A3B-Uncensored), not the main experiment\'s Qwen3.5-9B. The pilot cannot be compared numerically with the main baseline.',
-    '**A pilot, not a rate.** Every pilot prompt contains a trap, and P2 depends on an unstated interface convention (nested versus flat tuples). The pilot shows failure modes; it does not estimate a natural hallucination rate. We treat it, and the comparison with commercial agents, as supplementary evidence only.',
-  ] },
-  { t: 'p', text: 'Its lasting lesson, which the lecturer also drew, is that tool access did not prevent fabrication: two of forty agent responses used visible search, and one of those still fabricated a citation. What distinguished the better systems was willingness to contradict a false premise. Our design accordingly does not rely on the model deciding to check; it makes checking against authoritative evidence part of the architecture.' },
-  { t: 'p', text: 'The main benchmark deliberately differs from the pilot. Every task is answerable and has exactly specified ground truth; there are no trick premises, no ambiguous items and no tasks where refusal is the correct answer. It therefore measures the **natural** rate at which the model writes hallucinated API calls on ordinary requests, which is what a developer would experience, and version drift enters naturally where an API has changed (Petstore, REST Countries). The cost of this choice is that the benchmark cannot reward a correct refusal of an impossible request; we return to this in Section 10.' },
-  { t: 'h2', text: '5.3 Baseline results' },
+  { t: 'h2', text: '5.2 Baseline results' },
   { t: 'p', text: '{tab:baseline} gives the class of the code the plain model delivered for each of the 990 scored tasks in each run. Between half and 55% of answers contained an API hallucination; only a quarter to a third were correct.' },
   { t: 'table', key: 'baseline', caption: 'Baseline: class of the code delivered to the user (990 tasks per run, pilot excluded).', cols: [2.4, 1.3, 1.3, 1.3],
     header: ['Class', 'Q4_K_M', 'Q6_K', 'Q8_0'], align: [null, 'r', 'r', 'r'],
@@ -47,7 +36,7 @@ module.exports = [
       ['No code block', '1 (0.1%)', '3 (0.3%)', '2 (0.2%)'],
     ] },
   { t: 'p', text: 'Two features stand out. First, the API hallucination rate is almost the same at every quantization (50.8–55.2%): it is a property of what the model knows, not of numerical precision. Second, the lower quantization pays for its smaller size in ordinary programming errors rather than in API errors. At Q4_K_M, 128 of the 150 runtime failures used an input as the wrong type, typically treating the credential string as a dictionary, and 52 class B answers sent a malformed credential; at Q8_0 these fell to 36 and 7. The API knowledge is shared; the coding care is not.' },
-  { t: 'h2', text: '5.4 Why the baseline fails: the model writes the API it was trained on' },
+  { t: 'h2', text: '5.3 Why the baseline fails: the model writes the API it was trained on' },
   { t: 'p', text: 'Most baseline hallucinations (1,303 of 1,562 across the three runs) are of a single kind: the wrong host, version or base path. {fig:cutoff} shows which host and version every baseline answer called, compared with the frozen specification the task pins.' },
   { t: 'fig', key: 'cutoff', file: RF + 'R03_training_cutoff_versions.png', caption: 'Which API host and version each baseline answer called (three runs pooled). The model reproduces versions from its training data and extrapolates versions it has never seen.' },
   { t: 'bullets', items: [

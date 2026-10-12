@@ -11,7 +11,6 @@ and writes  charts/R*.png  and  tables/R*.csv  next to this file.
   R03 which API version the baseline model reached for (training-data staleness)
   R04 sensitivity of decisions to the EWCS weights, thresholds and uncertainty gate
   R05 agent protocol deviations
-  R06 the pilot (Practical Three) verdicts, reconciled
 
 Run:  python -X utf8 build_report_figures.py      (pandas, numpy, matplotlib)
 """
@@ -484,40 +483,9 @@ def r05():
     return df
 
 
-# --------------------------------------------------------------------------- R06 pilot
-def r06():
-    systems = ["Qwen (pilot model)", "Gemini", "ChatGPT", "Copilot", "DeepSeek"]
-    workbook = [6, 2, 2, 1, 8]          # Summary sheet of Baseline_Template_Final_V9.xlsx
-    practical = [6, 2, 2, 2, 8]         # Practical Three report, figure 1
-    reconciled = [6, 2, 2, 4, 8]        # verdict justifications re-read (Copilot P5, P8, P9, P10)
-    pd.DataFrame({"system": systems, "workbook_summary": workbook, "practical_three_report": practical,
-                  "reconciled_from_justifications": reconciled}).to_csv(TB / "R06_pilot_reconciliation.csv", index=False)
-    fig, ax = plt.subplots(figsize=(11.5, 4.6))
-    fig.subplots_adjust(left=0.07, right=0.97, top=0.76, bottom=0.14)
-    x = np.arange(len(systems))
-    for k, (vals, col, lab) in enumerate(((workbook, "#c4c2bb", "Workbook V9 summary sheet"),
-                                         (practical, "#8fb6ea", "Practical Three report"),
-                                         (reconciled, "#2a78d6", "Reconciled (this report)"))):
-        ax.bar(x + (k - 1) * 0.26, vals, width=0.24, color=col, label=lab)
-        for xx, v in zip(x, vals):
-            ax.text(xx + (k - 1) * 0.26, v + 0.12, str(v), ha="center", fontsize=8.5)
-    ax.set_xticks(x, systems)
-    ax.set_ylabel("Hallucinations out of 10")
-    ax.set_ylim(0, 10)
-    ax.legend(loc="upper left", fontsize=9)
-    ax.grid(axis="x", visible=False)
-    title(fig, "Pilot (Practical Three): the counts agree except Copilot's",
-          "Ten trap-heavy prompts, one response per system. Copilot's verdict cells are free text; read by their justifications they record\n"
-          "hallucinations on P5, P8, P9 and P10. The pilot is supplementary evidence, not the experiment.")
-    fig.text(0.012, 0.012, "Source: Final Report and Documentation/COMP301 The Skeptics Practical Three/Baseline_Template_Final_V9.xlsx",
-             fontsize=8, color=MUTED)
-    save(fig, "R06_pilot_reconciliation.png")
-
-
 if __name__ == "__main__":
     r01()
     r02()
     r03()
     df4, check = r04()
     r05()
-    r06()
