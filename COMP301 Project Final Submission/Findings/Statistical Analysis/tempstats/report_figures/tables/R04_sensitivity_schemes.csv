@@ -1,0 +1,19 @@
+quantization,scheme,deliver,deliver_with_flag,abstain,no_verification,hallucinations_delivered,correct_delivered,wrong_task_delivered
+Q4_K_M,A. Proposed (used),53,565,372,0,16,504,94
+Q4_K_M,B. Equal weights,66,552,372,0,16,504,94
+Q4_K_M,C. Endpoint-heavy,365,253,372,0,16,504,94
+Q4_K_M,D. Strict thresholds,0,618,372,0,16,504,94
+Q4_K_M,E. Lenient thresholds,365,253,372,0,16,504,94
+Q4_K_M,F. Gate off (exploratory),53,675,262,0,101,523,98
+Q6_K,A. Proposed (used),55,544,391,0,23,499,70
+Q6_K,B. Equal weights,68,531,391,0,23,499,70
+Q6_K,C. Endpoint-heavy,349,250,391,0,23,499,70
+Q6_K,D. Strict thresholds,0,599,391,0,23,499,70
+Q6_K,E. Lenient thresholds,349,250,391,0,23,499,70
+Q6_K,F. Gate off (exploratory),55,612,323,0,63,519,77
+Q8_0,A. Proposed (used),58,549,383,0,20,510,74
+Q8_0,B. Equal weights,78,529,383,0,20,510,74
+Q8_0,C. Endpoint-heavy,358,249,383,0,20,510,74
+Q8_0,D. Strict thresholds,0,607,383,0,20,510,74
+Q8_0,E. Lenient thresholds,358,249,383,0,20,510,74
+Q8_0,F. Gate off (exploratory),58,632,300,0,60,537,89

@@ -1,0 +1,7 @@
+{
+  "name": "comp301-final-report-build",
+  "private": true,
+  "description": "Builds the COMP301 Confident Agent final report (.docx) from content_part*.js",
+  "scripts": { "build": "node build_report.js report.docx" },
+  "dependencies": { "docx": "^9.10.0" }
+}

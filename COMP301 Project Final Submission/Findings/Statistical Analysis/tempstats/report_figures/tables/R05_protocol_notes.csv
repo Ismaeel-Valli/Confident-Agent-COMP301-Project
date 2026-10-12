@@ -1,0 +1,17 @@
+quantization,note,tasks
+Q4_K_M,Hit the 4-turn limit; reply requested,337
+Q4_K_M,Verified identical code again,310
+Q4_K_M,Corrected without a contradiction,54
+Q4_K_M,Reply differs from the report,90
+Q4_K_M,More than one correction,150
+Q6_K,Hit the 4-turn limit; reply requested,371
+Q6_K,Verified identical code again,289
+Q6_K,Reply differs from the report,68
+Q6_K,Corrected without a contradiction,48
+Q6_K,More than one correction,186
+Q6_K,Replied without correcting,1
+Q8_0,More than one correction,192
+Q8_0,Hit the 4-turn limit; reply requested,383
+Q8_0,Verified identical code again,296
+Q8_0,Reply differs from the report,54
+Q8_0,Corrected without a contradiction,57

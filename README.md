@@ -22,7 +22,9 @@ COMP301 Project Final Submission/
         evaluation/                 report.md, per-run scores, manual review queues
         stats/                      CSV tables for data processing (see STATS_README.md)
       analyse_results.py            statistical tests and charts (figures/)
+      tempstats/                    cost statistics in Rand; report_figures/ for the final report
   Final Report and Documentation/   reports, practicals and supporting documentation
+    Final Report/                   COMP301 The Skeptics Final Report (.docx, .pdf); build/ regenerates it
 Archive/                            superseded code and runs, kept for reference only
 ```
 
