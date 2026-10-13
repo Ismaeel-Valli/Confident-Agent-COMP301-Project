@@ -14,7 +14,7 @@ module.exports = [
   { t: 'title', text: 'in LLM-Generated Python Code', size: 44, bold: true, color: '1F3864', after: 300 },
   { t: 'title', text: 'Final Report', size: 34, after: 1000 },
   { t: 'title', text: 'The Skeptics', size: 30, bold: true, after: 300 },
-  { t: 'members', rows: [['Jawad Kachbal', '223037045'], ['Joshua Blom', '224039813'], ['Mahomed Valli Mahomed', '224005878'], ['Andiswa Hlengwa', '221002430'], ['Abiel Govender', '224058851']] },
+  { t: 'members', rows: [['Mahomed Valli Mahomed', '224005878'], ['Jawad Kachbal', '223037045'], ['Joshua Blom', '224039813'], ['Andiswa Hlengwa', '221002430'], ['Abiel Govender', '224058851']] },
   { t: 'title', text: 'October 2026', size: 24, before: 900 },
 
   // ============================================================== FRONT MATTER
