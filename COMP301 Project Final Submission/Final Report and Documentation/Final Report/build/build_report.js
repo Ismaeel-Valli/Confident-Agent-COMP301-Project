@@ -112,11 +112,13 @@ function caption(kind, text, opts = {}) {
 }
 
 // ------------------------------------------------------------------ block rendering
-function render(blocks, width) {
+// h1Break: whether a level-1 heading starts a new page unless the block says otherwise
+// (`noBreak` or `pageBreak`). The main narrative runs on; appendices start on new pages.
+function render(blocks, width, h1Break = true) {
   const out = [];
   for (const b of blocks) {
     switch (b.t) {
-      case 'h1': out.push(new Paragraph({ heading: HeadingLevel.HEADING_1, pageBreakBefore: !b.noBreak, children: runs(b.text) })); break;
+      case 'h1': out.push(new Paragraph({ heading: HeadingLevel.HEADING_1, pageBreakBefore: b.noBreak ? false : b.pageBreak !== undefined ? b.pageBreak : h1Break, children: runs(b.text) })); break;
       case 'h2': out.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: runs(b.text) })); break;
       case 'h3': out.push(new Paragraph({ heading: HeadingLevel.HEADING_3, children: runs(b.text) })); break;
       case 'fronth': out.push(new Paragraph({ style: 'FrontHeading', pageBreakBefore: !!b.pageBreak, children: runs(b.text) })); break;
@@ -214,7 +216,7 @@ const doc = new Document({
     { properties: { type: SectionType.NEXT_PAGE, page: { ...A4, pageNumbers: { start: 1, formatType: NumberFormat.LOWER_ROMAN } } },
       headers: { default: header }, footers: { default: footer() }, children: render(parts.front, BODY_W) },
     { properties: { type: SectionType.NEXT_PAGE, page: { ...A4, pageNumbers: { start: 1, formatType: NumberFormat.DECIMAL } } },
-      headers: { default: header }, footers: { default: footer() }, children: render(parts.main, BODY_W) },
+      headers: { default: header }, footers: { default: footer() }, children: render(parts.main, BODY_W, false) },
     { properties: { type: SectionType.NEXT_PAGE, page: A3L }, headers: { default: header }, footers: { default: footer() }, children: render(parts.a3, A3_W) },
     { properties: { type: SectionType.NEXT_PAGE, page: A4 }, headers: { default: header }, footers: { default: footer() }, children: render(parts.appendix, BODY_W) },
   ],

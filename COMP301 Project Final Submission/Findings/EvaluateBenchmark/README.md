@@ -9,6 +9,7 @@ evaluation does not share the intervention's blind spots (plan §5).
 cd EvaluateBenchmark
 python evaluate_benchmark.py                          REM every run with results in both modes
 python compile_stats.py                               REM then the statistics as CSV
+python stage_analysis.py                              REM first candidates, agreement between runs (report 8.2)
 python evaluate_benchmark.py --labels "Qwen3.5-9B-Q8_0-full-Latest"
 python evaluate_benchmark.py --self-check-only
 python -m unittest discover tests                     REM known-answer tests of the evaluator
@@ -59,6 +60,7 @@ status code) for an empty success, and an exception for a server error.
 | `<label>/per_task.jsonl` | every task's classes and reasons |
 | `<label>/review_queue.csv` | undetermined candidates for the manual review (plan §4), with their code in `review_code/` |
 | `<label>/audit_sample.csv` | a stratified random sample of 50 decided candidates per mode to check by hand (plan §5) |
+| `stage_analysis.json` | from `stage_analysis.py`: the class and hallucination kinds of the agent's first candidate (before verification feedback) beside the baseline and the delivered code; per-task agreement between the main runs; behaviour checks against the whole task |
 
 ## All project statistics as CSV
 

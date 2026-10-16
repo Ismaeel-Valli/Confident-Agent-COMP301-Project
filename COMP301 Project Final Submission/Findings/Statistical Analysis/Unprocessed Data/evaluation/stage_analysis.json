@@ -1,0 +1,252 @@
+{
+  "stages": {
+    "QQwen3.5-9B-Q6_K-full-Latest": {
+      "quantization": "Q6_K",
+      "baseline": {
+        "tasks": 990,
+        "classes": {
+          "correct": 365,
+          "A": 503,
+          "B": 56,
+          "runtime_failure": 63,
+          "no_code": 3
+        },
+        "A_rate": 0.5080808080808081,
+        "A_rate_undetermined_as_A": 0.5080808080808081,
+        "hallucination_types": {
+          "wrong host, version or base path": 408,
+          "invented endpoint or method": 70,
+          "invented parameter or body field": 5,
+          "invalid value or structure": 11,
+          "undocumented response field": 3,
+          "missing required part or credential": 3
+        },
+        "A_other_than_wrong_host": 87
+      },
+      "first_candidate": {
+        "tasks": 990,
+        "classes": {
+          "correct": 388,
+          "A": 462,
+          "runtime_failure": 14,
+          "undetermined": 78,
+          "B": 48
+        },
+        "A_rate": 0.4666666666666667,
+        "A_rate_undetermined_as_A": 0.5454545454545454,
+        "hallucination_types": {
+          "invented endpoint or method": 163,
+          "invalid value or structure": 9,
+          "invented parameter or body field": 9,
+          "wrong host, version or base path": 178,
+          "non-existent requests API": 1,
+          "missing required part or credential": 1
+        },
+        "A_other_than_wrong_host": 182
+      },
+      "delivered": {
+        "tasks": 990,
+        "A": 23,
+        "A_rate": 0.023232323232323233,
+        "withheld": 391,
+        "A_other_than_wrong_host": 23
+      },
+      "task_behaviour": {
+        "baseline_all_checks_share_of_programs": 0.18506493506493507,
+        "agent_all_checks_share_of_delivered_programs": 0.22297297297297297,
+        "fully_correct_share_of_tasks": {
+          "baseline": 0.05757575757575758,
+          "agent": 0.10505050505050505
+        },
+        "agent_correct_delivered_check_shares": {
+          "returns_expected_value": 0.7995991983967936,
+          "empty_response_ok": 0.22845691382765532,
+          "error_raises": 1.0
+        }
+      }
+    },
+    "Qwen3.5-9B-Q4_KM-full-Latest": {
+      "quantization": "Q4_K_M",
+      "baseline": {
+        "tasks": 990,
+        "classes": {
+          "correct": 247,
+          "A": 513,
+          "runtime_failure": 150,
+          "B": 79,
+          "no_code": 1
+        },
+        "A_rate": 0.5181818181818182,
+        "A_rate_undetermined_as_A": 0.5181818181818182,
+        "hallucination_types": {
+          "wrong host, version or base path": 449,
+          "other": 1,
+          "invented endpoint or method": 39,
+          "invented parameter or body field": 8,
+          "invalid value or structure": 9,
+          "non-existent requests API": 1,
+          "missing required part or credential": 5
+        },
+        "A_other_than_wrong_host": 58
+      },
+      "first_candidate": {
+        "tasks": 990,
+        "classes": {
+          "correct": 377,
+          "runtime_failure": 40,
+          "A": 484,
+          "undetermined": 39,
+          "B": 50
+        },
+        "A_rate": 0.4888888888888889,
+        "A_rate_undetermined_as_A": 0.5282828282828282,
+        "hallucination_types": {
+          "invented endpoint or method": 173,
+          "invented parameter or body field": 26,
+          "wrong host, version or base path": 256,
+          "undocumented response field": 2,
+          "missing required part or credential": 14,
+          "invalid value or structure": 9,
+          "non-existent requests API": 2
+        },
+        "A_other_than_wrong_host": 209
+      },
+      "delivered": {
+        "tasks": 990,
+        "A": 16,
+        "A_rate": 0.01616161616161616,
+        "withheld": 372,
+        "A_other_than_wrong_host": 15
+      },
+      "task_behaviour": {
+        "baseline_all_checks_share_of_programs": 0.08700834326579261,
+        "agent_all_checks_share_of_delivered_programs": 0.19381107491856678,
+        "fully_correct_share_of_tasks": {
+          "baseline": 0.021212121212121213,
+          "agent": 0.10303030303030303
+        },
+        "agent_correct_delivered_check_shares": {
+          "returns_expected_value": 0.8035714285714286,
+          "empty_response_ok": 0.26785714285714285,
+          "error_raises": 0.998015873015873
+        }
+      }
+    },
+    "Qwen3.5-9B-Q8_0-full-Latest": {
+      "quantization": "Q8_0",
+      "baseline": {
+        "tasks": 990,
+        "classes": {
+          "correct": 341,
+          "A": 546,
+          "runtime_failure": 43,
+          "B": 58,
+          "no_code": 2
+        },
+        "A_rate": 0.5515151515151515,
+        "A_rate_undetermined_as_A": 0.5515151515151515,
+        "hallucination_types": {
+          "wrong host, version or base path": 446,
+          "invented endpoint or method": 72,
+          "invented parameter or body field": 7,
+          "missing required part or credential": 8,
+          "invalid value or structure": 7,
+          "undocumented response field": 4,
+          "non-existent requests API": 1
+        },
+        "A_other_than_wrong_host": 93
+      },
+      "first_candidate": {
+        "tasks": 990,
+        "classes": {
+          "correct": 378,
+          "A": 474,
+          "runtime_failure": 6,
+          "undetermined": 81,
+          "B": 51
+        },
+        "A_rate": 0.47878787878787876,
+        "A_rate_undetermined_as_A": 0.5606060606060606,
+        "hallucination_types": {
+          "invented endpoint or method": 188,
+          "invalid value or structure": 9,
+          "invented parameter or body field": 6,
+          "wrong host, version or base path": 167,
+          "undocumented response field": 2,
+          "non-existent requests API": 2
+        },
+        "A_other_than_wrong_host": 203
+      },
+      "delivered": {
+        "tasks": 990,
+        "A": 20,
+        "A_rate": 0.020202020202020204,
+        "withheld": 383,
+        "A_other_than_wrong_host": 20
+      },
+      "task_behaviour": {
+        "baseline_all_checks_share_of_programs": 0.17671957671957672,
+        "agent_all_checks_share_of_delivered_programs": 0.2251655629139073,
+        "fully_correct_share_of_tasks": {
+          "baseline": 0.06464646464646465,
+          "agent": 0.11313131313131314
+        },
+        "agent_correct_delivered_check_shares": {
+          "returns_expected_value": 0.8411764705882353,
+          "empty_response_ok": 0.2549019607843137,
+          "error_raises": 0.996078431372549
+        }
+      }
+    }
+  },
+  "agreement_between_runs": {
+    "QQwen3.5-9B-Q6_K-full-Latest | Qwen3.5-9B-Q4_KM-full-Latest": {
+      "baseline_A": {
+        "agreement": 0.8444444444444444,
+        "kappa": 0.688705942886545
+      },
+      "baseline_class": {
+        "agreement": 0.692929292929293,
+        "kappa": 0.5130325599607786
+      },
+      "agent_delivered": {
+        "agreement": 0.8212121212121212,
+        "kappa": 0.6227280360672255
+      }
+    },
+    "QQwen3.5-9B-Q6_K-full-Latest | Qwen3.5-9B-Q8_0-full-Latest": {
+      "baseline_A": {
+        "agreement": 0.8717171717171717,
+        "kappa": 0.7430064141085859
+      },
+      "baseline_class": {
+        "agreement": 0.8141414141414142,
+        "kappa": 0.6832187314141425
+      },
+      "agent_delivered": {
+        "agreement": 0.8626262626262626,
+        "kappa": 0.7115396975708832
+      }
+    },
+    "Qwen3.5-9B-Q4_KM-full-Latest | Qwen3.5-9B-Q8_0-full-Latest": {
+      "baseline_A": {
+        "agreement": 0.8494949494949495,
+        "kappa": 0.6978579065737567
+      },
+      "baseline_class": {
+        "agreement": 0.695959595959596,
+        "kappa": 0.5072435968455917
+      },
+      "agent_delivered": {
+        "agreement": 0.8313131313131313,
+        "kappa": 0.6425281839056602
+      }
+    }
+  },
+  "baseline_A_in_how_many_runs": {
+    "0": 363,
+    "1": 104,
+    "2": 111,
+    "3": 412
+  }
+}

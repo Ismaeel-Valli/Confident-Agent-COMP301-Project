@@ -5,7 +5,7 @@ recorded experiment.
 
 | File | Content |
 |---|---|
-| `content_part1.js` … `content_part4.js` | the report's text, tables and figure references, section by section |
+| `content_part1.js` … `content_part5.js` | the report's text, tables and figure references, section by section (part 5: appendices D–K) |
 | `build_report.js` | renders the content to `.docx` with the `docx` package (figures and tables are numbered automatically) |
 | `build_diagrams.py` | the architecture and UML diagrams in `figures/` (matplotlib) |
 | `word_finalize.ps1` | opens the document in Microsoft Word, updates the table of contents, the lists of figures and tables and all fields, saves the `.docx` and exports the PDF |
