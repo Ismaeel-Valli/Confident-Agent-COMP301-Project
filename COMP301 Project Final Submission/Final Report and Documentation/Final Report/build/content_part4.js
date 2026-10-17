@@ -10,13 +10,13 @@ module.exports = [
   { t: 'h2', text: '10.1 Benchmark bias' },
   { t: 'bullets', items: [
     '**Hallucination means contract violation.** Class A measures conformance to a frozen specification, not whether a live service would accept the request. Some APIs silently ignore unknown parameters, so a class A candidate may still return data; it does not, however, do what the code claims, which is the harm targeted.',
-    '**Ground truth is partly researcher-authored.** Three of the six specifications are curated partial contracts, and the planned two-reviewer audit of a 100-task sample of the answer key was not completed. The evaluator\'s self-check (1,000/1,000 reference solutions correct) and the documented review of every case the curated specifications left open reduce, but do not remove, this threat.',
+    '**Ground truth is partly researcher-authored.** Three of the six specifications are curated partial contracts. The answer-key audit found no errors in a stratified sample of 100 tasks, and the evaluator\'s self-check passed all 1,000 reference solutions, but the audit had one reviewer and covered a tenth of the tasks, so it reduces rather than removes this threat.',
     '**Composition follows the specifications.** Reads dominate (494 of 990 tasks), deletes are rare (30) and the difficulty heuristic labels only three tasks hard, so pooled rates weight APIs and operations unevenly. Results are therefore also reported by subgroup.',
     '**Only answerable tasks, narrowly checked.** The benchmark contains no ambiguous or impossible requests, so it cannot measure whether the agent correctly refuses a task that should be refused, and three behaviour checks do not establish that a program is fully correct.',
   ] },
   { t: 'h2', text: '10.2 Evaluator bias' },
   { t: 'bullets', items: [
-    '**Same team.** The same group, with AI assistance, built the agent and the evaluator. They are separated by code (no shared modules), by method (sandboxed execution versus static analysis) and by data (only the evaluator reads the answer key), and the evaluator was validated on the reference solutions. The planned stratified hand audit of 50 decided candidates per mode was not completed.',
+    '**Same team.** The same group, with AI assistance, built the agent and the evaluator. They are separated by code (no shared modules), by method (sandboxed execution versus static analysis) and by data (only the evaluator reads the answer key), and the evaluator was validated on the reference solutions. In the two-reviewer audit of 102 of its decisions, every adjudicated decision agreed with it on the primary outcome, but the reviewers agreed with each other only moderately (κ = 0.72), partly because they applied different rules to crashing programs, and 18 disagreements await adjudication (Section 7.6). The audit covers one run, and its sample is small for estimating rare errors.',
     '**AI-assisted manual review.** The first review of the 396 undetermined candidates was AI-assisted. A human second review of the 46 candidates that could change the primary result agreed on 43 (κ = 0.88), and every decision is recorded with its evidence; the 350 withheld candidates have the first review only. Settling the three disagreements as correct relaxed the closed list of equivalences for three cases and changed no hallucination figure.',
   ] },
   { t: 'h2', text: '10.3 Overfitting' },
@@ -49,7 +49,7 @@ module.exports = [
   // -------------------------------------------------------------- 11
   { t: 'h1', text: '11 Conclusion' },
   { t: 'h2', text: '11.1 Answer to the research question' },
-  { t: 'p', text: 'This study asked whether an agent that verifies the REST API claims in its own code against frozen, authoritative specifications can stop API hallucinations from reaching the user, and at what cost. For the combined Confident Agent architecture of prompt, verification, one correction and abstention, judged by an independent evaluator on a frozen benchmark, the answer is yes. In each of three runs on the same 990 tasks, hallucinated code reaching the user fell from 50.8–55.2% to 1.6–2.3% (exact McNemar, Holm-adjusted p < 10⁻¹²⁹), while correct code reaching the user rose from 24.9–36.9% to 50.4–51.5%. The scientific hypothesis of the project description is supported for this architecture, this model and these APIs.' },
+  { t: 'p', text: 'This study asked whether an agent that verifies the REST API claims in its own code against frozen, authoritative specifications can stop API hallucinations from reaching the user, and at what cost. For the combined Confident Agent architecture of prompt, verification, one correction and abstention, judged by an independent evaluator on a frozen benchmark whose answer key and evaluator were both audited by group members, the answer is yes. In each of three runs on the same 990 tasks, hallucinated code reaching the user fell from 50.8–55.2% to 1.6–2.3% (exact McNemar, Holm-adjusted p < 10⁻¹²⁹), while correct code reaching the user rose from 24.9–36.9% to 50.4–51.5%. The scientific hypothesis of the project description is supported for this architecture, this model and these APIs.' },
   { t: 'h2', text: '11.2 Principal findings' },
   { t: 'numbers', ref: 'numbers2', items: [
     '**The model writes the API it was trained on.** Its hallucinations are dominated by retired and extrapolated versions and by confusion between similar services. These errors are invisible to the model and obvious to a pinned specification, which is why external evidence, rather than self-reflection, is the appropriate remedy.',
@@ -59,7 +59,7 @@ module.exports = [
     '**Trust has a price.** The agent takes about six times as long and processes 40–46 times as many tokens; locally this is about one cent of electricity per prompt, while the real costs are latency and, on a paid service, tokens.',
   ] },
   { t: 'h2', text: '11.3 Limitations and future work' },
-  { t: 'p', text: 'The residual hallucinations come from values known only at run time; the verifier does not check whether a valid call is the one the task wanted; the model repairs its own code only about a third of the time; and only APIs with frozen specifications can be verified. These limits point to the next steps: an ablation that runs the prompt without the tool and the tool with the baseline prompt; binding representative inputs during verification; task-level checks of the intended operation; a shorter conversation and fewer correction rounds to reduce cost; completing the human review of the answer key and of a sample of the evaluator\'s decisions; repeating the experiment with seeded samples and other models; adding ambiguous and impossible tasks so that correct refusal can be measured; and monitoring frozen specifications for drift against their live versions.' },
+  { t: 'p', text: 'The residual hallucinations come from values known only at run time; the verifier does not check whether a valid call is the one the task wanted; the model repairs its own code only about a third of the time; and only APIs with frozen specifications can be verified. These limits point to the next steps: an ablation that runs the prompt without the tool and the tool with the baseline prompt; binding representative inputs during verification; task-level checks of the intended operation; a shorter conversation and fewer correction rounds to reduce cost; adjudicating the remaining audit disagreements and extending the audits to more tasks, more reviewers and every run; repeating the experiment with seeded samples and other models; adding ambiguous and impossible tasks so that correct refusal can be measured; and monitoring frozen specifications for drift against their live versions.' },
   { t: 'h2', text: '11.4 Closing remarks' },
   { t: 'p', text: 'A Confident Agent, the project description states, is not one that is always correct but one that knows when it should not be trusted. The agent studied here is wrong far less often than the model it wraps, and when it cannot establish that its code is right, it says so instead of handing the code over. That behaviour does not come from the model becoming more humble, nor from a well-chosen confidence threshold. It comes from explicit constraints in the architecture that decide what may be released: trust by design rather than by declaration (Vorster, 2026b).' },
 
@@ -199,6 +199,7 @@ module.exports = [
       ['6 Oct', 'Findings use the final series of runs (30 Sep–3 Oct); an earlier series is used only as a repeat-run check', 'Machine throughput halved during the earlier series (GPU power 240 W to 193 W), invalidating its cost figures; its accuracy agrees within about 2 points (Appendix E.10)'],
       ['6 Oct', 'Manual review made with AI assistance rather than by two independent members', 'Time constraints; documented rules and reasons for all 396 decisions'],
       ['7 Oct', 'Second, human review of the 46 decisive candidates; three relaxed to correct', 'κ = 0.88; changes correct-code figures by one task (Q6_K) and two (Q8_0)'],
+      ['16 Oct', 'Answer-key audit made by one reviewer rather than two; evaluator audit drawn from the Q6_K run only; both completed after the main analysis', 'Time constraints; the audits validate the instruments and change no reported outcome; 18 evaluator-audit disagreements await adjudication'],
     ] },
   { t: 'h2', text: 'C.7 Statistical methods' },
   { t: 'table', key: 'statsplan', caption: 'Statistical methods (evaluation plan §6).', cols: [2.2, 4.6],
@@ -210,7 +211,7 @@ module.exports = [
       ['Per-group rates', 'Wilson 95% intervals (Wilson, 1927); subgroup tests are descriptive'],
       ['Cost', 'Wilcoxon signed-rank test on paired per-task costs (Wilcoxon, 1945) with rank-biserial effect size; Kruskal–Wallis across quantizations'],
       ['Confidence metric', 'Area under the ROC curve, correct versus class A final candidates; share correct per EWCS band'],
-      ['Agreement', 'Cohen\'s κ for the two reviewers, between repeated runs and between quantization runs (Cohen, 1960)'],
+      ['Agreement', 'Cohen\'s κ for the manual review, the evaluator audit (each reviewer against the evaluator and against each other), between repeated runs and between quantization runs (Cohen, 1960)'],
       ['Robustness', 'Pilot tasks included; undetermined counted as A and as correct; hallucinations other than a wrong host; the five planned weighting schemes'],
     ] },
   { t: 'h2', text: 'C.8 Summary of threats to validity' },
@@ -218,8 +219,8 @@ module.exports = [
     header: ['Threat', 'Risk', 'Mitigation'],
     rows: [
       ['Curated partial specifications', 'Ground-truth errors', 'Labelled; undetermined cases reviewed against documentation and live APIs; κ = 0.88'],
-      ['Answer-key review incomplete', 'Systematic answer-key errors undetected', 'Self-check on 1,000 references; review of open cases; disclosed as a limitation'],
-      ['Evaluator built by the same team', 'Correlated blind spots', 'Separate code, method and data; sandboxed execution; self-check'],
+      ['Answer-key errors', 'Systematic errors in the expected requests', 'Self-check on 1,000 references; 100-task human audit, all passed; review of open cases'],
+      ['Evaluator built by the same team', 'Correlated blind spots', 'Separate code, method and data; sandboxed execution; self-check; two-reviewer audit of 102 decisions'],
       ['Overfitting to the benchmark', 'Design tuned to the test set', 'Pilot tasks excluded; parameters fixed in advance; sensitivity analysis; rule change disclosed'],
       ['Runtime and sampling drift', 'Unequal conditions between runs', 'Pinned model; repeat runs reproduce within about 2 points; aggregate tests only'],
       ['Weights and thresholds chosen by the group', 'Result depends on arbitrary numbers', 'Five pre-planned schemes: no change to withheld or delivered outcomes'],

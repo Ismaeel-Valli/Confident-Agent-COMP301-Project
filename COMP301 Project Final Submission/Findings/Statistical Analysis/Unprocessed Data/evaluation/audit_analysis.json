@@ -1,0 +1,138 @@
+{
+  "evaluator_audit": {
+    "file": "reviews\\audit_reviews.csv",
+    "runs": [
+      "QQwen3.5-9B-Q6_K-full-Latest"
+    ],
+    "candidates": 102,
+    "by_role": {
+      "baseline": 52,
+      "shown": 50
+    },
+    "automatic_classes": {
+      "A": 26,
+      "correct": 58,
+      "runtime_failure": 7,
+      "B": 11
+    },
+    "adjudicated": 84,
+    "awaiting_adjudication": [
+      "REST_PY_DJ_0066/baseline",
+      "REST_PY_DJ_0031/baseline",
+      "REST_PY_GH_0034/baseline",
+      "REST_PY_GH_0209/baseline",
+      "REST_PY_GH_0142/baseline",
+      "REST_PY_GH_0244/baseline",
+      "REST_PY_GH_0217/baseline",
+      "REST_PY_GH_0080/baseline",
+      "REST_PY_OM_0145/baseline",
+      "REST_PY_PS_0092/baseline",
+      "REST_PY_DJ_0121/shown",
+      "REST_PY_DJ_0092/shown",
+      "REST_PY_GH_0219/shown",
+      "REST_PY_GH_0012/shown",
+      "REST_PY_PS_0065/shown",
+      "REST_PY_PS_0133/shown",
+      "REST_PY_PS_0046/shown",
+      "REST_PY_PS_0121/shown"
+    ],
+    "reviewer_1_vs_evaluator": {
+      "class": {
+        "n": 102,
+        "agreement": 0.9607843137254902,
+        "kappa": 0.9360701974302729,
+        "disagreements": {
+          "B->correct": 4
+        }
+      },
+      "class_A_or_not": {
+        "n": 102,
+        "agreement": 1.0,
+        "kappa": 1.0
+      }
+    },
+    "reviewer_2_vs_evaluator": {
+      "class": {
+        "n": 102,
+        "agreement": 0.7843137254901961,
+        "kappa": 0.6495392784632202,
+        "disagreements": {
+          "B->correct": 8,
+          "A->runtime_failure": 4,
+          "correct->runtime_failure": 2,
+          "B->runtime_failure": 1,
+          "correct->A": 3,
+          "A->correct": 3,
+          "B->A": 1
+        }
+      },
+      "class_A_or_not": {
+        "n": 102,
+        "agreement": 0.8921568627450981,
+        "kappa": 0.726474890297416
+      }
+    },
+    "reviewer_1_vs_reviewer_2": {
+      "class": {
+        "n": 102,
+        "agreement": 0.8235294117647058,
+        "kappa": 0.7187069097594606,
+        "disagreements": {
+          "correct->B": 4,
+          "runtime_failure->A": 4,
+          "runtime_failure->correct": 2,
+          "runtime_failure->B": 1,
+          "A->correct": 3,
+          "correct->A": 3,
+          "A->B": 1
+        }
+      },
+      "class_A_or_not": {
+        "n": 102,
+        "agreement": 0.8921568627450981,
+        "kappa": 0.726474890297416
+      }
+    },
+    "agreed_vs_evaluator": {
+      "class": {
+        "n": 84,
+        "agreement": 0.9523809523809523,
+        "kappa": 0.9162094763092269,
+        "disagreements": {
+          "B->correct": 4
+        }
+      },
+      "class_A_or_not": {
+        "n": 84,
+        "agreement": 1.0,
+        "kappa": 1.0
+      }
+    }
+  },
+  "answer_key_audit": {
+    "file": "review_100.csv",
+    "tasks": 100,
+    "by_api": {
+      "JSONPlaceholder": 15,
+      "GitHub": 25,
+      "Open-Meteo": 15,
+      "DummyJSON": 15,
+      "REST Countries": 15,
+      "Petstore": 15
+    },
+    "reviewers": {
+      "Abiel": 100
+    },
+    "decisions": {
+      "PASS": 100
+    },
+    "checks_passed": {
+      "source_contract_correct": 100,
+      "prompt_unambiguous": 100,
+      "reference_code_correct": 100,
+      "test_case_correct": 100,
+      "alternative_valid_calls_considered": 100,
+      "difficulty_label_checked": 100
+    }
+  }
+}
