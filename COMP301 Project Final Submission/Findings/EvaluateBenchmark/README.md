@@ -61,7 +61,7 @@ status code) for an empty success, and an exception for a server error.
 | `<label>/per_task.jsonl` | every task's classes and reasons |
 | `<label>/review_queue.csv` | undetermined candidates for the manual review (plan §4), with their code in `review_code/` |
 | `<label>/audit_sample.csv` | a stratified random sample of 50 decided candidates per mode to check by hand (plan §5) |
-| `audit_analysis.json` | from `audit_analysis.py`: agreement of the two audit reviewers with the evaluator and with each other (class and primary outcome), and the answer-key audit's results. The completed evaluator audit is kept in `reviews/audit_reviews.csv`, because `evaluate_benchmark.py` rewrites `audit_sample.csv` on every run |
+| `audit_analysis.json` | from `audit_analysis.py`: agreement of the two audit reviewers with the evaluator and with each other (class and primary outcome), the evaluator's primary-outcome errors per role; the answer-key audit's results; and every main run re-scored with the two rules the adjudication added (invented GitHub media types are A, legacy Open-Meteo names are C). The completed evaluator audit is kept in `reviews/audit_reviews.csv`, because `evaluate_benchmark.py` rewrites `audit_sample.csv` on every run |
 | `stage_analysis.json` | from `stage_analysis.py`: the class and hallucination kinds of the agent's first candidate (before verification feedback) beside the baseline and the delivered code; per-task agreement between the main runs; behaviour checks against the whole task |
 
 ## All project statistics as CSV

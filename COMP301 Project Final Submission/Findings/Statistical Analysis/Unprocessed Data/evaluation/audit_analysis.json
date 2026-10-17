@@ -15,27 +15,8 @@
       "runtime_failure": 7,
       "B": 11
     },
-    "adjudicated": 84,
-    "awaiting_adjudication": [
-      "REST_PY_DJ_0066/baseline",
-      "REST_PY_DJ_0031/baseline",
-      "REST_PY_GH_0034/baseline",
-      "REST_PY_GH_0209/baseline",
-      "REST_PY_GH_0142/baseline",
-      "REST_PY_GH_0244/baseline",
-      "REST_PY_GH_0217/baseline",
-      "REST_PY_GH_0080/baseline",
-      "REST_PY_OM_0145/baseline",
-      "REST_PY_PS_0092/baseline",
-      "REST_PY_DJ_0121/shown",
-      "REST_PY_DJ_0092/shown",
-      "REST_PY_GH_0219/shown",
-      "REST_PY_GH_0012/shown",
-      "REST_PY_PS_0065/shown",
-      "REST_PY_PS_0133/shown",
-      "REST_PY_PS_0046/shown",
-      "REST_PY_PS_0121/shown"
-    ],
+    "adjudicated": 102,
+    "awaiting_adjudication": [],
     "reviewer_1_vs_evaluator": {
       "class": {
         "n": 102,
@@ -95,18 +76,106 @@
     },
     "agreed_vs_evaluator": {
       "class": {
-        "n": 84,
-        "agreement": 0.9523809523809523,
-        "kappa": 0.9162094763092269,
+        "n": 102,
+        "agreement": 0.9313725490196079,
+        "kappa": 0.8886810102899907,
         "disagreements": {
-          "B->correct": 4
+          "B->correct": 4,
+          "correct->A": 1,
+          "A->correct": 2
         }
       },
       "class_A_or_not": {
-        "n": 84,
-        "agreement": 1.0,
-        "kappa": 1.0
+        "n": 102,
+        "agreement": 0.9705882352941176,
+        "kappa": 0.9235382308845577
       }
+    },
+    "primary_errors_by_role": {
+      "baseline": {
+        "n": 52,
+        "missed_hallucinations": [],
+        "false_hallucinations": [
+          "REST_PY_OM_0145"
+        ],
+        "missed_share": 0.0,
+        "missed_share_wilson95": [
+          0.0,
+          0.06879459041288215
+        ],
+        "false_share": 0.019230769230769232,
+        "false_share_wilson95": [
+          0.0034027204090655225,
+          0.10120746268024422
+        ]
+      },
+      "shown": {
+        "n": 50,
+        "missed_hallucinations": [
+          "REST_PY_GH_0219",
+          "REST_PY_GH_0012"
+        ],
+        "false_hallucinations": [],
+        "missed_share": 0.04,
+        "missed_share_wilson95": [
+          0.011038652660826577,
+          0.13460337877954667
+        ],
+        "false_share": 0.0,
+        "false_share_wilson95": [
+          0.0,
+          0.07135003417431873
+        ]
+      }
+    }
+  },
+  "audit_informed_rescoring": {
+    "QQwen3.5-9B-Q6_K-full-Latest": {
+      "quantization": "Q6_K",
+      "tasks": 990,
+      "changes": {
+        "shown: correct -> A (invented GitHub media type)": 4,
+        "shown: B -> A (invented GitHub media type)": 1,
+        "baseline: correct -> A (invented GitHub media type)": 1,
+        "baseline: A -> C (legacy Open-Meteo name)": 6
+      },
+      "baseline_rate": 0.503030303030303,
+      "intervention_rate": 0.028282828282828285,
+      "discordant_baseline_only": 485,
+      "discordant_intervention_only": 15,
+      "mcnemar_p": 1.1900671209874597e-122,
+      "mcnemar_p_holm": 2.3801342419749195e-122
+    },
+    "Qwen3.5-9B-Q4_KM-full-Latest": {
+      "quantization": "Q4_K_M",
+      "tasks": 990,
+      "changes": {
+        "shown: correct -> A (invented GitHub media type)": 10,
+        "shown: B -> A (invented GitHub media type)": 4,
+        "baseline: A -> C (legacy Open-Meteo name)": 5
+      },
+      "baseline_rate": 0.5131313131313131,
+      "intervention_rate": 0.030303030303030304,
+      "discordant_baseline_only": 500,
+      "discordant_intervention_only": 22,
+      "mcnemar_p": 5.320270284791411e-119,
+      "mcnemar_p_holm": 5.320270284791411e-119
+    },
+    "Qwen3.5-9B-Q8_0-full-Latest": {
+      "quantization": "Q8_0",
+      "tasks": 990,
+      "changes": {
+        "shown: correct -> A (invented GitHub media type)": 14,
+        "shown: B -> A (invented GitHub media type)": 3,
+        "baseline: correct -> A (invented GitHub media type)": 1,
+        "baseline: A -> C (legacy Open-Meteo name)": 5
+      },
+      "baseline_rate": 0.5474747474747474,
+      "intervention_rate": 0.03737373737373737,
+      "discordant_baseline_only": 520,
+      "discordant_intervention_only": 15,
+      "mcnemar_p": 9.670181546485178e-133,
+      "mcnemar_p_holm": 2.9010544639455535e-132
     }
   },
   "answer_key_audit": {

@@ -40,7 +40,7 @@ module.exports = [
   { t: 'p', text: 'APIs the model knows well improve the most: GitHub rises from 26–63% correct to 75–84%, and DummyJSON from 30–59% to 67–74%, with no hallucination reaching the user in any run (Appendix E.2). Three outcomes, however, qualify the headline as much as they support it.' },
   { t: 'bullets', items: [
     '**REST Countries: safe, but no useful answer.** The baseline hallucinated on 99–100% of REST Countries tasks, and the agent delivered nothing for 99–100% of them. Even with the current host named in its prompt, the model invented v5 paths (all 258 withheld candidates reviewed used non-existent paths), and the verifier correctly refused them, at a cost of 7.1 hours of computation across the three runs. The architecture prevented unsupported code from being released, but it cannot supply code that the model does not know how to write: for this part of the domain it provides safety without usefulness.',
-    '**Residual hallucinations.** 57 of the 59 hallucinations still delivered are Petstore tasks, mostly request bodies that place a run-time value where the schema expects a string. The verifier deliberately treats run-time values as opaque, which is what makes `solve(inputs)` code verifiable at all, so it cannot see which value lands in a field (Appendix E.3).',
+    '**Residual hallucinations.** 57 of the 59 hallucinations still delivered are Petstore tasks, mostly request bodies that place a run-time value where the schema expects a string. The verifier deliberately treats run-time values as opaque, which is what makes `solve(inputs)` code verifiable at all, so it cannot see which value lands in a field (Appendix E.3). The evaluator audit found a further kind that both the verifier and the evaluator miss: an invented GitHub media type in the `Accept` header, delivered in 5–17 tasks per run (Section 9.4).',
     '**Conformance to the API is not the user\'s task.** The verifier checks the API contract, not the user\'s intent, so a valid call to the wrong endpoint passes by design. Task-fidelity (class B) errors in delivered code did not fall but rose, from 193 to 238 across the three runs. Only 19–23% of the agent\'s delivered programs also met all three behaviour checks, mostly because few returned `None` for an empty response. Requiring the right request *and* all three behaviours, the agent delivered fully correct code for only 10.3–11.3% of tasks, against 2.1–6.5% for the baseline (Appendix E.8).',
   ] },
   { t: 'p', text: 'A clean verification report is therefore evidence about API claims only, which is what the toolbox\'s report tells the user. Throughout this report, "correct code" means the correct request, not a program that does everything the task asked.' },
@@ -99,5 +99,18 @@ module.exports = [
     '**Hallucinations other than a wrong host** fell by 74–79% from baseline to delivered code, so the result does not rest on the host list in the prompt (Section 8.3).',
     '**Weighting schemes**: identical withheld sets and outcomes under all five planned schemes (Section 8.5).',
     '**Repeat runs** with identical settings reproduce the headline rates within about two points (Appendix E.10).',
+    '**Audit-informed re-scoring** with the two rules the evaluator audit added (Section 7.6): see {tab:rescore}.',
   ] },
+  { t: 'p', text: 'The evaluator audit found two rules the pre-registered evaluator lacks: an `Accept` header naming a non-existent GitHub media type is an API hallucination, and Open-Meteo\'s legacy variable names are equivalent to the current ones. Re-scoring every task with both rules ({tab:rescore}) moves 5–17 delivered programs per run into class A, most of them built with `f"application/vnd.github.{version}-preview+json"`, and removes 5–6 baseline answers from it. The agent\'s hallucination rate rises from 1.6–2.3% to 2.8–3.7%, because neither its verifier nor the evaluator checks the media type, but the reduction remains 47.5–51.0 percentage points with Holm-adjusted p < 10⁻¹¹⁸ in every run. The headline figures in this report use the pre-registered evaluator.' },
+  { t: 'table', key: 'rescore', caption: 'Primary outcome re-scored with the two rules added by the evaluator audit (990 tasks per run).', cols: [2.9, 1.45, 1.45, 1.45],
+    header: ['Measure', 'Q4_K_M', 'Q6_K', 'Q8_0'], align: [null, 'c', 'c', 'c'],
+    rows: [
+      ['Class A reaching the user, pre-registered evaluator', '51.8% → 1.6%', '50.8% → 2.3%', '55.2% → 2.0%'],
+      ['Class A reaching the user, re-scored', '51.3% → 3.0%', '50.3% → 2.8%', '54.7% → 3.7%'],
+      ['Delivered programs moved into A (invented media type)', '14', '5', '17'],
+      ['Baseline answers moved out of A (legacy Open-Meteo name)', '5', '6', '5'],
+      ['Tasks repaired / regressed (b / c)', '500 / 22', '485 / 15', '520 / 15'],
+      ['Holm-adjusted p (exact McNemar)', '5.3 × 10⁻¹¹⁹', '2.4 × 10⁻¹²²', '2.9 × 10⁻¹³²'],
+    ],
+    note: 'Computed by `Findings/EvaluateBenchmark/audit_analysis.py`. The media-type rule reads the header from the program text, an approximation; one baseline answer per run in Q6_K and Q8_0 also moves into A.' },
 ];
