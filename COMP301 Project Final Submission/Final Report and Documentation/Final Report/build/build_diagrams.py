@@ -93,7 +93,7 @@ def d01():
     fig, ax = canvas(W, H)
     title(ax, W, H, "Experimental pipeline: one dataset, two conditions, an independent judge",
           "Solid arrows: data flow. Dashed: the answer key, which only the evaluator reads. Everything to the right of the runs is offline and repeatable.")
-    ds = box(ax, 0.3, 3.4, 2.9, 2.6, "Dataset Builder", ["1,000 Python tasks, 6 REST APIs", "141 operation families", "provider specs frozen 21 Sep 2026", "(SHA-256 per file and task)", "", "prompt-only file  ->  model", "task file = answer key"], color=PURPLE)
+    ds = box(ax, 0.3, 3.4, 2.9, 2.6, "Dataset Builder", ["1,000 Python tasks, 6 REST APIs", "142 operation families", "provider specs frozen 21 Sep 2026", "(SHA-256 per file and task)", "", "prompt-only file  ->  model", "task file = answer key"], color=PURPLE)
     hn = box(ax, 4.0, 1.2, 4.3, 5.1, "Benchmark harness", ["run_benchmark.py (benchmark 2026-09-27.2)", "same tasks, model and sampling settings"], color=GREY)
     bl = box(ax, 4.2, 4.15, 3.9, 1.1, "Baseline condition", ["Qwen3.5-9B + 2-line system prompt", "reply's code block is what the user gets"], color=BLUE, title_fs=9.5, fs=8.6)
     iv = box(ax, 4.2, 2.6, 3.9, 1.3, "Intervention condition", ["Qwen3.5-9B + Confident Agent prompt", "+ verify_candidate tool (function calling)", "decision of the tool on the last candidate"], color=ORANGE, title_fs=9.5, fs=8.6)
@@ -102,7 +102,7 @@ def d01():
     pw = box(ax, 4.0, 0.3, 4.3, 0.65, "LibreHardwareMonitor: GPU + CPU power, 0.5 s", [], color=GREY, title_fs=8.8)
     rn = box(ax, 9.0, 3.4, 1.9, 2.6, "Completed runs", ["per task:", "replies, tool calls,", "every verified", "candidate, timing,", "tokens, energy", "", "zipped per model"], color=GREY)
     ev = box(ax, 11.55, 3.4, 3.15, 2.6, "Evaluate Benchmark", ["runs each candidate in a", "sandbox (python -I -S) with a", "recording stand-in for requests", "3 scenarios: ok / 204 / 500", "classes: correct, A, B,", "runtime failure, undetermined", "self-check: 1,000/1,000 refs"], color=GREEN)
-    mr = box(ax, 11.55, 1.75, 3.15, 1.2, "Manual review", ["396 undetermined candidates", "2nd reviewer on the 46 decisive", "(kappa 0.88)"], color=GREEN, fs=8.6)
+    mr = box(ax, 11.55, 1.75, 3.15, 1.2, "Manual review and human audits", ["396 undetermined; 46 re-reviewed (kappa 0.88)", "answer-key audit: 100 tasks", "evaluator audit: 102 decisions, 2 reviewers"], color=GREEN, fs=8.0, title_fs=9.0)
     st = box(ax, 9.0, 0.3, 5.7, 1.05, "Stats compiler -> Statistical analysis -> report", ["CSV per prompt, group and run; McNemar, bootstrap, Holm;", "time, tokens and energy priced in Rand"], color=PURPLE, fs=8.5, title_fs=9.3)
     arrow(ax, (ds["r"], 5.0), (bl["l"], 4.7), "prompts only", lpos=0.45)
     arrow(ax, (ds["r"], 4.6), (iv["l"], 3.25), "same prompts", lpos=0.45)

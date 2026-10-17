@@ -112,7 +112,7 @@ module.exports = [
   // -------------------------------------------------------------- A3 SUMMARY
   { t: 'section', kind: 'a3' },
   { t: 'h1', text: 'Appendix A: Summary of Results', noBreak: true },
-  { t: 'p', text: 'Supplementary charts generated from the unprocessed data (`Findings/Statistical Analysis`). All panels use the 990 scored tasks per quantization (pilot excluded) and price electricity at R4.1109/kWh including VAT. Baseline is blue and the Confident Agent orange throughout.' },
+  { t: 'p', text: 'Supplementary charts generated from the unprocessed data (`Findings/Statistical Analysis`). All panels use the 990 scored tasks per quantization (pilot excluded) and price electricity at R4.1109/kWh including VAT. In panels (a)–(k) the baseline is blue and the Confident Agent orange; panel (l) uses its own colours, with the baseline shown first in each pair.' },
   { t: 'collage', key: 'collage', cols: 3, cellW: 470, cellH: 182,
     files: [TS + '13_what_reaches_the_user.png', TS + '15_effect_sizes_forest.png', TS + '09_cost_and_quality_by_api.png',
       TS + '04_cost_vs_quality_frontier.png', TS + '02_whole_run_time_and_rand.png', TS + '14_unit_economics.png',
