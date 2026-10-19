@@ -7,7 +7,7 @@
 
 <p align="center">
 <a href="COMP301%20Project%20Final%20Submission/Final%20Report%20and%20Documentation/Final%20Report/COMP301%20The%20Skeptics%20Final%20Report.pdf"><b>Final report (PDF)</b></a> &nbsp;·&nbsp;
-<a href="COMP301%20Project%20Final%20Submission/Final%20Report%20and%20Documentation/Presentation/The_Skeptics_Final_PresentationFinal.pptx"><b>Presentation</b></a> &nbsp;·&nbsp;
+<a href="COMP301%20Project%20Final%20Submission/Final%20Report%20and%20Documentation/Presentation/The_Skeptics_Final_Presentation_Final_v2.pptx"><b>Presentation</b></a> &nbsp;·&nbsp;
 <a href="#running-the-project"><b>Run it</b></a> &nbsp;·&nbsp;
 <a href="#1-introduction"><b>Read the study</b></a>
 </p>
@@ -15,7 +15,7 @@
 <p align="center"><img src="docs/readme/banners/at-a-glance.png" width="100%" alt="At a glance: hallucinated code reaching the user fell from 53% to 2%; correct code rose by 13 to 26 points; p below 10 to the minus 129 in every run; 99 of 102 audited evaluator decisions confirmed"></p>
 
 > [!NOTE]
-> This README presents the complete final report of **The Skeptics** for COMP301 (Software Design, UKZN, 2026), chapter by chapter. Material the printed report placed in appendices to save pages appears here inside the chapter it supports. The formatted report is in [`Final Report`](<COMP301 Project Final Submission/Final Report and Documentation/Final Report/COMP301 The Skeptics Final Report.pdf>) and the slides in [`Presentation`](<COMP301 Project Final Submission/Final Report and Documentation/Presentation/The_Skeptics_Final_PresentationFinal.pptx>).
+> This README presents the complete final report of **The Skeptics** for COMP301 (Software Design, UKZN, 2026), chapter by chapter. Material the printed report placed in appendices to save pages appears here inside the chapter it supports. The formatted report is in [`Final Report`](<COMP301 Project Final Submission/Final Report and Documentation/Final Report/COMP301 The Skeptics Final Report.pdf>) and the slides in [`Presentation`](<COMP301 Project Final Submission/Final Report and Documentation/Presentation/The_Skeptics_Final_Presentation_Final_v2.pptx>).
 
 <p align="center"><img src="docs/readme/banners/00-abstract.png" width="100%" alt="Abstract"></p>
 
@@ -58,6 +58,9 @@ Release decisions are governed by hard verification constraints, not by the conf
 10. [Threats to validity](#10-threats-to-validity)
 11. [Conclusion](#11-conclusion)
 
+**Beyond the study**
+- [Real-world applications](#real-world-applications)
+
 **Back matter**
 - [Glossary](#glossary)
 - [AI disclosure](#ai-disclosure)
@@ -92,7 +95,7 @@ Release decisions are governed by hard verification constraints, not by the conf
 | Deliverable | Where |
 |---|---|
 | Final report | [PDF](<COMP301 Project Final Submission/Final Report and Documentation/Final Report/COMP301 The Skeptics Final Report.pdf>) · [Word](<COMP301 Project Final Submission/Final Report and Documentation/Final Report/COMP301 The Skeptics Final Report.docx>) |
-| Presentation | [The_Skeptics_Final_PresentationFinal.pptx](<COMP301 Project Final Submission/Final Report and Documentation/Presentation/The_Skeptics_Final_PresentationFinal.pptx>) |
+| Presentation | [The_Skeptics_Final_Presentation_Final_v2.pptx](<COMP301 Project Final Submission/Final Report and Documentation/Presentation/The_Skeptics_Final_Presentation_Final_v2.pptx>) |
 | The Confident Agent (source) | [`Code Submission/confident-agent-toolbox`](<COMP301 Project Final Submission/Code Submission/confident-agent-toolbox>) |
 | Hallucination benchmark (1,000 tasks, answer key) | [`Code Submission/COMP301-Dataset-Builder`](<COMP301 Project Final Submission/Code Submission/COMP301-Dataset-Builder/comp301-dataset-builder>) |
 | Benchmark runs and evaluation plan | [`Findings/Benchmark`](<COMP301 Project Final Submission/Findings/Benchmark>) |
@@ -1350,6 +1353,61 @@ The residual hallucinations come from values known only at run time; the verifie
 ### 11.4 Closing remarks
 
 A Confident Agent, the project description states, is not one that is always correct but one that knows when it should not be trusted. The agent studied here is wrong far less often than the model it wraps, and when it cannot establish that its code is right, it says so instead of handing the code over. That behaviour does not come from the model becoming more humble, nor from a well-chosen confidence threshold. It comes from explicit constraints in the architecture that decide what may be released: trust by design rather than by declaration (Vorster, 2026b).
+
+<p align="right"><sub><a href="#top">Back to top ↑</a></sub></p>
+
+## Real-world applications
+
+<p align="center"><img src="docs/readme/slides/slide-applications.png" width="860" alt="Applying it in the real world: the assistant writes, the checker reads, the developer sees verified, flagged or withheld code"></p>
+
+> [!IMPORTANT]
+> These are applications the design points to, not settings this study tested. The evidence covers one model (Qwen3.5-9B), Python with `requests`, and six public REST APIs.
+
+### The main example: a company's own APIs
+
+Picture a company with a large codebase and dozens of internal services. A general-purpose model has never seen those services, so the stale-knowledge problem behind most of our baseline hallucinations is worse there, not better. The Confident Agent fits this setting in three steps:
+
+1. **The assistant writes.** An AI coding assistant drafts a call to one of the company's own APIs.
+2. **The checker reads.** Every claim in the code (host, path, method, parameters, response fields, authentication) is checked against that service's OpenAPI specification, frozen and versioned with the release it belongs to.
+3. **The developer sees** code that is *verified* and delivered, *flagged* with a warning, or *withheld*, in which case the request goes to a person rather than silently shipping a broken call.
+
+Three properties make the setting a good match. The checker is **specialised**: one codebase with known contracts, rather than the whole internet. It **stays current**: when a contract changes, the team updates the checker's evidence, not the model. And it is **cheap to run** in electricity, though not in time (see cost below).
+
+### Other places it fits
+
+| Setting | How the Confident Agent would be used | What it protects against |
+|---|---|---|
+| Code review and CI pipelines | A pre-commit hook or CI step verifies API calls in AI-written changes before they merge | Hallucinated endpoints, parameters and credentials reaching the main branch |
+| IDE coding assistants | The editor shows a suggestion only after it passes verification, with a flag where evidence is weak | Plausible but invented calls being accepted without a second look |
+| API migrations and deprecations | Generated or legacy code is checked against the *new* version's specification | Calls to retired hosts and versions, the commonest error we found (78% of baseline Petstore answers used the retired Swagger 2 host) |
+| API providers and developer platforms | A provider publishes a pinned specification with a checker alongside its SDK documentation | Developers receiving AI-generated examples for an API version that no longer exists |
+| Regulated and audited environments (finance, health, government) | Every decision is stored with the SHA-256 of the code and of the evidence it was checked against | Untraceable AI output: each release decision can be audited later |
+| Teaching and onboarding | Learners see *why* a call was rejected, layer by layer, with the closest valid operation | Learning an API from confident but wrong examples |
+
+### Cost of running it
+
+The study measured the cost directly (Sections 8.7 and 8.16), and it shapes where the system makes sense.
+
+| Measure | Plain model | Confident Agent | Implication |
+|---|---|---|---|
+| Time per prompt | 6–7 s | 37–48 s | about 6× slower; fine for review and CI, noticeable for interactive chat |
+| Tokens per prompt | about 500 | 21,000–23,000 | 40–46× more; on a pay-per-token cloud model this, not electricity, dominates the bill |
+| Electricity (local GPU) | R1.95–R2.42 per 1,000 prompts | R10.51–R14.87 per 1,000 prompts | about one cent per verified prompt |
+| Verification itself | | 2.3–9.6 s per prompt | the checker is cheap; the conversation around it is not |
+| Code withheld | 0% | 38–40% of tasks | each withheld task needs a person or another attempt |
+
+Most of the cost comes from the conversation re-sending its growing context on every turn, not from the checker. A production version could cut it substantially by running the checker as a gate outside the chat, which needs no extra tokens, by limiting correction rounds, and by trimming the report sent back to the model. Running locally also keeps proprietary code and internal specifications off third-party services.
+
+### What it takes to adopt
+
+- **A specification for every API it guards.** Services without an OpenAPI document need one written and maintained; otherwise the agent abstains on every call to them, as it did for almost all REST Countries tasks.
+- **Specification hygiene.** Specifications are frozen per release and monitored against the live service, because frozen evidence goes stale just as a model's training data does.
+- **A route for abstentions.** Withheld code should become a ticket, a review request or a prompt to the developer, never a silent failure.
+- **Scope extensions** for other languages, HTTP clients and multi-step workflows, which the current toolbox does not cover.
+
+### Limits to keep in mind
+
+Verification proves that a call matches the API contract, not that it does what the user intended: task-fidelity errors did not fall in our experiment, and only about one task in ten received code that passed every check. Values that exist only at run time are not inspected, and the checker shares one known blind spot with our evaluator (the `Accept` media type). The system therefore makes AI-written integration code *safer to accept*. It does not remove the need for tests and review.
 
 <p align="right"><sub><a href="#top">Back to top ↑</a></sub></p>
 
