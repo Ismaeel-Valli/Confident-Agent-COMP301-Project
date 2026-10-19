@@ -1,7 +1,0 @@
-{
-  "type": "plugin",
-  "runner": "node",
-  "owner": "confidence-agent",
-  "name": "standalone-toolbox",
-  "revision": 1
-}

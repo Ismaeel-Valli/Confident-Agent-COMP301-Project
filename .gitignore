@@ -1,0 +1,6 @@
+# local build and run artefacts
+__pycache__/
+*.pyc
+node_modules/
+.venv/
+verification-runs/

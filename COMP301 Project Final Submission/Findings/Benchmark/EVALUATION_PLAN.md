@@ -148,7 +148,7 @@ classified by hand as in §4; the evaluator's error rate on the sample is report
   Qwen3.5-9B, made 30 September to 3 October 2026 with benchmark 2026-09-27.2 on one
   machine: Q4_K_M, Q6_K and Q8_0 (`Benchmark/Completed Runs/`). These are the main
   runs and the Holm family of §6. The earlier runs below are kept in
-  `Archive/Superseded Benchmark Runs` and are not part of the findings; see the change
+  a superseded-runs folder kept outside the public repository (their rows remain in `complete_test_*.jsonl`) and are not part of the findings; see the change
   of 2026-10-06 for why.
 - **Run 1** (benchmark 2026-09-26.2) and **run 2** (benchmark 2026-09-27.2) are scored
   with this plan. Run 2 was the main result until the final runs replaced it.
@@ -222,7 +222,7 @@ classified by hand as in §4; the evaluator's error rate on the sample is report
   (2026-10-05) before this decision; their accuracy figures agree with the first series
   within about 2 percentage points (repairs, regressions and Holm-corrected significance
   alike), so the choice does not change the conclusions. The superseded runs are kept in
-  `Archive/Superseded Benchmark Runs`; Q4_K_M and Q8_0, each run twice with the same
+  a superseded-runs folder kept outside the public repository (their rows remain in `complete_test_*.jsonl`); Q4_K_M and Q8_0, each run twice with the same
   settings, can be reported as a repeat-run check.
 - 2026-10-06: §4 manual review of the final runs' undetermined candidates (396 distinct
   candidates: 46 that reached the user, 350 that were withheld). For lack of time it was made

@@ -1,7 +1,0 @@
-node_modules/
-.venv/
-.verification-venv/
-__pycache__/
-*.pyc
-verification-runs/
-dist/

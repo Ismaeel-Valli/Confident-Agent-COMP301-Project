@@ -55,8 +55,9 @@ with benchmark 2026-09-27.2 on one machine (EVALUATION_PLAN.md §7):
 Each zip holds the `<model-label>/` folder exactly as the run wrote it (the Q6_K label's
 doubled "Q" is what that run recorded, so it is kept). The runs stay zipped because,
 unpacked, they are too large for GitHub; `evaluate_benchmark` and `compile_stats` read the
-zips directly. Earlier runs (run 1, run 2 and the first Q6_K and Q8_0 runs) are kept in
-`Archive/Superseded Benchmark Runs` at the root of the repository.
+zips directly. Earlier runs (run 1, run 2 and the first Q6_K and Q8_0 runs) are not part of the
+public repository; their rows remain in `complete_test_*.jsonl`, which is what the
+evaluator reads.
 
 ## Setup (Windows, once)
 
