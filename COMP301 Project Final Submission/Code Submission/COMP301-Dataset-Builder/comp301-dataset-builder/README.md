@@ -110,6 +110,4 @@ The reference request is an example of correct behavior, not necessarily the onl
 
 Source retrieval was performed on 2026-09-21. Byte hashes of bundled specification files are in `sources/bundled_manifest.json` and in every task. Provider branch URLs can change; the bundled bytes define this draft. Official-source licenses are included. The curated specifications are marked as researcher-authored subsets; missing entries are not proof that an API operation or field is invalid.
 
-## Next action for your group
 
-Begin with the 10-task pilot and review the curated source contracts. Then complete the 100-task sample, correct the dataset and resolve the distribution differences in `DATASET_AUDIT.md`. Only after review should you create a frozen `rest_api_tasks_v1.jsonl` for the final experiment. Keep the current `_DRAFT` suffix until then.
